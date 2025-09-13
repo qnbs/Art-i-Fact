@@ -1,3 +1,5 @@
+
+
 import React, { useState, useCallback } from 'react';
 import type { Artwork, Gallery, DeepDive } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -64,6 +66,22 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
         }
     }, [artwork, deepDive, showToast, t]);
 
+    const createAttributionHtml = () => {
+        if (!artwork.license) return null;
+        const licenseUrlMap: Record<string, string> = {
+            "CC BY-SA 4.0": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/",
+            "CC BY-SA 3.0": "https://creativecommons.org/licenses/by-sa/3.0/",
+            "CC BY 3.0": "https://creativecommons.org/licenses/by/3.0/",
+            "CC0": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "Public domain": "https://en.wikipedia.org/wiki/Public_domain"
+        };
+        const licenseUrl = licenseUrlMap[artwork.license] || '#';
+        const artistHtml = `<strong>${artwork.artist}</strong>`;
+        const licenseHtml = `<a href="${licenseUrl}" target="_blank" rel="noopener noreferrer" class="hover:underline text-amber-600 dark:text-amber-500">${artwork.license}</a>`;
+        return {__html: `${t('modal.details.attribution')}: ${artistHtml} / ${licenseHtml}`};
+    };
+
     return (
         <div className="flex flex-col md:flex-row gap-8">
             <div className="w-full md:w-1/3 flex-shrink-0">
@@ -92,6 +110,12 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                             </a>
                         )}
                     </div>
+                )}
+                 {createAttributionHtml() && (
+                    <div 
+                        className="mt-2 text-xs text-gray-600 dark:text-gray-400"
+                        dangerouslySetInnerHTML={createAttributionHtml()!}
+                    />
                 )}
                 {artwork.colorPalette && <ColorPalette colors={artwork.colorPalette} />}
             </div>
@@ -197,7 +221,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                         ? <Button variant="danger" onClick={() => onRemoveFromGallery(artwork.id)}>{t('modal.details.removeFromGallery')}</Button>
                         : <Button variant="secondary" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => { onInitiateAddToGallery(artwork); onClose(); }}>{t('modal.details.addToGallery')}</Button>
                     }
-                    <Button variant="secondary" onClick={() => { onClose(); onStartChat(artwork); }}>
+                    <Button variant="secondary" onClick={() => { onStartChat(artwork); }}>
                         <ChatBubbleLeftEllipsisIcon className="w-5 h-5 mr-2" />
                         {t('chat.button')}
                     </Button>

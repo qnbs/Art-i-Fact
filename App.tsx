@@ -20,6 +20,8 @@ import { ChatModal } from './components/ChatModal';
 import { CameraAnalysisModal } from './components/CameraAnalysisModal';
 import { CommandPalette, Command } from './components/CommandPalette';
 import { GalleryCreator } from './components/GalleryCreator';
+import { GalleryManager } from './components/GalleryManager';
+import { ExhibitionMode } from './components/ExhibitionMode';
 import { Toast } from './components/ui/Toast';
 import { useTheme } from './hooks/useTheme';
 import { useGallery } from './hooks/useGallery';
@@ -31,9 +33,9 @@ import { useModal } from './contexts/ModalContext';
 import { useTranslation } from './contexts/TranslationContext';
 import { useDynamicLoadingMessage } from './hooks/useDynamicLoadingMessage';
 import * as gemini from './services/geminiService';
-import { realArtworks } from './data/realArtworks';
-import type { Artwork, Gallery, JournalEntry, Project } from './types';
+import type { Artwork, Gallery, JournalEntry, Project, ShareableGalleryData } from './types';
 import { WELCOME_PORTAL_SEEN_KEY } from './constants';
+import { Cog6ToothIcon, CommandLineIcon, GalleryIcon, HomeIcon, JournalIcon, PaintBrushIcon, QuestionMarkCircleIcon, SearchIcon, UserCircleIcon } from './components/IconComponents';
 
 type ActiveView = 'workspace' | 'discover' | 'studio' | 'gallery' | 'journal' | 'setup' | 'help' | 'profile' | 'glossary' | 'project';
 
@@ -57,21 +59,58 @@ const App: React.FC = () => {
     const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_PORTAL_SEEN_KEY));
     
     const [artworks, setArtworks] = useState<Artwork[]>([]);
+    const [featuredArtworks, setFeaturedArtworks] = useState<Artwork[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [similarTo, setSimilarTo] = useState<Artwork | null>(null);
     
     const [artworkToAdd, setArtworkToAdd] = useState<Artwork | null>(null);
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     
-    const [artworkForChat, setArtworkForChat] = useState<Artwork | null>(null);
-    const [isCameraOpen, setCameraOpen] = useState(false);
     const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
+    const [publicGalleryData, setPublicGalleryData] = useState<ShareableGalleryData | null>(null);
 
 
     const loadingMessages = useMemo(() => [
         t('loading.gemini.1'), t('loading.gemini.2'), t('loading.gemini.3'), t('loading.gemini.4')
     ], [t]);
     const loadingMessage = useDynamicLoadingMessage(loadingMessages, 3000, !!activeAiTask);
+
+    // Effect to fetch featured artworks on initial load
+    useEffect(() => {
+        const fetchFeaturedArtworks = async () => {
+            const results = await gemini.findArtworks("Most famous paintings in history high resolution", 10);
+            if (results) {
+                setFeaturedArtworks(results);
+            }
+        };
+        fetchFeaturedArtworks();
+    }, []);
+
+    // Effect to handle shared gallery links
+    useEffect(() => {
+        const handleHashChange = () => {
+            if (window.location.hash.startsWith('#view=')) {
+                try {
+                    const encodedData = window.location.hash.substring(6);
+                    const decodedJson = atob(encodedData);
+                    const data: ShareableGalleryData = JSON.parse(decodedJson);
+                    if (data.gallery && data.profile) {
+                        setPublicGalleryData(data);
+                    }
+                } catch (error) {
+                    console.error("Failed to parse shared gallery data:", error);
+                    window.location.hash = ''; // Clear invalid hash
+                }
+            }
+        };
+        
+        handleHashChange(); // Check on initial load
+        window.addEventListener('hashchange', handleHashChange);
+
+        return () => {
+            window.removeEventListener('hashchange', handleHashChange);
+        };
+    }, []);
 
     // Derived State
     const activeProject = useMemo(() => projects.find(p => p.id === activeProjectId), [projects, activeProjectId]);
@@ -174,7 +213,15 @@ const App: React.FC = () => {
         }
     }, [galleries, deleteGallery, unlinkGallery, t]);
 
-    // View Details Modal
+    // Modal Handlers
+    const handleStartChat = (artwork: Artwork) => {
+        showModal(t('chat.modal.title', { title: artwork.title }), <ChatModal artwork={artwork} />);
+    };
+    
+    const handleShowCamera = () => {
+        showModal(t('camera.modal.title'), <CameraAnalysisModal onCapture={handleAnalyzeImage} onClose={hideModal} />);
+    };
+    
     const handleViewDetails = (artwork: Artwork) => {
         showModal(
             artwork.title,
@@ -186,7 +233,7 @@ const App: React.FC = () => {
                 onRemoveFromGallery={removeArtworkFromActiveGallery}
                 onAddComment={addCommentToArtwork}
                 onThematicSearch={(tags) => { handleSearch(tags.join(', ')); setActiveView('discover'); }}
-                onStartChat={setArtworkForChat}
+                onStartChat={handleStartChat}
                 onClose={hideModal}
                 showToast={showToast}
             />
@@ -204,7 +251,11 @@ const App: React.FC = () => {
     
     const handleDeleteProject = (id: string, title: string) => {
         if(window.confirm(t('workspace.delete.confirm', { title }))) {
+            // This hook updates project state and localStorage for all related items
             deleteProject(id, galleries, journalEntries);
+            // Manually update React state for galleries and journals to sync the UI
+            setGalleries(prev => prev.filter(g => g.projectId !== id));
+            setJournalEntries(prev => prev.filter(j => j.projectId !== id));
             showToast(t('toast.project.deleted'));
         }
     };
@@ -228,17 +279,32 @@ const App: React.FC = () => {
 
     // App Commands
     const commands: Command[] = useMemo(() => [
-        { id: 'view_workspace', title: t('nav.workspace'), category: t('nav.category'), action: () => setActiveView('workspace') },
-        { id: 'view_discover', title: t('nav.discover'), category: t('nav.category'), action: () => setActiveView('discover') },
-        { id: 'view_studio', title: t('nav.studio'), category: t('nav.category'), action: () => setActiveView('studio') },
-        { id: 'view_journal', title: t('nav.journal'), category: t('nav.category'), action: () => setActiveView('journal') },
-        { id: 'view_profile', title: t('nav.profile'), category: t('nav.category'), action: () => setActiveView('profile') },
-        { id: 'view_settings', title: t('nav.settings'), category: t('nav.category'), action: () => setActiveView('setup') },
-        { id: 'view_help', title: t('nav.help'), category: t('nav.category'), action: () => setActiveView('help') },
-        { id: 'toggle_theme', title: t('command.toggleTheme'), category: t('command.category.general'), action: toggleTheme },
-        ...projects.map(p => ({ id: `proj_${p.id}`, title: t('command.openProject', { title: p.title }), category: t('command.category.projects'), action: () => { setActiveProjectId(p.id); setActiveView('project') }})),
-        ...galleries.map(g => ({ id: `gal_${g.id}`, title: t('command.openGallery', { title: g.title }), category: t('command.category.galleries'), action: () => { setActiveGalleryId(g.id); setActiveView('gallery'); }})),
-    ], [t, toggleTheme, projects, galleries, setActiveGalleryId]);
+        { id: 'view_workspace', title: t('nav.workspace'), category: t('nav.category'), icon: <HomeIcon className="w-5 h-5"/>, action: () => setActiveView('workspace') },
+        { id: 'view_discover', title: t('nav.discover'), category: t('nav.category'), icon: <SearchIcon className="w-5 h-5"/>, action: () => setActiveView('discover') },
+        { id: 'view_studio', title: t('nav.studio'), category: t('nav.category'), icon: <PaintBrushIcon className="w-5 h-5"/>, action: () => setActiveView('studio') },
+        { id: 'view_journal', title: t('nav.journal'), category: t('nav.category'), icon: <JournalIcon className="w-5 h-5"/>, action: () => setActiveView('journal') },
+        { id: 'view_profile', title: t('nav.profile'), category: t('nav.category'), icon: <UserCircleIcon className="w-5 h-5"/>, action: () => setActiveView('profile') },
+        { id: 'view_settings', title: t('nav.settings'), category: t('nav.category'), icon: <Cog6ToothIcon className="w-5 h-5"/>, action: () => setActiveView('setup') },
+        { id: 'view_help', title: t('nav.help'), category: t('nav.category'), icon: <QuestionMarkCircleIcon className="w-5 h-5"/>, action: () => setActiveView('help') },
+        { id: 'toggle_theme', title: t('command.toggleTheme'), category: t('command.category.general'), icon: <CommandLineIcon className="w-5 h-5"/>, action: toggleTheme },
+        ...projects.map(p => ({ id: `proj_${p.id}`, title: t('command.openProject', { title: p.title }), category: t('command.category.projects'), icon: <HomeIcon className="w-5 h-5"/>, action: () => { setActiveProjectId(p.id); setActiveView('project') }})),
+        ...galleries.map(g => ({
+            id: `gal_${g.id}`,
+            title: t('command.openGallery', { title: g.title }),
+            category: t('command.category.galleries'),
+            icon: <GalleryIcon className="w-5 h-5"/>,
+            action: () => {
+                if (g.projectId) {
+                    setActiveProjectId(g.projectId);
+                    setActiveView('project');
+                } else {
+                    setActiveProjectId(null); // Ensure we clear project context for standalone galleries
+                    setActiveView('gallery');
+                }
+                setActiveGalleryId(g.id);
+            }
+        })),
+    ], [t, toggleTheme, projects, galleries, setActiveGalleryId, setActiveProjectId]);
 
 
     // Render Logic
@@ -297,14 +363,15 @@ const App: React.FC = () => {
                     onAnalyzeImage={handleAnalyzeImage}
                     onAddArtwork={initiateAddToGallery}
                     onViewArtworkDetails={handleViewDetails}
-                    onShowCamera={() => setCameraOpen(true)}
+                    onShowCamera={handleShowCamera}
                     artworks={artworks}
                     isLoading={activeAiTask === 'search' || activeAiTask === 'similar' || activeAiTask === 'analyze'}
                     loadingMessage={loadingMessage}
                     searchTerm={searchTerm}
                     similarTo={similarTo}
                     onFindSimilar={handleFindSimilar}
-                    featuredArtworks={realArtworks.slice(0, 5)}
+                    featuredArtworks={featuredArtworks}
+                    appSettings={appSettings}
                 />;
             case 'studio':
                 return <Studio 
@@ -317,6 +384,17 @@ const App: React.FC = () => {
                     handleAiTask={handleAiTask}
                     loadingMessage={loadingMessage}
                 />
+            case 'gallery':
+                return <GalleryManager
+                    galleries={galleries.filter(g => !g.projectId)}
+                    onCreateNew={() => {
+                        const newId = createNewGallery({ title: t('gallery.newUntitled') });
+                        setActiveGalleryId(newId);
+                    }}
+                    onSelectGallery={(id) => setActiveGalleryId(id)}
+                    onDeleteGallery={(id, title) => handleDeleteGallery(id)}
+                    isProjectView={false}
+                />;
             case 'journal':
                  return <Journal
                     entries={journalEntries.filter(j => !j.projectId)} // Only show non-project entries here
@@ -391,6 +469,22 @@ const App: React.FC = () => {
         }
     };
     
+    if (publicGalleryData) {
+        return (
+            <ExhibitionMode 
+                artworks={publicGalleryData.gallery.artworks}
+                onClose={() => {
+                    setPublicGalleryData(null);
+                    window.location.hash = ''; // Clear hash on close
+                }}
+                settings={appSettings}
+                isPublicView={true}
+                galleryTitle={publicGalleryData.gallery.title}
+                curatorProfile={publicGalleryData.profile}
+            />
+        );
+    }
+
     if (showWelcome) {
         return <WelcomePortal onEnter={handleEnter} />;
     }
@@ -427,8 +521,6 @@ const App: React.FC = () => {
                 isOpen={isAddModalOpen}
                 activeProjectId={activeProjectId}
             />}
-            {artworkForChat && <ChatModal artwork={artworkForChat} onClose={() => setArtworkForChat(null)} />}
-            {isCameraOpen && <CameraAnalysisModal onCapture={handleAnalyzeImage} onClose={() => setCameraOpen(false)} />}
             <CommandPalette isOpen={isCommandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} commands={commands} />
             {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage('')} />}
             <div id="command-palette-root"></div>

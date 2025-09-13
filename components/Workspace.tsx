@@ -5,6 +5,7 @@ import { Project } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { HomeIcon, PlusCircleIcon, PencilIcon, TrashIcon } from './IconComponents';
 import { Button } from './ui/Button';
+import { EmptyState } from './ui/EmptyState';
 
 interface WorkspaceProps {
     projects: Project[];
@@ -30,7 +31,12 @@ const ProjectCard: React.FC<{
     };
 
     return (
-        <div className="group relative bg-white dark:bg-gray-900 rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] hover:shadow-amber-500/20 transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-800 flex flex-col" onClick={onSelect}>
+        <div 
+            className="group relative bg-white dark:bg-gray-900 rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] hover:shadow-amber-500/20 transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-800 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" 
+            onClick={onSelect}
+            onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}
+            tabIndex={0}
+        >
             <div className="p-6 flex-grow">
                 <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400 truncate mb-2">{project.title}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-3 h-[60px]">{project.description}</p>
@@ -39,8 +45,8 @@ const ProjectCard: React.FC<{
                 <span>{t('workspace.project.galleries', { count: String(galleryCount)})}</span>
                 <span>{t('workspace.project.journals', { count: String(journalCount)})}</span>
             </div>
-             <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <button onClick={handleDeleteClick} title={t('remove')} className="p-2 bg-red-600/80 hover:bg-red-600 text-white rounded-full">
+             <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 group-focus-within:opacity-100">
+                <button onClick={handleDeleteClick} title={t('remove')} className="p-2 bg-red-600/80 hover:bg-red-600 text-white rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
                     <TrashIcon className="w-4 h-4" />
                 </button>
             </div>
@@ -54,17 +60,16 @@ export const Workspace: React.FC<WorkspaceProps> = ({ projects, onNewProject, on
     return (
         <div className="flex flex-col h-full">
             {projects.length === 0 ? (
-                <div className="flex-grow flex justify-center items-center text-center">
-                    <div className="text-center text-gray-500 max-w-md p-8 bg-gray-100 dark:bg-gray-900/30 rounded-lg">
-                        <HomeIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">{t('workspace.empty.title')}</h3>
-                        <p className="mb-6">{t('workspace.empty.prompt')}</p>
-                        <Button onClick={onNewProject}>
-                            <PlusCircleIcon className="w-5 h-5 mr-2" />
-                            {t('workspace.empty.button')}
-                        </Button>
-                    </div>
-                </div>
+                 <EmptyState
+                    icon={<HomeIcon className="w-16 h-16" />}
+                    title={t('workspace.empty.title')}
+                    message={t('workspace.empty.prompt')}
+                >
+                    <Button onClick={onNewProject}>
+                        <PlusCircleIcon className="w-5 h-5 mr-2" />
+                        {t('workspace.empty.button')}
+                    </Button>
+                </EmptyState>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {projects.map(project => (

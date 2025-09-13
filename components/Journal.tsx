@@ -7,6 +7,7 @@ import { JournalIcon, PlusCircleIcon, SparklesIcon, TrashIcon, CheckCircleIcon, 
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { Button } from './ui/Button';
 import { SpinnerIcon } from './IconComponents';
+import { EmptyState } from './ui/EmptyState';
 
 interface JournalProps {
     entries: JournalEntry[];
@@ -17,7 +18,6 @@ interface JournalProps {
     onDeleteEntry: (id: string) => void;
     onJournalResearch: (topic: string) => Promise<string>;
     activeAiTask: string | null;
-    // FIX: Updated handleAiTask signature to match App.tsx definition.
     handleAiTask: <T>(taskName: string, taskFn: () => Promise<T>, options?: { onStart?: () => void; onEnd?: (result: T | undefined) => void; }) => Promise<T | undefined>;
 }
 
@@ -40,7 +40,6 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries'> & { entry: JournalEn
 
     const handleResearch = async () => {
         if (!researchTopic) return;
-        // FIX: Removed the third argument from handleAiTask call to match the updated signature.
         const insights = await handleAiTask('journal', () => onJournalResearch(researchTopic));
         if (insights) {
             setContent(prev => `${prev}\n\n### ${t('journal.research.heading', { topic: researchTopic })}\n\n${insights}`);
@@ -57,7 +56,7 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries'> & { entry: JournalEn
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="text-2xl font-bold bg-transparent focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-800 rounded-md p-1 w-full"
+                    className="text-2xl font-bold bg-transparent focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800 rounded-md p-1 w-full"
                 />
                 {isDirty && (
                      <Button size="sm" onClick={handleSave}>
@@ -98,18 +97,40 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries'> & { entry: JournalEn
 
 export const Journal: React.FC<JournalProps> = (props) => {
     const { t } = useTranslation();
-    const { entries, activeEntryId, onSelectEntry, onDeleteEntry } = props;
+    const { entries, onDeleteEntry } = props;
+    
+    // Internal state to manage active entry if not controlled by props
+    const [internalActiveEntryId, setInternalActiveEntryId] = useState<string | null>(null);
+
+    // Determine whether to use controlled or internal state
+    const isControlled = props.activeEntryId !== undefined;
+    const activeEntryId = isControlled ? props.activeEntryId : internalActiveEntryId;
+    const onSelectEntry = isControlled ? props.onSelectEntry! : setInternalActiveEntryId;
+
+    useEffect(() => {
+        // If the active entry is deleted from outside, clear internal state
+        if (!isControlled && activeEntryId && !entries.find(e => e.id === activeEntryId)) {
+            setInternalActiveEntryId(null);
+        }
+    }, [entries, activeEntryId, isControlled]);
+
     const activeEntry = useMemo(() => entries.find(e => e.id === activeEntryId), [entries, activeEntryId]);
+
+    const handleDelete = (e: React.MouseEvent, entryId: string) => {
+        e.stopPropagation();
+        onDeleteEntry(entryId);
+        if (activeEntryId === entryId) {
+            onSelectEntry(null);
+        }
+    };
 
     if (entries.length === 0) {
         return (
-            <div className="flex-grow flex justify-center items-center text-center">
-                <div className="text-gray-500 max-w-md p-8 bg-gray-100 dark:bg-gray-900/30 rounded-lg">
-                    <JournalIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">{t('journal.empty.title')}</h3>
-                    <p>{t('journal.empty.prompt')}</p>
-                </div>
-            </div>
+            <EmptyState 
+                icon={<JournalIcon className="w-16 h-16" />}
+                title={t('journal.empty.title')}
+                message={t('journal.empty.prompt')}
+            />
         );
     }
     
@@ -121,13 +142,13 @@ export const Journal: React.FC<JournalProps> = (props) => {
                     {entries.map(entry => (
                         <button
                             key={entry.id}
-                            onClick={() => onSelectEntry?.(entry.id)}
+                            onClick={() => onSelectEntry(entry.id)}
                             className={`w-full text-left p-3 rounded-md group transition-colors ${activeEntryId === entry.id ? 'bg-amber-100 dark:bg-amber-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'}`}
                         >
                             <div className="flex justify-between items-start">
                                 <h4 className={`font-semibold truncate ${activeEntryId === entry.id ? 'text-amber-800 dark:text-amber-300' : ''}`}>{entry.title}</h4>
                                  <button
-                                    onClick={(e) => { e.stopPropagation(); onDeleteEntry(entry.id); }}
+                                    onClick={(e) => handleDelete(e, entry.id)}
                                     className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                     title={t('remove')}
                                 >

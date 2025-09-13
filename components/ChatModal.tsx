@@ -3,14 +3,14 @@ import type { Chat } from '@google/genai';
 import { useTranslation } from '../contexts/TranslationContext';
 import { startArtChat } from '../services/geminiService';
 import type { Artwork } from '../types';
-import { CloseIcon, SparklesIcon } from './IconComponents';
+import { SparklesIcon } from './IconComponents';
 
 interface ChatMessage {
     sender: 'user' | 'ai';
     text: string;
 }
 
-export const ChatModal: React.FC<{ artwork: Artwork; onClose: () => void; }> = ({ artwork, onClose }) => {
+export const ChatModal: React.FC<{ artwork: Artwork; }> = ({ artwork }) => {
     const { t } = useTranslation();
     const [chat, setChat] = useState<Chat | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -81,44 +81,38 @@ export const ChatModal: React.FC<{ artwork: Artwork; onClose: () => void; }> = (
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl transform flex flex-col h-[80vh] max-h-[700px]">
-                <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
-                    <h2 className="text-xl font-semibold truncate pr-4">{t('chat.modal.title', { title: artwork.title })}</h2>
-                    <button onClick={onClose} aria-label={t('close')}><CloseIcon className="w-6 h-6" /></button>
-                </div>
-                <div className="flex-grow p-4 overflow-y-auto space-y-4">
-                    {messages.map((msg, index) => (
-                        <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            {msg.sender === 'ai' && <div className="w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>}
-                            <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${msg.sender === 'user' ? 'bg-amber-600 text-white rounded-br-none' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-bl-none'}`}>
-                                <p className="text-sm">{msg.text}</p>
-                            </div>
+         <div className="flex flex-col h-[60vh] max-h-[500px]">
+            <div className="flex-grow p-4 overflow-y-auto space-y-4 -mx-6">
+                {messages.map((msg, index) => (
+                    <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        {msg.sender === 'ai' && <div className="w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>}
+                        <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${msg.sender === 'user' ? 'bg-amber-600 text-white rounded-br-none' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-bl-none'}`}>
+                            <p className="text-sm">{msg.text}</p>
                         </div>
-                    ))}
-                    {isLoading && (
-                        <div className="flex items-end gap-2 justify-start">
-                            <div className="w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
-                            <div className="max-w-md p-3 rounded-2xl bg-gray-200 dark:bg-gray-700 rounded-bl-none">
-                                <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce mr-1"></span>
-                                <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce mr-1" style={{ animationDelay: '0.1s' }}></span>
-                                <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                            </div>
+                    </div>
+                ))}
+                {isLoading && (
+                    <div className="flex items-end gap-2 justify-start">
+                        <div className="w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
+                        <div className="max-w-md p-3 rounded-2xl bg-gray-200 dark:bg-gray-700 rounded-bl-none">
+                            <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce mr-1"></span>
+                            <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce mr-1" style={{ animationDelay: '0.1s' }}></span>
+                            <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
                         </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                </div>
-                <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 dark:border-gray-700/50 flex-shrink-0">
-                    <input
-                        type="text"
-                        value={userInput}
-                        onChange={e => setUserInput(e.target.value)}
-                        placeholder={t('chat.placeholder')}
-                        disabled={isLoading}
-                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                </form>
+                    </div>
+                )}
+                <div ref={messagesEndRef} />
             </div>
+            <form onSubmit={handleSendMessage} className="pt-4 flex-shrink-0 -mx-6 px-6">
+                <input
+                    type="text"
+                    value={userInput}
+                    onChange={e => setUserInput(e.target.value)}
+                    placeholder={t('chat.placeholder')}
+                    disabled={isLoading}
+                    className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full py-2 px-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                />
+            </form>
         </div>
     );
 };

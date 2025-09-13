@@ -1,8 +1,6 @@
-
-
 import { GoogleGenAI, Type, GenerateContentResponse, Chat, Modality } from "@google/genai";
-import { Artwork, DeepDive, Gallery, GalleryCritique, AudioGuide } from '../types';
-import { findArtwork, realArtworks } from '../data/realArtworks';
+import { Artwork, DeepDive, Gallery, GalleryCritique, AudioGuide, ImageAspectRatio } from '../types';
+import { searchWikimedia } from './wikimediaService';
 
 // Initialize the Google AI client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
@@ -45,35 +43,50 @@ const extractJson = <T>(response: GenerateContentResponse, fallback: T): T => {
     }
 };
 
-/**
- * Searches for artworks based on a text query.
- */
-export const findArtworks = async (query: string, count: number): Promise<Artwork[]> => {
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `Find ${count} famous artworks related to "${query}".`,
-        config: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title: { type: Type.STRING },
-                        artist: { type: Type.STRING },
+const searchArtTool = {
+    functionDeclarations: [
+        {
+            name: "search_artwork_on_wikimedia",
+            description: "Searches for artworks on Wikimedia Commons based on a user's query.",
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    query: {
+                        type: Type.STRING,
+                        description: "The user's search query, e.g., 'Mona Lisa' or 'Van Gogh Starry Night'."
                     }
-                }
+                },
+                required: ["query"]
             }
         }
-    });
-
-    const results = extractJson<{ title: string, artist: string }[]>(response, []);
-    return results.map(art => findArtwork(art.title, art.artist)).filter(Boolean) as Artwork[];
+    ]
 };
 
-/**
- * Analyzes an image file to identify the artwork.
- */
+export const findArtworks = async (query: string, count: number): Promise<Artwork[]> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Please find artworks related to: "${query}"`,
+            config: {
+                tools: [searchArtTool]
+            }
+        });
+
+        const call = response.candidates?.[0]?.content?.parts?.[0]?.functionCall;
+
+        if (call?.name === 'search_artwork_on_wikimedia' && call.args?.query) {
+            const searchTerm = call.args.query as string;
+            return await searchWikimedia(searchTerm, count);
+        } else {
+            console.warn("Gemini did not return a function call. Performing direct search as fallback.");
+            return await searchWikimedia(query, count);
+        }
+    } catch (error) {
+        console.error("Error in findArtworks with function calling:", error);
+        return await searchWikimedia(query, count);
+    }
+};
+
 export const analyzeImage = async (file: File): Promise<Artwork | null> => {
     const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -82,28 +95,21 @@ export const analyzeImage = async (file: File): Promise<Artwork | null> => {
         reader.readAsDataURL(file);
     });
 
-    const response = await ai.models.generateContent({
+    const identifyResponse = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: {
             parts: [
                 { inlineData: { mimeType: file.type, data: base64 } },
-                { text: "Identify this artwork. What is its title and who is the artist?" }
+                { text: "Identify this artwork. What is its title and who is the artist? Just give the title and artist." }
             ]
-        },
-        config: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    artist: { type: Type.STRING },
-                }
-            }
         }
     });
 
-    const result = extractJson<{ title: string, artist: string }>(response, { title: '', artist: '' });
-    return findArtwork(result.title, result.artist);
+    const identificationText = identifyResponse.text.trim();
+    if (!identificationText) return null;
+
+    const searchResults = await findArtworks(identificationText, 1);
+    return searchResults.length > 0 ? searchResults[0] : null;
 };
 
 /**
@@ -158,9 +164,7 @@ export const generateAudioGuideScript = async (gallery: Gallery, profile: { user
     const artworkData = gallery.artworks.map(a => ({ id: a.id, title: a.title, artist: a.artist }));
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: {
-            parts: [{ text: `Generate a script for an audio guide for a gallery titled "${gallery.title}", curated by ${profile.username}. The gallery contains these artworks: ${JSON.stringify(artworkData)}` }]
-        },
+        contents: `Generate a script for an audio guide for a gallery titled "${gallery.title}", curated by ${profile.username}. The gallery contains these artworks: ${JSON.stringify(artworkData)}`,
         config: {
             responseMimeType: 'application/json',
             responseSchema: {
@@ -223,13 +227,13 @@ export const enhancePrompt = async (prompt: string): Promise<string> => {
 /**
  * Generates an image from a text prompt.
  */
-export const generateImage = async (prompt: string, aspectRatio: string): Promise<string> => {
+export const generateImage = async (prompt: string, aspectRatio: ImageAspectRatio): Promise<string> => {
     const response = await ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt,
         config: {
             numberOfImages: 1,
-            aspectRatio: aspectRatio as any,
+            aspectRatio: aspectRatio,
             outputMimeType: 'image/jpeg',
         }
     });
@@ -249,7 +253,6 @@ export const remixImage = async (base64ImageData: string, prompt: string): Promi
             ],
         },
         config: {
-            // FIX: Updated responseModalities to use the Modality enum as per API guidelines.
             responseModalities: [Modality.IMAGE, Modality.TEXT],
         },
     });

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
 import { PaintBrushIcon, SparklesIcon, SpinnerIcon, PlusCircleIcon, GalleryIcon, MagicWandIcon, ArrowPathIcon, CloseIcon } from './IconComponents';
@@ -15,7 +16,6 @@ interface StudioProps {
     onInitiateAdd: (artwork: Artwork) => void;
     activeAiTask: string | null;
     showToast: (message: string) => void;
-    // FIX: Updated handleAiTask signature to match App.tsx definition.
     handleAiTask: <T>(taskName: string, taskFn: () => Promise<T>, options?: { onStart?: () => void; onEnd?: (result: T | undefined) => void; }) => Promise<T | undefined>;
     loadingMessage: string;
 }
@@ -54,7 +54,6 @@ export const Studio: React.FC<StudioProps> = ({
             ? () => onRemixImage(generatedImage!, prompt)
             : () => onGenerateImage(prompt, aspectRatio);
 
-        // FIX: Removed the third argument from handleAiTask call to match the updated signature.
         const result = await handleAiTask(taskName, apiFn);
 
         if (result) {
@@ -82,7 +81,6 @@ export const Studio: React.FC<StudioProps> = ({
     const handleEnhance = async () => {
         if (!prompt.trim()) return;
         setIsEnhancing(true);
-        // FIX: Removed the third argument from handleAiTask call to match the updated signature.
         const enhancedPrompt = await handleAiTask('enhance', () => onEnhancePrompt(prompt));
         setIsEnhancing(false);
 

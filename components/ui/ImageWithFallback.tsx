@@ -1,4 +1,3 @@
-// FIX: Imported useEffect hook to handle src prop changes.
 import React, { useState, useEffect } from 'react';
 import { GalleryIcon } from '../IconComponents';
 

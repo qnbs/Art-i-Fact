@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useTranslation } from '../contexts/TranslationContext';
-import { SearchIcon, CommandLineIcon } from './IconComponents';
+import { SearchIcon } from './IconComponents';
 
 export interface Command {
     id: string;
     title: string;
     category: string;
     action: () => void;
+    icon?: React.ReactNode;
 }
 
 interface CommandPaletteProps {
@@ -112,7 +113,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                                             onClick={() => { command.action(); onClose(); }}
                                             className={`flex items-center gap-3 p-3 rounded-md cursor-pointer ${isSelected ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
                                         >
-                                            <CommandLineIcon className="w-5 h-5 flex-shrink-0" />
+                                            <span className="w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-400">{command.icon}</span>
                                             <span>{command.title}</span>
                                         </li>
                                         )

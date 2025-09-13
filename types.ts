@@ -5,6 +5,7 @@ export interface Artwork {
     artist: string;
     year: string;
     imageUrl: string;
+    thumbnailUrl?: string;
     description: string;
     medium?: string;
     dimensions?: string;
@@ -15,6 +16,7 @@ export interface Artwork {
     historicalContext?: string;
     comment?: string;
     isGenerated?: boolean;
+    license?: string;
 }
 
 export interface Gallery {
@@ -87,3 +89,5 @@ export interface ShareableGalleryData {
     gallery: Gallery;
     profile: Profile;
 }
+
+export type ImageAspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4';

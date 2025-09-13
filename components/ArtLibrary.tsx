@@ -1,13 +1,11 @@
-// FIX: Implemented full content for the ArtLibrary component.
 import React, { useState, useRef, ChangeEvent } from 'react';
-import type { Artwork } from '../types';
+import type { Artwork, AppSettings } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { SearchIcon, SparklesIcon, ArrowLeftIcon, ArrowUpTrayIcon, CameraIcon } from './IconComponents';
 import { ArtworkItem } from './ArtworkItem';
-import { LoadingOverlay } from './ui/LoadingOverlay';
 import { Button } from './ui/Button';
+import { ArtworkItemSkeleton } from './ui/ArtworkItemSkeleton';
 
-// FIX: Added ArtLibraryProps interface to define component props.
 interface ArtLibraryProps {
   onSearch: (term: string) => void;
   onAnalyzeImage: (file: File) => void;
@@ -21,14 +19,49 @@ interface ArtLibraryProps {
   similarTo: Artwork | null;
   onFindSimilar: (artwork: Artwork) => void;
   featuredArtworks: Artwork[];
+  appSettings: AppSettings;
 }
 
-const themeCategories = {
-    'welcome.category.eras': ['baroque_chiaroscuro', 'impressionist_light', 'surreal_dreams', 'bauhaus_design', 'pop_art_critique'],
-    'welcome.category.emotions': ['joy_celebration', 'melancholic_solitude', 'chaotic_harmony', 'vanitas_mortality'],
-    'welcome.category.places': ['stormy_seascapes', 'urban_alienation', 'mystical_forests', 'manicured_gardens'],
-    'welcome.category.themes': ['mythological_heroes', 'industrial_revolution', 'unconventional_portraits', 'geometric_abstraction']
+const themeSuggestions = {
+    'welcome.category.eras': [
+        { labelKey: 'welcome.theme.renaissance_portraits', query: 'High Renaissance portraits by Leonardo da Vinci, Raphael, Titian' },
+        { labelKey: 'welcome.theme.baroque_chiaroscuro', query: 'Baroque painting chiaroscuro Caravaggio Gentileschi' },
+        { labelKey: 'welcome.theme.dutch_golden_age', query: 'Dutch Golden Age painting Vermeer Rembrandt' },
+        { labelKey: 'welcome.theme.romanticism_landscapes', query: 'Romanticism landscape painting Caspar David Friedrich, J. M. W. Turner' },
+        { labelKey: 'welcome.theme.impressionist_light', query: 'Impressionist paintings light Monet, Renoir, Degas' },
+        { labelKey: 'welcome.theme.post_impressionism_emotion', query: 'Post-Impressionism paintings emotion Van Gogh, Cézanne, Gauguin' },
+        { labelKey: 'welcome.theme.cubist_perspectives', query: 'Cubism paintings Picasso, Braque' },
+        { labelKey: 'welcome.theme.surreal_dreams', query: 'Surrealist paintings dreams Dalí, Magritte, Ernst' },
+        { labelKey: 'welcome.theme.abstract_expressionism', query: 'Abstract Expressionism action painting Pollock, de Kooning' },
+        { labelKey: 'welcome.theme.pop_art_critique', query: 'Pop Art consumer culture Warhol, Lichtenstein' },
+    ],
+    'welcome.category.techniques': [
+        { labelKey: 'welcome.theme.impasto_texture', query: 'Impasto oil painting thick texture Van Gogh, Rembrandt' },
+        { labelKey: 'welcome.theme.sfumato_haze', query: 'Sfumato technique paintings Leonardo da Vinci' },
+        { labelKey: 'welcome.theme.tenebrism_drama', query: 'Tenebrism dramatic lighting Caravaggio, Ribera' },
+        { labelKey: 'welcome.theme.pointillism_dots', query: 'Pointillism paintings Seurat, Signac' },
+        { labelKey: 'welcome.theme.fresco_murals', query: 'Italian Renaissance fresco murals Michelangelo, Raphael' },
+    ],
+    'welcome.category.subjects': [
+        { labelKey: 'welcome.theme.mythological_heroes', query: 'Mythological Greek heroes paintings Rubens, Titian' },
+        { labelKey: 'welcome.theme.biblical_scenes', query: 'Biblical scenes paintings Caravaggio, Rembrandt' },
+        { labelKey: 'welcome.theme.historical_events', query: 'Famous historical event paintings Jacques-Louis David, Delacroix' },
+        { labelKey: 'welcome.theme.vanitas_mortality', query: 'Vanitas still life paintings skull candle' },
+        { labelKey: 'welcome.theme.unconventional_portraits', query: 'Unconventional portraits Francis Bacon, Lucian Freud' },
+        { labelKey: 'welcome.theme.dramatic_seascapes', query: 'Dramatic stormy seascape paintings J. M. W. Turner' },
+        { labelKey: 'welcome.theme.tranquil_gardens', query: 'Paintings of tranquil gardens Monet, Klimt' },
+        { labelKey: 'welcome.theme.urban_alienation', query: 'Paintings of urban alienation Edward Hopper' },
+    ],
+    'welcome.category.concepts': [
+        { labelKey: 'welcome.theme.order_and_chaos', query: 'Paintings depicting order and chaos Kandinsky, Pollock' },
+        { labelKey: 'welcome.theme.love_and_loss', query: 'Paintings about love and loss Pre-Raphaelite Brotherhood' },
+        { labelKey: 'welcome.theme.power_and_conflict', query: 'Paintings depicting power and conflict Goya, Picasso' },
+        { labelKey: 'welcome.theme.joy_and_celebration', query: 'Paintings of joy and celebration Renoir, Matisse' },
+        { labelKey: 'welcome.theme.melancholy_and_solitude', query: 'Paintings of melancholy and solitude Caspar David Friedrich, Edward Hopper' },
+        { labelKey: 'welcome.theme.geometric_abstraction', query: 'Geometric abstraction paintings Mondrian, Malevich' },
+    ],
 };
+
 
 const SearchResultHeader: React.FC<{ term?: string; similarTo?: Artwork | null; onBack: () => void }> = ({ term, similarTo, onBack }) => {
     const { t } = useTranslation();
@@ -50,7 +83,7 @@ const SearchResultHeader: React.FC<{ term?: string; similarTo?: Artwork | null; 
 export const ArtLibrary: React.FC<ArtLibraryProps> = ({
   onSearch, onAnalyzeImage, onAddArtwork, onViewArtworkDetails, onShowCamera,
   artworks, isLoading, loadingMessage, searchTerm, similarTo, onFindSimilar,
-  featuredArtworks
+  featuredArtworks, appSettings,
 }) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
@@ -63,8 +96,8 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
     }
   };
 
-  const handleThematicSearch = (themeKey: string) => {
-    onSearch(t(themeKey));
+  const handleThematicSearch = (query: string) => {
+    onSearch(query);
   };
   
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -83,19 +116,18 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
             {t('welcome.subtitle')}
         </p>
         <div className="w-full max-w-4xl">
-            {Object.entries(themeCategories).map(([categoryKey, themeKeys]) => (
+            {Object.entries(themeSuggestions).map(([categoryKey, themes]) => (
                 <div key={categoryKey} className="mb-6 animate-fade-in">
                     <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-300 mb-3">{t(categoryKey)}</h3>
                     <div className="flex flex-wrap justify-center gap-3">
-                        {themeKeys.map(themeKey => {
-                            const fullThemeKey = `welcome.theme.${themeKey}`;
+                        {themes.map(theme => {
                             return (
                                 <button 
-                                    key={themeKey}
-                                    onClick={() => handleThematicSearch(fullThemeKey)}
-                                    className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm px-4 py-2 rounded-full hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white transition-all transform hover:scale-105"
+                                    key={theme.labelKey}
+                                    onClick={() => handleThematicSearch(theme.query)}
+                                    className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm px-4 py-2 rounded-full hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white transition-all transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                                 >
-                                    {t(fullThemeKey)}
+                                    {t(theme.labelKey)}
                                 </button>
                             );
                         })}
@@ -156,6 +188,12 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
       </div>
     )
   );
+  
+  const renderLoading = () => (
+     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {Array.from({ length: appSettings.aiResultsCount }).map((_, i) => <ArtworkItemSkeleton key={i} />)}
+    </div>
+  )
 
   return (
     <div className="flex flex-col h-full bg-white/50 dark:bg-black/20 rounded-lg p-4 md:p-6">
@@ -167,7 +205,7 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={t('artLibrary.search.placeholder')}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-full text-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-full text-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2">
               <SearchIcon className="w-6 h-6 text-gray-400" />
@@ -180,7 +218,7 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
      
       <div className="flex-grow overflow-y-auto">
         {isLoading ? (
-          <LoadingOverlay message={loadingMessage} />
+          renderLoading()
         ) : showResultsHeader ? (
           renderResults()
         ) : (

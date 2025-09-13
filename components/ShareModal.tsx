@@ -3,7 +3,6 @@ import { Gallery, Profile, ShareableGalleryData } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { Modal } from './Modal';
 import { Button } from './ui/Button';
-// FIX: Replaced non-existent LinkIcon with ArrowUpTrayIcon for better semantics.
 import { ArrowDownTrayIcon, ArrowUpTrayIcon } from './IconComponents';
 
 interface ShareModalProps {

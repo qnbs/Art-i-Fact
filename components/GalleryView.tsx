@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, DragEvent } from 'react';
 import { Gallery, Artwork, Profile, AppSettings, AudioGuide, GalleryCritique } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -200,7 +201,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                                 onDrop={(e) => handleDrop(e, index)}
                                 className={`group relative cursor-pointer overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 transition-transform duration-300 hover:scale-105 hover:shadow-amber-500/20 focus-within:ring-2 focus-within:ring-amber-400 ${draggedIndex === index ? 'opacity-50' : ''}`}
                             >
-                               <ImageWithFallback src={art.imageUrl} alt={art.title} fallbackText={art.title} className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-75"/>
+                               <ImageWithFallback src={art.thumbnailUrl || art.imageUrl} alt={art.title} fallbackText={art.title} className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-75"/>
                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-end">
                                    <h3 className="font-bold text-base text-white truncate">{art.title}</h3>
                                    <p className="text-sm text-gray-300 truncate">{art.artist}</p>

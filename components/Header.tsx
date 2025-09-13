@@ -1,4 +1,3 @@
-// FIX: Implemented full content for the Header component.
 import React from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
 import { PlusCircleIcon, CommandLineIcon, ArrowLeftIcon } from './IconComponents';

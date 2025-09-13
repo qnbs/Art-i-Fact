@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Project, Gallery, JournalEntry } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -21,7 +22,6 @@ interface ProjectViewProps {
     onUpdateJournalEntry: (id: string, updatedEntry: Partial<Omit<JournalEntry, 'id' | 'createdAt'>>) => void;
     onDeleteJournalEntry: (id: string) => void;
     onNewJournalEntry: () => string;
-    // FIX: Corrected the return type for onJournalResearch to match the expected Promise<string>.
     onJournalResearch: (topic: string) => Promise<string>;
     activeAiTask: string | null;
     handleAiTask: <T>(taskName: string, taskFn: () => Promise<T>, options?: { onStart?: () => void; onEnd?: (result: T | undefined) => void; }) => Promise<T | undefined>;

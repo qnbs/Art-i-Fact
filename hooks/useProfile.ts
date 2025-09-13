@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback } from 'react';
 import type { Profile } from '../types';
 import { PROFILE_LOCAL_STORAGE_KEY } from '../constants';
@@ -18,18 +19,16 @@ const sanitizeProfile = (p: Profile): Profile => ({
 
 export const useProfile = () => {
   const [profile, setProfileState] = useState<Profile>(() => {
+    let p = initialProfile;
     try {
       const savedProfile = localStorage.getItem(PROFILE_LOCAL_STORAGE_KEY);
       if (savedProfile) {
-        const parsed = JSON.parse(savedProfile);
-        // Ensure initial data is also sanitized
-        return sanitizeProfile({ ...initialProfile, ...parsed });
+        p = { ...initialProfile, ...JSON.parse(savedProfile) };
       }
-      return initialProfile;
     } catch (error) {
       console.error("Could not parse saved profile:", error);
-      return initialProfile;
     }
+    return sanitizeProfile(p);
   });
 
   useEffect(() => {

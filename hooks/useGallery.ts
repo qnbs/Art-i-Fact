@@ -6,8 +6,14 @@ import { GALLERY_LOCAL_STORAGE_KEY } from '../constants';
 import { sanitizeInput } from '../services/geminiService';
 
 const getGalleryThumbnail = (artworks: Artwork[]): string => {
-    if (artworks.length > 0 && artworks[0].imageUrl) {
-        return artworks[0].imageUrl;
+    if (artworks.length > 0) {
+        const firstArt = artworks[0];
+        if (firstArt.thumbnailUrl) {
+            return firstArt.thumbnailUrl;
+        }
+        if (firstArt.imageUrl) {
+            return firstArt.imageUrl;
+        }
     }
     // Return a default placeholder SVG for an empty gallery
     const svg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#e5e7eb"/><text x="50" y="55" font-family="sans-serif" font-size="12" fill="#9ca3af" text-anchor="middle">Empty</text></svg>`;
