@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Cog6ToothIcon, UserCircleIcon, CheckCircleIcon, PresentationChartBarIcon, ArrowDownTrayIcon, ArrowUpTrayIcon } from './IconComponents';
+import { Cog6ToothIcon, UserCircleIcon, CheckCircleIcon, PresentationChartBarIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, SparklesIcon } from './IconComponents';
 import { useTranslation } from '../contexts/TranslationContext';
 import { Profile, AppSettings } from '../types';
 import { Section, SettingRow, Toggle } from './ui/SettingsComponents';
@@ -108,6 +108,32 @@ export const Setup: React.FC<SetupProps> = ({
                     </Button>
                 </div>
             </div>
+        </Section>
+
+        <Section title={t('settings.section.ai')} icon={<SparklesIcon className="w-5 h-5" />}>
+            <SettingRow label={t('settings.ai.creativity')} description={t('settings.ai.creativity.desc')}>
+                 <select 
+                    value={appSettings.aiCreativity} 
+                    onChange={(e) => onUpdateAppSettings({ aiCreativity: e.target.value as AppSettings['aiCreativity'] })} 
+                    className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 max-w-xs"
+                >
+                    <option value="focused">{t('settings.ai.creativity.focused')}</option>
+                    <option value="balanced">{t('settings.ai.creativity.balanced')}</option>
+                    <option value="creative">{t('settings.ai.creativity.creative')}</option>
+                </select>
+            </SettingRow>
+            <SettingRow label={t('settings.ai.resultsCount')} description={t('settings.ai.resultsCount.desc')}>
+                <div className="flex items-center gap-2">
+                    <input 
+                        type="range"
+                        min="10" max="50" step="5"
+                        value={appSettings.aiResultsCount}
+                        onChange={(e) => onUpdateAppSettings({ aiResultsCount: Number(e.target.value) })}
+                        className="w-24"
+                    />
+                    <span className="text-sm w-12 text-right">{appSettings.aiResultsCount}</span>
+                </div>
+            </SettingRow>
         </Section>
 
         <Section title={t('settings.section.exhibition')} icon={<PresentationChartBarIcon className="w-5 h-5" />}>
