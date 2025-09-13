@@ -1,0 +1,53 @@
+// FIX: Implemented full content for the eraArtworks data file.
+import { Artwork } from '../../types';
+
+export const eraArtworks: Artwork[] = [
+  {
+    id: 'renaissance_mona_lisa',
+    title: 'Mona Lisa',
+    artist: 'Leonardo da Vinci',
+    year: 'c. 1503–1506',
+    imageUrl: 'https://storage.googleapis.com/gen-ai-samples/story-vision/renaissance_mona_lisa.jpg',
+    description: 'A half-length portrait painting by the Italian High Renaissance artist Leonardo da Vinci that has been described as "the best known, the most visited, the most written about, the most sung about, the most parodied work of art in the world".',
+    medium: 'Oil on poplar panel',
+    dimensions: '77 cm × 53 cm',
+    location: 'Louvre Museum, Paris',
+    tags: ['High Renaissance', 'Portrait', 'Italian Renaissance'],
+  },
+  {
+    id: 'baroque_the_night_watch',
+    title: 'The Night Watch',
+    artist: 'Rembrandt van Rijn',
+    year: '1642',
+    imageUrl: 'https://storage.googleapis.com/gen-ai-samples/story-vision/baroque_the_night_watch.jpg',
+    description: 'Famous for its massive size, dramatic use of light and shadow (chiaroscuro), and its perception of motion in what would have traditionally been a static military group portrait.',
+    medium: 'Oil on canvas',
+    dimensions: '363 cm × 437 cm',
+    location: 'Rijksmuseum, Amsterdam',
+    tags: ['Baroque', 'Dutch Golden Age', 'Group Portrait'],
+  },
+  {
+    id: 'impressionism_impression_sunrise',
+    title: 'Impression, Sunrise',
+    artist: 'Claude Monet',
+    year: '1872',
+    imageUrl: 'https://storage.googleapis.com/gen-ai-samples/story-vision/impressionism_impression_sunrise.jpg',
+    description: 'The painting credited with inspiring the name of the Impressionist movement. It depicts the port of Le Havre, Monet\'s hometown, and is a study of the fleeting effects of light and atmosphere.',
+    medium: 'Oil on canvas',
+    dimensions: '48 cm × 63 cm',
+    location: 'Musée Marmottan Monet, Paris',
+    tags: ['Impressionism', 'Landscape', 'Plein Air'],
+  },
+  {
+    id: 'surrealism_the_persistence_of_memory',
+    title: 'The Persistence of Memory',
+    artist: 'Salvador Dalí',
+    year: '1931',
+    imageUrl: 'https://storage.googleapis.com/gen-ai-samples/story-vision/surrealism_the_persistence_of_memory.jpg',
+    description: 'One of the most recognizable works of Surrealism, this iconic painting features melting pocket watches in a dreamlike landscape, exploring the relationship between time, memory, and the subconscious.',
+    medium: 'Oil on canvas',
+    dimensions: '24 cm × 33 cm',
+    location: 'Museum of Modern Art, New York',
+    tags: ['Surrealism', 'Symbolism', 'Psychoanalysis'],
+  },
+];

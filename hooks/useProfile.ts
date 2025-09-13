@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import type { Profile } from '../types';
 import { PROFILE_LOCAL_STORAGE_KEY } from '../constants';
+import { sanitizeInput } from '../services/geminiService';
 
 const initialProfile: Profile = { 
     username: 'Art Enthusiast', 
@@ -8,13 +10,20 @@ const initialProfile: Profile = {
     avatar: 'avatar-1' 
 };
 
+const sanitizeProfile = (p: Profile): Profile => ({
+    ...p,
+    username: sanitizeInput(p.username),
+    bio: sanitizeInput(p.bio),
+});
+
 export const useProfile = () => {
-  const [profile, setProfile] = useState<Profile>(() => {
+  const [profile, setProfileState] = useState<Profile>(() => {
     try {
       const savedProfile = localStorage.getItem(PROFILE_LOCAL_STORAGE_KEY);
       if (savedProfile) {
         const parsed = JSON.parse(savedProfile);
-        return { ...initialProfile, ...parsed };
+        // Ensure initial data is also sanitized
+        return sanitizeProfile({ ...initialProfile, ...parsed });
       }
       return initialProfile;
     } catch (error) {
@@ -31,9 +40,13 @@ export const useProfile = () => {
     }
   }, [profile]);
 
+  const setProfile = useCallback((newProfile: Profile) => {
+    setProfileState(sanitizeProfile(newProfile));
+  }, []);
+
   const updateProfile = useCallback((newProfile: Profile) => {
     setProfile(newProfile);
-  }, []);
+  }, [setProfile]);
 
   return {
     profile,

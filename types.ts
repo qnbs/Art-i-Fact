@@ -1,98 +1,89 @@
-import { Modality } from "@google/genai";
 
 export interface Artwork {
-  id: string;
-  title: string;
-  artist: string;
-  year: string;
-  imageUrl: string;
-  description?: string;
-  visualDescription?: string;
-  colorPalette?: string[];
-  comment?: string;
-  tags?: string[];
-  isGenerated?: boolean;
-  sourceUrl?: string;
-}
-
-export interface AudioGuideSegment {
-  artworkId: string;
-  script: string;
-}
-
-export interface AudioGuide {
-  introduction: string;
-  segments: AudioGuideSegment[];
-}
-
-export interface Profile {
-  username: string;
-  bio: string;
-  avatar: string; // identifier for a predefined avatar
+    id: string;
+    title: string;
+    artist: string;
+    year: string;
+    imageUrl: string;
+    description: string;
+    medium?: string;
+    dimensions?: string;
+    location?: string;
+    tags?: string[];
+    sourceUrl?: string;
+    colorPalette?: string[];
+    historicalContext?: string;
+    comment?: string;
+    isGenerated?: boolean;
 }
 
 export interface Gallery {
-  id: string; // Unique ID for each gallery
-  title: string;
-  description: string;
-  artworks: Artwork[];
-  createdAt: string; // ISO string
-  updatedAt: string; // ISO string
-  curatorIntro?: string;
-  audioGuide?: AudioGuide;
-  curatorProfile?: Profile;
-  thumbnailUrl?: string; // Auto-generated SVG data URL
-  projectId?: string; // Link to a project
-  trailerVideoUrl?: string; // Blob URL for the generated video
+    id: string;
+    title: string;
+    description: string;
+    artworks: Artwork[];
+    createdAt: string;
+    updatedAt: string;
+    thumbnailUrl?: string;
+    curatorIntro?: string;
+    projectId?: string;
+    trailerVideoUrl?: string;
+    trailerVideoStatus?: 'pending' | 'ready' | 'failed';
 }
 
-export interface DeepDive {
-  symbolism: string;
-  artistContext: string;
-  technique: string;
-}
-
-export interface GalleryCritique {
-  critique: string;
-  suggestions: string[];
+export interface Profile {
+    username: string;
+    bio: string;
+    avatar: string;
 }
 
 export interface AppSettings {
-  aiCreativity: 'focused' | 'exploratory';
-  aiResultsCount: 8 | 12 | 16;
-  slideshowSpeed: number; // in seconds
-  exhibitAutoplay: boolean;
-  audioGuideVoiceURI: string | null;
-  audioGuideSpeed: number; // e.g., 0.5 to 2
+    aiCreativity: 'focused' | 'balanced' | 'creative';
+    aiResultsCount: number;
+    slideshowSpeed: number; // in seconds
+    exhibitAutoplay: boolean;
+    audioGuideVoiceURI: string | null;
+    audioGuideSpeed: number; // rate multiplier
+}
+
+export interface DeepDive {
+    symbolism: string;
+    artistContext: string;
+    technique: string;
+}
+
+export interface GalleryCritique {
+    critique: string;
+    suggestions: string[];
+}
+
+export interface AudioGuide {
+    introduction: string;
+    segments: {
+        artworkId: string;
+        script: string;
+    }[];
 }
 
 export interface JournalEntry {
     id: string;
     title: string;
     content: string;
-    createdAt: string; // ISO String
-    updatedAt: string; // ISO String
-    linkedGalleryId?: string;
-    projectId?: string; // Link to a project
+    createdAt: string;
+    updatedAt: string;
+    galleryIds: string[];
+    projectId?: string;
 }
 
 export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
+    id: string;
+    title: string;
+    description: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
-export interface UserData {
-    galleries: Gallery[];
+export interface ShareableGalleryData {
+    gallery: Gallery;
     profile: Profile;
-    settings: AppSettings;
-    journal: JournalEntry[];
-    projects: Project[];
-}
-
-export interface ResearchResult {
-    summary: string;
-    sources: { uri: string; title: string }[];
 }

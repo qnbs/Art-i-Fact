@@ -1,9 +1,8 @@
 import React from 'react';
-import { HomeIcon, GalleryIcon, Cog6ToothIcon, SparklesIcon, QuestionMarkCircleIcon, JournalIcon, SearchIcon, PaintBrushIcon } from './IconComponents';
+import { HomeIcon, GalleryIcon, Cog6ToothIcon, SparklesIcon, QuestionMarkCircleIcon, JournalIcon, SearchIcon, PaintBrushIcon, UserCircleIcon } from './IconComponents';
 import { useTranslation } from '../contexts/TranslationContext';
 
-type ActiveView = 'workspace' | 'discover' | 'studio' | 'gallery' | 'journal' | 'setup' | 'help';
-
+type ActiveView = 'workspace' | 'discover' | 'studio' | 'gallery' | 'journal' | 'setup' | 'help' | 'profile' | 'glossary' | 'project';
 
 interface SideNavBarProps {
   activeView: ActiveView;
@@ -53,7 +52,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveVie
         <NavButton
           label={t('workspace')}
           icon={<HomeIcon className="w-6 h-6" />}
-          isActive={activeView === 'workspace'}
+          isActive={activeView === 'workspace' || activeView === 'project'}
           onClick={() => setActiveView('workspace')}
         />
         <NavButton
@@ -82,9 +81,29 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveVie
           onClick={() => setActiveView('journal')}
         />
       </div>
-      <div className="mt-auto text-center text-xs text-gray-400 dark:text-gray-500 p-4">
-        <p>Art-i-Fact {t('settings.about.version')}</p>
-        <p>&copy; {new Date().getFullYear()}</p>
+      <div className="mt-auto flex flex-col gap-2">
+         <NavButton
+          label={t('profile')}
+          icon={<UserCircleIcon className="w-6 h-6" />}
+          isActive={activeView === 'profile'}
+          onClick={() => setActiveView('profile')}
+        />
+         <NavButton
+          label={t('settings.title')}
+          icon={<Cog6ToothIcon className="w-6 h-6" />}
+          isActive={activeView === 'setup'}
+          onClick={() => setActiveView('setup')}
+        />
+        <NavButton
+          label={t('help.title')}
+          icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
+          isActive={activeView === 'help' || activeView === 'glossary'}
+          onClick={() => setActiveView('help')}
+        />
+        <div className="text-center text-xs text-gray-400 dark:text-gray-500 p-4 mt-4 border-t border-gray-200 dark:border-gray-800">
+            <p>Art-i-Fact {t('settings.about.version')}</p>
+            <p>&copy; {new Date().getFullYear()}</p>
+        </div>
       </div>
     </nav>
   );

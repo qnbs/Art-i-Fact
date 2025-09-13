@@ -3,6 +3,8 @@ import { Artwork, AudioGuide, AppSettings, Profile } from '../types';
 import { CloseIcon, ArrowLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, SpeakerWaveIcon, SpeakerXMarkIcon, DocumentTextIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from './IconComponents';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
+import { ImageWithFallback } from './ui/ImageWithFallback';
+import { getResizedImageUrl } from '../services/geminiService';
 
 interface ExhibitionModeProps {
   artworks: Artwork[];
@@ -25,9 +27,35 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   const [isAudioGuideActive, setAudioGuideActive] = useState(settings.exhibitAutoplay && !!audioGuide);
   const [showTranscript, setShowTranscript] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [areControlsVisible, setAreControlsVisible] = useState(true);
   const exhibitionRef = useRef<HTMLDivElement>(null);
+  const inactivityTimerRef = useRef<number | null>(null);
 
   const currentArtwork = artworks[currentIndex];
+
+  const resetInactivityTimer = useCallback(() => {
+    setAreControlsVisible(true);
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    inactivityTimerRef.current = window.setTimeout(() => {
+      setAreControlsVisible(false);
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    resetInactivityTimer();
+    window.addEventListener('mousemove', resetInactivityTimer);
+    window.addEventListener('keydown', resetInactivityTimer);
+
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      window.removeEventListener('mousemove', resetInactivityTimer);
+      window.removeEventListener('keydown', resetInactivityTimer);
+    };
+  }, [resetInactivityTimer]);
 
   const goToNext = useCallback(() => {
     setCurrentIndex(prevIndex => (prevIndex + 1) % artworks.length);
@@ -139,8 +167,8 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   const currentScript = audioGuide ? (currentIndex === 0 ? audioGuide.introduction : audioGuide.segments.find(s => s.artworkId === currentArtwork.id)?.script) : null;
 
   return (
-    <div ref={exhibitionRef} className="fixed inset-0 bg-gray-950/95 backdrop-blur-xl z-50 flex flex-col p-4 md:p-8 text-white animate-fade-in">
-      <div className="flex-shrink-0 flex justify-between items-center mb-4">
+    <div ref={exhibitionRef} className="fixed inset-0 bg-gray-950/95 backdrop-blur-xl z-50 flex flex-col p-4 md:p-8 text-white animate-fade-in" onMouseMove={resetInactivityTimer}>
+      <div className={`flex-shrink-0 flex justify-between items-center mb-4 transition-opacity duration-300 ${areControlsVisible ? 'opacity-100' : 'opacity-0'}`}>
         <div className="flex items-center space-x-2">
             {artworks.map((_, index) => (
               <button 
@@ -168,10 +196,11 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
 
       <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-8 overflow-hidden">
         <div className="relative w-full md:w-1/2 h-2/3 md:h-full flex items-center justify-center">
-            <img 
+            <ImageWithFallback 
               key={currentArtwork.id}
-              src={currentArtwork.imageUrl} 
+              src={getResizedImageUrl(currentArtwork.imageUrl, 1920)} 
               alt={currentArtwork.title} 
+              fallbackText={currentArtwork.title}
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-fade-in"
             />
         </div>
@@ -198,7 +227,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
         </div>
       </div>
       
-      <div className="flex-shrink-0 flex justify-center items-center gap-8 mt-4">
+      <div className={`flex-shrink-0 flex justify-center items-center gap-8 mt-4 transition-opacity duration-300 ${areControlsVisible ? 'opacity-100' : 'opacity-0'}`}>
           <button onClick={handlePreviousClick} className="text-gray-400 hover:text-white transition-colors p-2 rounded-full bg-white/10 hover:bg-white/20" aria-label="Previous Artwork">
               <ArrowLeftIcon className="w-6 h-6" />
           </button>

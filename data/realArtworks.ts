@@ -1,24 +1,40 @@
 import { Artwork } from '../types';
+import { eraArtworks } from './artworks/eras';
+import { emotionArtworks } from './artworks/emotions';
+import { placeArtworks } from './artworks/places';
+import { themeArtworks } from './artworks/themes';
+
+// Consolidate all artworks from the modular files into one comprehensive library.
+// This structure makes it easier to add new categories or artworks in the future.
+export const realArtworks: Artwork[] = [
+    ...eraArtworks,
+    ...emotionArtworks,
+    ...placeArtworks,
+    ...themeArtworks,
+];
 
 // A helper function to perform a fuzzy search for an artwork in our library.
 // This allows for minor variations in titles or artist names from the AI.
 export const findArtwork = (title: string, artist: string): Artwork | null => {
-    if (!title || !artist || title === 'Unknown' || artist === 'Unknown') return null;
+    if (!title || !artist || title === 'Unknown Artwork' || artist === 'Unknown Artist') return null;
 
     const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
 
     const normalizedTitle = normalize(title);
     const normalizedArtist = normalize(artist);
 
+    // Create a Set of unique artworks based on their ID to avoid duplicates from different categories
+    const uniqueArtworks = Array.from(new Map(realArtworks.map(art => [art.id, art])).values());
+
     // Prioritize exact matches first
-    for (const art of realArtworks) {
+    for (const art of uniqueArtworks) {
         if (normalize(art.title) === normalizedTitle && normalize(art.artist) === normalizedArtist) {
             return art;
         }
     }
 
     // Allow for partial matches if no exact match is found
-    for (const art of realArtworks) {
+    for (const art of uniqueArtworks) {
         if (normalize(art.title).includes(normalizedTitle) && normalize(art.artist).includes(normalizedArtist)) {
             return art;
         }
@@ -26,246 +42,3 @@ export const findArtwork = (title: string, artist: string): Artwork | null => {
 
     return null;
 }
-
-export const realArtworks: Artwork[] = [
-  {
-    id: 'van-gogh-starry-night',
-    title: 'The Starry Night',
-    artist: 'Vincent van Gogh',
-    year: '1889',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
-    description: 'One of the most recognized paintings in Western art, it depicts the view from the east-facing window of his asylum room at Saint-Rémy-de-Provence, just before sunrise, with the addition of an imaginary village.',
-    visualDescription: 'A dramatic, swirling night sky filled with a glowing crescent moon and stars over a tranquil village.',
-    colorPalette: ['#032A5F', '#07488B', '#F2B900', '#2E6737', '#6A874F'],
-    tags: ['post-impressionism', 'landscape', 'night', 'expressionism', 'nature'],
-  },
-  {
-    id: 'da-vinci-mona-lisa',
-    title: 'Mona Lisa',
-    artist: 'Leonardo da Vinci',
-    year: 'c. 1503–1506',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/1280px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg',
-    description: 'Arguably the most famous painting in the world, this portrait is renowned for its sitter\'s enigmatic smile and has been the subject of endless speculation and study.',
-    visualDescription: 'A portrait of a woman with a gentle, mysterious smile, set against a distant landscape.',
-    colorPalette: ['#46402E', '#9E8E5E', '#C0A978', '#67533E', '#2B2319'],
-    tags: ['high-renaissance', 'portrait', 'sfumato', 'realism'],
-  },
-  {
-    id: 'rembrandt-night-watch',
-    title: 'The Night Watch',
-    artist: 'Rembrandt van Rijn',
-    year: '1642',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/The_Night_Watch_-_Rembrandt_van_Rijn.jpg/1920px-The_Night_Watch_-_Rembrandt_van_Rijn.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:The_Night_Watch_-_Rembrandt_van_Rijn.jpg',
-    description: 'A massive group portrait of a militia company, famous for its dramatic use of light and shadow (chiaroscuro) and its depiction of motion in what would have traditionally been a static genre.',
-    visualDescription: 'A large, dark canvas with a group of soldiers in dynamic poses, illuminated by a dramatic central light.',
-    colorPalette: ['#C48325', '#332115', '#F5E3A8', '#7E3E18', '#0F0B0A'],
-    tags: ['dutch-golden-age', 'baroque', 'group-portrait', 'chiaroscuro'],
-  },
-  {
-    id: 'vermeer-girl-with-a-pearl-earring',
-    title: 'Girl with a Pearl Earring',
-    artist: 'Johannes Vermeer',
-    year: 'c. 1665',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/1280px-1665_Girl_with_a_Pearl_Earring.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:1665_Girl_with_a_Pearl_Earring.jpg',
-    description: 'Often called the "Mona Lisa of the North," this captivating portrait (a tronie) is admired for its delicate handling of light, the subject\'s intimate gaze, and the shimmering pearl earring.',
-    visualDescription: 'A young woman in exotic dress and a blue and yellow turban, looking back over her shoulder with a large pearl earring.',
-    colorPalette: ['#1E1913', '#3E5C6B', '#E7C883', '#A47E45', '#F2F0E4'],
-    tags: ['dutch-golden-age', 'baroque', 'portrait', 'tronie'],
-  },
-  {
-    id: 'munch-the-scream',
-    title: 'The Scream',
-    artist: 'Edvard Munch',
-    year: '1893',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg/1280px-Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Edvard_Munch,_1893,_The_Scream,_oil,_tempera_and_pastel_on_cardboard,_91_x_73_cm,_National_Gallery_of_Norway.jpg',
-    description: 'An iconic symbol of modern anxiety, this work depicts a figure against a swirling, blood-red sky, expressing a profound sense of existential dread and psychological turmoil.',
-    visualDescription: 'A ghostly figure with an agonized expression on a bridge, beneath a fiery, undulating sky.',
-    colorPalette: ['#E69B32', '#343845', '#DF5E21', '#5B768B', '#B4A293'],
-    tags: ['symbolism', 'expressionism', 'modern-art', 'anxiety'],
-  },
-  {
-    id: 'monet-impression-sunrise',
-    title: 'Impression, Sunrise',
-    artist: 'Claude Monet',
-    year: '1872',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Monet_-_Impression%2C_Sunrise.jpg/1920px-Monet_-_Impression%2C_Sunrise.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Monet_-_Impression,_Sunrise.jpg',
-    description: 'The painting that gave its name to the Impressionist movement. It captures the hazy morning atmosphere of the port of Le Havre, focusing on the fleeting effects of light and color.',
-    visualDescription: 'A misty, blue-toned harbor scene with a small boat, dominated by a vibrant orange sun reflecting on the water.',
-    colorPalette: ['#9298A1', '#2C404E', '#F26227', '#6C7E89', '#555F6A'],
-    tags: ['impressionism', 'landscape', 'seascape', 'sunrise', 'en-plein-air'],
-  },
-  {
-    id: 'klimt-the-kiss',
-    title: 'The Kiss',
-    artist: 'Gustav Klimt',
-    year: '1907–1908',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg/1280px-The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg',
-    description: 'A masterpiece of the Art Nouveau period, this painting depicts a couple embracing in a field of flowers, their bodies enveloped in ornate, golden robes that symbolize their ecstatic union.',
-    visualDescription: 'Two lovers locked in an embrace, cloaked in elaborate golden patterns against a shimmering background.',
-    colorPalette: ['#C49B24', '#4E483A', '#8F6F23', '#F2E284', '#6D611E'],
-    tags: ['art-nouveau', 'symbolism', 'vienna-secession', 'love'],
-  },
-  {
-    id: 'whistler-whistlers-mother',
-    title: 'Arrangement in Grey and Black No. 1',
-    artist: 'James McNeill Whistler',
-    year: '1871',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Whistlers_Mother_high_res.jpg/1280px-Whistlers_Mother_high_res.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Whistlers_Mother_high_res.jpg',
-    description: 'Popularly known as Whistler\'s Mother, this painting is a study in tonal harmony and composition. It depicts the artist\'s mother, Anna McNeill Whistler, in profile, embodying a sense of quiet dignity and contemplation.',
-    visualDescription: 'A woman in a black dress and white cap sitting in profile against a grey wall, creating a study of tones.',
-    colorPalette: ['#282627', '#8A8681', '#E7E2DB', '#53504C', '#ACABA6'],
-    tags: ['realism', 'tonalism', 'portrait', 'aestheticism'],
-  },
-  {
-    id: 'wood-american-gothic',
-    title: 'American Gothic',
-    artist: 'Grant Wood',
-    year: '1930',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg/1280px-Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg',
-    description: 'An iconic image of American Regionalism, this painting portrays a stoic farmer and his daughter standing before a Carpenter Gothic style house. It is a complex work, often interpreted as both a satire and a celebration of rural American values.',
-    visualDescription: 'A stern-faced man holding a pitchfork and a woman stand before a white house with a distinctive Gothic window.',
-    colorPalette: ['#5F4A3F', '#B39F7E', '#0B233E', '#8C745C', '#E4D5B7'],
-    tags: ['american-regionalism', 'modernism', 'portrait', 'rural-life'],
-  },
-  {
-    id: 'dali-persistence-of-memory',
-    title: 'The Persistence of Memory',
-    artist: 'Salvador Dalí',
-    year: '1931',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg',
-    sourceUrl: 'https://en.wikipedia.org/wiki/File:The_Persistence_of_Memory.jpg',
-    description: 'A quintessential Surrealist masterpiece, this painting features melting pocket watches in a desolate landscape, exploring the themes of time, memory, and the subconscious mind.',
-    visualDescription: 'Melting clocks drape over objects in a dreamlike, barren coastal landscape under a soft light.',
-    colorPalette: ['#C3943F', '#526C78', '#735737', '#EADAB3', '#2D2821'],
-    tags: ['surrealism', 'symbolism', 'landscape', 'dreams'],
-  },
-  {
-    id: 'botticelli-birth-of-venus',
-    title: 'The Birth of Venus',
-    artist: 'Sandro Botticelli',
-    year: 'c. 1484–1486',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/1920px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
-    description: 'An icon of the Italian Renaissance, this painting depicts the goddess Venus arriving at the shore after her birth, when she had emerged from the sea fully-grown.',
-    visualDescription: 'The goddess Venus stands on a giant scallop shell, surrounded by mythological figures against a serene coastal backdrop.',
-    colorPalette: ['#E3C6A2', '#8DB3A4', '#F4E7D3', '#D39679', '#4E6A5E'],
-    tags: ['early-renaissance', 'mythology', 'allegory', 'florentine-school'],
-  },
-  {
-    id: 'velazquez-las-meninas',
-    title: 'Las Meninas',
-    artist: 'Diego Velázquez',
-    year: '1656',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Las_Meninas%2C_by_Diego_Vel%C3%A1zquez%2C_from_Prado_in_Google_Earth.jpg/1920px-Las_Meninas%2C_by_Diego_Vel%C3%A1zquez%2C_from_Prado_in_Google_Earth.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Las_Meninas,_by_Diego_Vel%C3%A1zquez,_from_Prado_in_Google_Earth.jpg',
-    description: 'A masterful and complex painting of the Spanish court, it raises questions about reality and illusion, showing the young Infanta Margaret Theresa with her maids of honor, the artist himself, and the king and queen reflected in a mirror.',
-    visualDescription: 'A complex interior scene with a young princess and her attendants, with the artist at his easel and a reflection of the royal couple.',
-    colorPalette: ['#3A2F29', '#9E724F', '#D3BBA9', '#63493A', '#C7A177'],
-    tags: ['baroque', 'spanish-golden-age', 'portrait', 'realism'],
-  },
-  {
-    id: 'bruegel-tower-of-babel',
-    title: 'The Tower of Babel',
-    artist: 'Pieter Bruegel the Elder',
-    year: '1563',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project.jpg/1920px-Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_(Vienna)_-_Google_Art_Project.jpg',
-    description: 'A dramatic depiction of the biblical story of the Tower of Babel. Bruegel\'s rendering emphasizes the immense scale of the structure and the chaotic, futile human effort in its construction.',
-    visualDescription: 'A colossal, spiraling tower under construction, teeming with tiny figures, set against a vast landscape and seaport.',
-    colorPalette: ['#7C6B5A', '#B5A58A', '#415263', '#D6C6A9', '#938B7C'],
-    tags: ['northern-renaissance', 'religious-art', 'landscape', 'architecture'],
-  },
-  {
-    id: 'seurat-sunday-afternoon',
-    title: 'A Sunday Afternoon on the Island of La Grande Jatte',
-    artist: 'Georges Seurat',
-    year: '1884–1886',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg/1920px-A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:A_Sunday_on_La_Grande_Jatte,_Georges_Seurat,_1884.jpg',
-    description: 'A leading example of Pointillism, this large-scale work depicts Parisians at leisure on a park island. Seurat meticulously applied tiny dots of color that blend in the viewer\'s eye.',
-    visualDescription: 'A park scene by a river, populated by formally dressed figures composed of tiny, distinct dots of color.',
-    colorPalette: ['#1B5B3A', '#F0D47C', '#396982', '#A4A644', '#D48E34'],
-    tags: ['post-impressionism', 'pointillism', 'neo-impressionism', 'genre-painting'],
-  },
-  {
-    id: 'hokusai-great-wave',
-    title: 'The Great Wave off Kanagawa',
-    artist: 'Katsushika Hokusai',
-    year: 'c. 1829–1833',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/1920px-Tsunami_by_hokusai_19th_century.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Tsunami_by_hokusai_19th_century.jpg',
-    description: 'An iconic woodblock print from the series "Thirty-six Views of Mount Fuji." It shows a massive, claw-like wave threatening three boats, with the distant Mount Fuji visible under its crest.',
-    visualDescription: 'A giant, cresting wave with foam like claws, dwarfing boats and a distant Mount Fuji.',
-    colorPalette: ['#0E2A47', '#7292A9', '#F4E9D3', '#39536B', '#A7BED0'],
-    tags: ['ukiyo-e', 'edo-period', 'japanese-art', 'landscape'],
-  },
-  {
-    id: 'turner-the-fighting-temeraire',
-    title: 'The Fighting Temeraire',
-    artist: 'J. M. W. Turner',
-    year: '1839',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/The_Fighting_Temeraire%2C_JMW_Turner%2C_1839.jpg/1920px-The_Fighting_Temeraire%2C_JMW_Turner%2C_1839.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:The_Fighting_Temeraire,_JMW_Turner,_1839.jpg',
-    description: 'This painting depicts the final journey of the HMS Temeraire, a celebrated warship, as it is towed by a steam-powered tugboat to be broken up. It is a poignant allegory for the end of an era and the rise of the industrial age.',
-    visualDescription: 'A majestic old sailing ship being pulled by a small, dark tugboat under a dramatic, fiery sunset.',
-    colorPalette: ['#F1A03C', '#E6C68A', '#45607C', '#7F7972', '#B98A5B'],
-    tags: ['romanticism', 'landscape', 'seascape', 'allegory', 'industrial-revolution'],
-  },
-   {
-    id: 'friedrich-wanderer-above-the-sea-of-fog',
-    title: 'Wanderer above the Sea of Fog',
-    artist: 'Caspar David Friedrich',
-    year: 'c. 1818',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg/1280px-Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg',
-    description: 'A seminal work of German Romanticism, this painting portrays a man standing on a rocky precipice, gazing out over a vast sea of fog. It symbolizes contemplation, the sublime power of nature, and the insignificance of humanity before it.',
-    visualDescription: 'A man seen from behind, standing on a dark, rocky outcrop, looking out over a thick blanket of fog that covers a mountain landscape.',
-    colorPalette: ['#3C4B59', '#A6B0B8', '#D8D8D8', '#6F7B85', '#1E2732'],
-    tags: ['romanticism', 'landscape', 'sublime', 'contemplation', 'nature'],
-  },
-  {
-    id: 'kandinsky-composition-vii',
-    title: 'Composition VII',
-    artist: 'Wassily Kandinsky',
-    year: '1913',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Vassily_Kandinsky%2C_1913_-_Composition_7.jpg/1920px-Vassily_Kandinsky%2C_1913_-_Composition_7.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Vassily_Kandinsky,_1913_-_Composition_7.jpg',
-    description: 'Considered one of the pinnacles of abstract art, this painting is a whirlwind of color and form. Kandinsky sought to create a purely spiritual art, free from representational constraints, where colors and shapes could evoke an emotional and musical response.',
-    visualDescription: 'A chaotic and vibrant explosion of abstract shapes, lines, and colors that seem to swirl and overlap across the canvas.',
-    colorPalette: ['#E34234', '#F7B52A', '#3C78BE', '#469658', '#F0EAD6'],
-    tags: ['abstract-art', 'der-blaue-reiter', 'expressionism', 'spiritual', 'chaos'],
-  },
-  {
-    id: 'hopper-nighthawks',
-    title: 'Nighthawks',
-    artist: 'Edward Hopper',
-    year: '1942',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Nighthawks_by_Edward_Hopper_1942.jpg/1920px-Nighthawks_by_Edward_Hopper_1942.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Nighthawks_by_Edward_Hopper_1942.jpg',
-    description: 'An iconic depiction of urban loneliness and alienation. The painting portrays four figures in a brightly lit late-night diner, their isolation emphasized by the dark, empty street outside. The scene is rendered with a cinematic quality and a palpable sense of quiet melancholy.',
-    visualDescription: 'Four figures sit in a brightly illuminated diner at night, viewed from the dark street outside, creating a sense of separation and observation.',
-    colorPalette: ['#0A5F4E', '#F3B43E', '#8E3F2C', '#C9C29E', '#2A292B'],
-    tags: ['american-realism', 'modernism', 'urban', 'loneliness', 'cinematic'],
-  },
-  {
-    id: 'mondrian-composition-with-red-blue-and-yellow',
-    title: 'Composition with Red, Blue and Yellow',
-    artist: 'Piet Mondrian',
-    year: '1930',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Piet_Mondrian%2C_1930_-_Mondrian_Composition_II_in_Red%2C_Blue%2C_and_Yellow.jpg/1280px-Piet_Mondrian%2C_1930_-_Mondrian_Composition_II_in_Red%2C_Blue%2C_and_Yellow.jpg',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Piet_Mondrian,_1930_-_Mondrian_Composition_II_in_Red,_Blue,_and_Yellow.jpg',
-    description: 'A prime example of the De Stijl movement and Mondrian\'s Neoplasticism, this work reduces form and color to their most basic elements: straight lines, primary colors, and a grid. It seeks to express a universal, harmonious order that transcends the natural world.',
-    visualDescription: 'A grid of thick black lines on a white background, containing blocks of primary colors: a large red rectangle, a small blue one, and a small yellow one.',
-    colorPalette: ['#D40000', '#00008B', '#FFD700', '#000000', '#FFFFFF'],
-    tags: ['de-stijl', 'neoplasticism', 'abstract-art', 'geometric', 'modernism'],
-  },
-];

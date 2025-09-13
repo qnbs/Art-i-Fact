@@ -3,6 +3,7 @@ import { Gallery } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { PlusCircleIcon } from './IconComponents';
 import { Modal } from './Modal';
+import { ImageWithFallback } from './ui/ImageWithFallback';
 
 interface AddToGalleryModalProps {
   galleries: Gallery[];
@@ -10,12 +11,35 @@ interface AddToGalleryModalProps {
   onCreateAndAdd: () => void;
   onClose: () => void;
   isOpen: boolean;
+  activeProjectId: string | null;
 }
 
-export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ galleries, onSelectGallery, onCreateAndAdd, onClose, isOpen }) => {
+const GalleryListItem: React.FC<{gallery: Gallery, onSelect: (id: string) => void}> = ({ gallery, onSelect }) => {
+    const { t } = useTranslation();
+    return (
+        <button
+            key={gallery.id}
+            onClick={() => onSelect(gallery.id)}
+            className="w-full text-left p-3 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
+        >
+            <ImageWithFallback 
+                src={gallery.thumbnailUrl} 
+                alt="" 
+                fallbackText={gallery.title || 'G'}
+                className="w-10 h-10 rounded object-cover flex-shrink-0 bg-gray-300" 
+            />
+            <span className="font-semibold truncate">{gallery.title || t('gallery.new')}</span>
+        </button>
+    );
+}
+
+export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ galleries, onSelectGallery, onCreateAndAdd, onClose, isOpen, activeProjectId }) => {
   const { t } = useTranslation();
 
   if (!isOpen) return null;
+
+  const projectGalleries = activeProjectId ? galleries.filter(g => g.projectId === activeProjectId) : [];
+  const otherGalleries = activeProjectId ? galleries.filter(g => g.projectId !== activeProjectId) : galleries;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('modal.addToGallery.title')}>
@@ -32,16 +56,18 @@ export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ galleries,
                 <>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 text-center">{t('modal.addToGallery.select')}</p>
                     <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
-                        {galleries.map(gallery => (
-                            <button
-                                key={gallery.id}
-                                onClick={() => onSelectGallery(gallery.id)}
-                                className="w-full text-left p-3 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
-                            >
-                                <img src={gallery.thumbnailUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0 bg-gray-300" />
-                                <span className="font-semibold truncate">{gallery.title || t('gallery.new')}</span>
-                            </button>
-                        ))}
+                        {projectGalleries.length > 0 && (
+                            <div className="mb-2">
+                                <h4 className="text-xs uppercase font-bold text-gray-500 my-2 px-1">In This Project</h4>
+                                {projectGalleries.map(gallery => <GalleryListItem key={gallery.id} gallery={gallery} onSelect={onSelectGallery} />)}
+                            </div>
+                        )}
+                        {otherGalleries.length > 0 && (
+                             <div className="mb-2">
+                                {projectGalleries.length > 0 && <h4 className="text-xs uppercase font-bold text-gray-500 my-2 px-1">Other Galleries</h4>}
+                                {otherGalleries.map(gallery => <GalleryListItem key={gallery.id} gallery={gallery} onSelect={onSelectGallery} />)}
+                            </div>
+                        )}
                     </div>
                 </>
             )}

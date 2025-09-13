@@ -2,7 +2,7 @@ import React from 'react';
 import { HomeIcon, GalleryIcon, JournalIcon, SearchIcon, PaintBrushIcon, UserCircleIcon } from './IconComponents';
 import { useTranslation } from '../contexts/TranslationContext';
 
-type ActiveView = 'workspace' | 'discover' | 'studio' | 'gallery' | 'journal' | 'setup' | 'help' | 'profile';
+type ActiveView = 'workspace' | 'discover' | 'studio' | 'gallery' | 'journal' | 'setup' | 'help' | 'profile' | 'glossary' | 'project';
 
 interface BottomNavBarProps {
   activeView: ActiveView;
@@ -40,7 +40,7 @@ const NavButton: React.FC<{
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, setActiveView }) => {
   const { t } = useTranslation();
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-200 dark:border-white/10 flex z-40">
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-200 dark:border-white/10 flex z-40 md:hidden">
        <NavButton
         label={t('discover')}
         icon={<SearchIcon className="w-6 h-6" />}
@@ -56,7 +56,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, setActiv
       <NavButton
         label={t('workspace')}
         icon={<HomeIcon className="w-6 h-6" />}
-        isActive={activeView === 'workspace' || activeView === 'gallery'}
+        isActive={['workspace', 'gallery', 'project'].includes(activeView)}
         onClick={() => setActiveView('workspace')}
       />
       <NavButton
@@ -68,7 +68,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, setActiv
        <NavButton
         label={t('profile')}
         icon={<UserCircleIcon className="w-6 h-6" />}
-        isActive={activeView === 'profile' || activeView === 'setup' || activeView === 'help'}
+        isActive={['profile', 'setup', 'help', 'glossary'].includes(activeView)}
         onClick={() => setActiveView('profile')}
       />
     </nav>

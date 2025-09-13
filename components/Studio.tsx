@@ -1,9 +1,12 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
 import { PaintBrushIcon, SparklesIcon, SpinnerIcon, PlusCircleIcon, GalleryIcon, MagicWandIcon, ArrowPathIcon, CloseIcon } from './IconComponents';
 import type { Artwork } from '../types';
-import { useDynamicLoadingMessage } from '../hooks/useDynamicLoadingMessage';
 import { Button } from './ui/Button';
+import { Skeleton } from './ui/Skeleton';
+import { ImageWithFallback } from './ui/ImageWithFallback';
+import { LoadingOverlay } from './ui/LoadingOverlay';
 
 interface StudioProps {
     onGenerateImage: (prompt: string, aspectRatio: '1:1' | '16:9' | '9:16' | '4:3' | '3:4') => Promise<string>;
@@ -11,50 +14,58 @@ interface StudioProps {
     onEnhancePrompt: (prompt: string) => Promise<string>;
     onInitiateAdd: (artwork: Artwork) => void;
     activeAiTask: string | null;
-    setActiveAiTask: (task: string | null) => void;
     showToast: (message: string) => void;
+    // FIX: Updated handleAiTask signature to match App.tsx definition.
+    handleAiTask: <T>(taskName: string, taskFn: () => Promise<T>, options?: { onStart?: () => void; onEnd?: (result: T | undefined) => void; }) => Promise<T | undefined>;
+    loadingMessage: string;
 }
 
 const aspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:4'] as const;
 type AspectRatio = typeof aspectRatios[number];
 
+const aspectRatioClasses: Record<AspectRatio, string> = {
+    '1:1': 'aspect-square',
+    '16:9': 'aspect-video',
+    '9:16': 'aspect-[9/16]',
+    '4:3': 'aspect-[4/3]',
+    '3:4': 'aspect-[3/4]',
+};
+
+
 export const Studio: React.FC<StudioProps> = ({
-    onGenerateImage, onRemixImage, onEnhancePrompt, onInitiateAdd, activeAiTask, setActiveAiTask, showToast
+    onGenerateImage, onRemixImage, onEnhancePrompt, onInitiateAdd, activeAiTask, showToast, handleAiTask, loadingMessage
 }) => {
     const { t } = useTranslation();
     const [prompt, setPrompt] = useState('');
     const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
     const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+    const [isImageVisible, setIsImageVisible] = useState(false);
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [isRemixMode, setIsRemixMode] = useState(false);
     const [originalPrompt, setOriginalPrompt] = useState('');
 
-    const isLoading = activeAiTask === 'studio';
-
-    const loadingMessages = [
-        t('ai.loading.studio.1'), t('ai.loading.studio.2'), t('ai.loading.studio.3'), t('ai.loading.studio.4')
-    ];
-    const loadingMessage = useDynamicLoadingMessage(loadingMessages, 2500, isLoading);
+    const isLoading = activeAiTask === 'studio' || activeAiTask === 'remix';
 
     const handleGenerateOrRemix = async () => {
         if (!prompt.trim()) return;
-        setActiveAiTask('studio');
         
-        try {
-            if (isRemixMode && generatedImage) {
-                const remixedImage = await onRemixImage(generatedImage, prompt);
-                setGeneratedImage(remixedImage);
+        const taskName = isRemixMode ? 'remix' : 'studio';
+        const apiFn = isRemixMode 
+            ? () => onRemixImage(generatedImage!, prompt)
+            : () => onGenerateImage(prompt, aspectRatio);
+
+        // FIX: Removed the third argument from handleAiTask call to match the updated signature.
+        const result = await handleAiTask(taskName, apiFn);
+
+        if (result) {
+            setIsImageVisible(false); // Hide before setting new image to re-trigger fade-in
+            setGeneratedImage(result);
+            if (isRemixMode) {
                 setOriginalPrompt(prev => `${prev}, remixed with: "${prompt}"`);
                 setPrompt('');
             } else {
-                const base64Image = await onGenerateImage(prompt, aspectRatio);
-                setGeneratedImage(base64Image);
                 setOriginalPrompt(prompt);
             }
-        } catch (e) {
-            showToast(t('toast.studio.generateError'));
-        } finally {
-            setActiveAiTask(null);
         }
     };
     
@@ -71,14 +82,13 @@ export const Studio: React.FC<StudioProps> = ({
     const handleEnhance = async () => {
         if (!prompt.trim()) return;
         setIsEnhancing(true);
-        try {
-            const enhancedPrompt = await onEnhancePrompt(prompt);
+        // FIX: Removed the third argument from handleAiTask call to match the updated signature.
+        const enhancedPrompt = await handleAiTask('enhance', () => onEnhancePrompt(prompt));
+        setIsEnhancing(false);
+
+        if (enhancedPrompt) {
             setPrompt(enhancedPrompt);
             showToast(t('toast.studio.promptEnhanced'));
-        } catch (error) {
-            // Error toast is shown by the handler in App.tsx
-        } finally {
-            setIsEnhancing(false);
         }
     };
 
@@ -200,19 +210,22 @@ export const Studio: React.FC<StudioProps> = ({
 
                 {/* Image Display */}
                 <div className="md:w-2/3 flex-grow bg-gray-100 dark:bg-gray-900/50 rounded-lg flex items-center justify-center p-4 min-h-[300px] relative">
-                    {isLoading && (
-                        <div className="text-center">
-                            <p className="text-lg text-gray-600 dark:text-gray-300 animate-pulse">{loadingMessage}</p>
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center w-full h-full text-center">
+                            <div className={`w-full max-w-md ${aspectRatioClasses[aspectRatio]}`}>
+                                <Skeleton className="w-full h-full" />
+                            </div>
+                            <p className="mt-4 text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>
                         </div>
-                    )}
-                    {generatedImage && !isLoading && (
-                        <img 
+                    ) : generatedImage ? (
+                        <ImageWithFallback 
                             src={`data:image/jpeg;base64,${generatedImage}`} 
                             alt={prompt} 
-                            className="max-w-full max-h-full object-contain rounded-md shadow-lg animate-fade-in"
+                            fallbackText={prompt}
+                            onLoad={() => setIsImageVisible(true)}
+                            className={`max-w-full max-h-full object-contain rounded-md shadow-lg transition-opacity duration-500 ${isImageVisible ? 'opacity-100' : 'opacity-0'}`}
                         />
-                    )}
-                    {!generatedImage && !isLoading && (
+                    ) : (
                         <div className="text-center text-gray-500">
                             <GalleryIcon className="w-16 h-16 mx-auto mb-4" />
                             <p>Your generated artwork will appear here.</p>

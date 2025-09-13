@@ -1,334 +1,192 @@
-import React, { useState, useRef, useEffect } from 'react';
-import type { Artwork, AppSettings } from '../types';
-import { ArtworkItem } from './ArtworkItem';
-import { Welcome } from './Welcome';
-import { SparklesIcon, SearchIcon, CloseIcon, CameraIcon, Cog6ToothIcon, ArrowUpTrayIcon } from './IconComponents';
+// FIX: Implemented full content for the ArtLibrary component.
+import React, { useState, useRef, ChangeEvent } from 'react';
+import type { Artwork } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
-import { useDynamicLoadingMessage } from '../hooks/useDynamicLoadingMessage';
+import { SearchIcon, SparklesIcon, ArrowLeftIcon, ArrowUpTrayIcon, CameraIcon } from './IconComponents';
+import { ArtworkItem } from './ArtworkItem';
+import { LoadingOverlay } from './ui/LoadingOverlay';
+import { Button } from './ui/Button';
 
-const SkeletonItem: React.FC = () => (
-    <div className="group relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800 aspect-[3/4]">
-      <div className="w-full h-full animate-pulse"></div>
-    </div>
-);
-
-interface DiscoverSettingsPopoverProps {
-    settings: AppSettings;
-    onUpdateSettings: (settings: Partial<AppSettings>) => void;
-    onClose: () => void;
+// FIX: Added ArtLibraryProps interface to define component props.
+interface ArtLibraryProps {
+  onSearch: (term: string) => void;
+  onAnalyzeImage: (file: File) => void;
+  onAddArtwork: (artwork: Artwork) => void;
+  onViewArtworkDetails: (artwork: Artwork) => void;
+  onShowCamera: () => void;
+  artworks: Artwork[];
+  isLoading: boolean;
+  loadingMessage: string;
+  searchTerm: string;
+  similarTo: Artwork | null;
+  onFindSimilar: (artwork: Artwork) => void;
+  featuredArtworks: Artwork[];
 }
 
-const DiscoverSettingsPopover: React.FC<DiscoverSettingsPopoverProps> = ({ settings, onUpdateSettings, onClose }) => {
-    const { t } = useTranslation();
-    const popoverRef = useRef<HTMLDivElement>(null);
+const themeCategories = {
+    'welcome.category.eras': ['baroque_chiaroscuro', 'impressionist_light', 'surreal_dreams', 'bauhaus_design', 'pop_art_critique'],
+    'welcome.category.emotions': ['joy_celebration', 'melancholic_solitude', 'chaotic_harmony', 'vanitas_mortality'],
+    'welcome.category.places': ['stormy_seascapes', 'urban_alienation', 'mystical_forests', 'manicured_gardens'],
+    'welcome.category.themes': ['mythological_heroes', 'industrial_revolution', 'unconventional_portraits', 'geometric_abstraction']
+};
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-                onClose();
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [onClose]);
+const SearchResultHeader: React.FC<{ term?: string; similarTo?: Artwork | null; onBack: () => void }> = ({ term, similarTo, onBack }) => {
+    const { t } = useTranslation();
+    const title = similarTo 
+        ? t('artLibrary.search.similarTo', { title: similarTo.title }) 
+        : (term ? t('artLibrary.search.resultsFor', { term }) : t('artLibrary.title'));
 
     return (
-        <div ref={popoverRef} className="absolute top-full mt-2 right-0 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-10 p-4 animate-fade-in">
-            <h4 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">{t('settings.discover.title')}</h4>
-            <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.discover.creativity')}</label>
-                <div className="flex gap-2">
-                    <button onClick={() => onUpdateSettings({ aiCreativity: 'focused' })} className={`flex-1 text-sm py-1 px-2 rounded-md transition-colors ${settings.aiCreativity === 'focused' ? 'bg-amber-600 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}>{t('settings.discover.creativity.focused')}</button>
-                    <button onClick={() => onUpdateSettings({ aiCreativity: 'exploratory' })} className={`flex-1 text-sm py-1 px-2 rounded-md transition-colors ${settings.aiCreativity === 'exploratory' ? 'bg-amber-600 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}>{t('settings.discover.creativity.exploratory')}</button>
-                </div>
-            </div>
-             <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.discover.results')}</label>
-                <div className="flex gap-2">
-                    {[8, 12, 16].map(count => (
-                        <button key={count} onClick={() => onUpdateSettings({ aiResultsCount: count as 8 | 12 | 16 })} className={`flex-1 text-sm py-1 px-2 rounded-md transition-colors ${settings.aiResultsCount === count ? 'bg-amber-600 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}>{count}</button>
-                    ))}
-                </div>
-            </div>
+        <div className="flex items-center mb-4">
+            <button onClick={onBack} className="mr-2 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700" aria-label={t('artLibrary.backToDiscover')}>
+                <ArrowLeftIcon className="w-6 h-6" />
+            </button>
+            <h2 className="text-2xl font-bold truncate">{title}</h2>
         </div>
     );
 };
 
-interface DiscoverProps {
-  artworks: Artwork[];
-  onSearch: (prompt: string | string[]) => void;
-  activeAiTask: string | null;
-  onAnalyzeImage: (file: File) => void;
-  onOpenCamera: () => void;
-  error: string | null;
-  onArtworkAdd: (artwork: Artwork) => void;
-  onArtworkViewDetails: (artwork: Artwork) => void;
-  refinements: string[];
-  styleSpotlight: { style: string; description: string } | null;
-  onClearSearch: () => void;
-  settings: AppSettings;
-  onUpdateSettings: (settings: Partial<AppSettings>) => void;
-}
 
-export const ArtLibrary: React.FC<DiscoverProps> = ({ 
-    artworks, onSearch, activeAiTask, onAnalyzeImage, onOpenCamera, error, onArtworkAdd, 
-    onArtworkViewDetails, refinements, styleSpotlight, onClearSearch, settings, onUpdateSettings 
+export const ArtLibrary: React.FC<ArtLibraryProps> = ({
+  onSearch, onAnalyzeImage, onAddArtwork, onViewArtworkDetails, onShowCamera,
+  artworks, isLoading, loadingMessage, searchTerm, similarTo, onFindSimilar,
+  featuredArtworks
 }) => {
   const { t } = useTranslation();
-  const [tags, setTags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
-  const [showVisionMenu, setShowVisionMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const visionButtonRef = useRef<HTMLDivElement>(null);
   
-  const isLoading = activeAiTask === 'discover';
-
-  const loadingMessages = [
-    t('ai.loading.1'), t('ai.loading.2'), t('ai.loading.3'), t('ai.loading.4'), t('ai.loading.5'),
-    t('ai.loading.6'), t('ai.loading.7')
-  ];
-  const loadingMessage = useDynamicLoadingMessage(loadingMessages, 2500, isLoading);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-        if (visionButtonRef.current && !visionButtonRef.current.contains(event.target as Node)) {
-            setShowVisionMenu(false);
-        }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      const newTag = inputValue.trim();
-      if (newTag && !tags.includes(newTag)) {
-        setTags([...tags, newTag]);
-      }
-      setInputValue('');
-    } else if (e.key === 'Backspace' && inputValue === '') {
-      e.preventDefault();
-      removeTag(tags.length - 1);
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const pastedText = e.clipboardData.getData('text');
-    const tagsFromPaste = pastedText.split(/[,;]/).map(tag => tag.trim()).filter(Boolean);
-    if (tagsFromPaste.length > 0) {
-        const newUniqueTags = tagsFromPaste.filter(t => !tags.includes(t));
-        setTags([...tags, ...newUniqueTags]);
-        setInputValue('');
+    if (inputValue.trim()) {
+      onSearch(inputValue);
     }
   };
 
-  const removeTag = (indexToRemove: number) => {
-    setTags(tags.filter((_, index) => index !== indexToRemove));
+  const handleThematicSearch = (themeKey: string) => {
+    onSearch(t(themeKey));
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    let finalTags = [...tags];
-    const newTag = inputValue.trim();
-    if (newTag && !tags.includes(newTag)) {
-        finalTags.push(newTag);
-    }
-    
-    if (finalTags.length > 0) {
-      onSearch(finalTags);
-      setTags(finalTags);
-      setInputValue('');
+  
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      onAnalyzeImage(e.target.files[0]);
     }
   };
 
-  const handleThemeClick = (clickedTheme: string) => {
-    const newTags = [clickedTheme];
-    setTags(newTags);
-    setInputValue('');
-    onSearch(newTags);
-  };
+  const showResultsHeader = searchTerm || similarTo;
 
-  const handleClear = () => {
-    setTags([]);
-    setInputValue('');
-    onClearSearch();
-  };
+  const renderDiscoverHome = () => (
+    <div className="flex-grow flex flex-col justify-center items-center text-center text-gray-500 dark:text-gray-400 p-4">
+        <SparklesIcon className="w-16 h-16 text-amber-500 dark:text-amber-400 mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('artLibrary.title')}</h2>
+        <p className="max-w-xl mb-8">
+            {t('welcome.subtitle')}
+        </p>
+        <div className="w-full max-w-4xl">
+            {Object.entries(themeCategories).map(([categoryKey, themeKeys]) => (
+                <div key={categoryKey} className="mb-6 animate-fade-in">
+                    <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-300 mb-3">{t(categoryKey)}</h3>
+                    <div className="flex flex-wrap justify-center gap-3">
+                        {themeKeys.map(themeKey => {
+                            const fullThemeKey = `welcome.theme.${themeKey}`;
+                            return (
+                                <button 
+                                    key={themeKey}
+                                    onClick={() => handleThematicSearch(fullThemeKey)}
+                                    className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm px-4 py-2 rounded-full hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white transition-all transform hover:scale-105"
+                                >
+                                    {t(fullThemeKey)}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+        </div>
+        <div className="mt-6 flex flex-col sm:flex-row gap-4">
+            <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
+                {t('artLibrary.upload.button')}
+            </Button>
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+            <Button variant="secondary" onClick={onShowCamera}>
+                <CameraIcon className="w-5 h-5 mr-2" />
+                {t('artLibrary.camera.button')}
+            </Button>
+        </div>
+        {featuredArtworks.length > 0 && (
+            <div className="w-full max-w-6xl mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Featured Artworks</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {featuredArtworks.map(art => (
+                        <ArtworkItem
+                            key={art.id}
+                            artwork={art}
+                            onAdd={onAddArtwork}
+                            onViewDetails={onViewArtworkDetails}
+                        />
+                    ))}
+                </div>
+            </div>
+        )}
+    </div>
+  );
 
-  const handleImageAnalyzeClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      onAnalyzeImage(file);
-    }
-    if(event.target) event.target.value = '';
-  };
+  const renderResults = () => (
+    artworks.length > 0 ? (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {artworks.map(art => (
+          <ArtworkItem
+            key={art.id}
+            artwork={art}
+            onAdd={onAddArtwork}
+            onViewDetails={onViewArtworkDetails}
+          />
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-col justify-center items-center text-center text-gray-500 h-full p-8">
+        <SparklesIcon className="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4" />
+        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+          {t('artLibrary.search.noResults')}
+        </h3>
+        <p className="max-w-md">
+            {t('artLibrary.search.noResults.prompt')}
+        </p>
+      </div>
+    )
+  );
 
   return (
-    <div className="flex flex-col h-full bg-white/50 dark:bg-black/20 rounded-lg p-4 md:p-6 overflow-y-auto">
+    <div className="flex flex-col h-full bg-white/50 dark:bg-black/20 rounded-lg p-4 md:p-6">
       <div className="flex-shrink-0">
-        <h2 className="text-2xl font-bold mb-4 text-amber-500 dark:text-amber-400 flex items-center">
-          <SearchIcon className="w-7 h-7 mr-2" />
-          {t('discover.title')}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="relative mb-4">
-          <div className="w-full bg-gray-100 dark:bg-gray-900/70 border-2 border-gray-300 dark:border-gray-700 rounded-xl p-3 text-gray-900 dark:text-white focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-amber-500 transition-all focus-within:shadow-lg focus-within:shadow-amber-500/20 flex flex-wrap items-center gap-2 min-h-[70px]">
-              {tags.map((tag, index) => (
-                <div key={index} className="flex items-center bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full pl-3 pr-2 py-1 text-sm font-medium animate-fade-in">
-                  <span>{tag}</span>
-                  <button type="button" onClick={() => removeTag(index)} className="ml-2 text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200" aria-label={`Remove ${tag}`}>
-                    <CloseIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              <input
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                onKeyDown={handleInputKeyDown}
-                onPaste={handlePaste}
-                placeholder={tags.length === 0 ? t('discover.placeholder') : t('discover.placeholder.continue')}
-                className="flex-grow bg-transparent focus:outline-none p-1 placeholder-gray-500 dark:placeholder-gray-400"
-                disabled={isLoading}
-                aria-label={t('discover.searchLabel')}
-              />
-          </div>
-          <div className="absolute right-3 top-[50%] -translate-y-1/2 flex items-center gap-1.5">
-            <div className="relative">
-                <button
-                    type="button"
-                    onClick={() => setShowSettings(s => !s)}
-                    className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 bg-gray-200 dark:bg-gray-800 rounded-full"
-                    aria-label={t('settings.discover.title')}
-                >
-                    <Cog6ToothIcon className="w-5 h-5" />
-                </button>
-                {showSettings && <DiscoverSettingsPopover settings={settings} onUpdateSettings={onUpdateSettings} onClose={() => setShowSettings(false)} />}
-            </div>
-            {(tags.length > 0 || artworks.length > 0) && !isLoading && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 bg-gray-200 dark:bg-gray-800 rounded-full"
-                aria-label={t('discover.clearSearch')}
-              >
-                <CloseIcon className="w-4 h-4" />
-              </button>
-            )}
-            <div ref={visionButtonRef} className="relative">
-                <button
-                    type="button"
-                    onClick={() => setShowVisionMenu(s => !s)}
-                    disabled={isLoading}
-                    className="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full p-2 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title={t('discover.vision.title')}
-                  >
-                    <CameraIcon className="w-5 h-5" />
-                </button>
-                {showVisionMenu && (
-                    <div className="absolute top-full mt-2 right-0 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-10 p-2 animate-fade-in">
-                        <button onClick={() => { handleImageAnalyzeClick(); setShowVisionMenu(false); }} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
-                            <ArrowUpTrayIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                            {t('discover.vision.button')}
-                        </button>
-                        <button onClick={() => { onOpenCamera(); setShowVisionMenu(false); }} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
-                            <CameraIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                            {t('discover.vision.live')}
-                        </button>
-                    </div>
-                )}
-            </div>
-             <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept="image/*"
+        {!showResultsHeader ? (
+           <form onSubmit={handleSearch} className="mb-6 relative">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={t('artLibrary.search.placeholder')}
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-full text-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
-            <button
-              type="submit"
-              disabled={isLoading || (tags.length === 0 && !inputValue.trim())}
-              className="bg-amber-600 text-white rounded-full px-4 py-2 flex items-center font-semibold hover:bg-amber-700 disabled:bg-gray-500 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all"
-            >
-              <SparklesIcon className="w-5 h-5 md:mr-2" />
-              <span className="hidden md:inline">{t('discover.curate')}</span>
-            </button>
-          </div>
-        </form>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2">
+              <SearchIcon className="w-6 h-6 text-gray-400" />
+            </div>
+          </form>
+        ) : (
+            <SearchResultHeader term={searchTerm} similarTo={similarTo} onBack={() => onSearch('')} />
+        )}
       </div>
-      
-      {isLoading && (
-        <div className="flex flex-col flex-grow items-center justify-center text-center">
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 animate-pulse">{loadingMessage}</p>
-            <div className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
-                {Array.from({ length: settings.aiResultsCount }).map((_, index) => <SkeletonItem key={index} />)}
-            </div>
-        </div>
-      )}
-
-      {error && <div className="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/50 p-3 rounded-lg flex-shrink-0 mb-4">{error}</div>}
-
-      {!isLoading && refinements.length > 0 && (
-        <div className="mb-6 flex-shrink-0 animate-fade-in">
-          <h3 className="text-md font-semibold text-amber-600 dark:text-amber-500 mb-2">{t('discover.refine')}</h3>
-          <div className="flex flex-wrap gap-2">
-            {refinements.map(theme => (
-              <button 
-                key={theme} 
-                onClick={() => handleThemeClick(theme)}
-                disabled={isLoading}
-                className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm px-3 py-1 rounded-full hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white transition-colors"
-              >
-                {theme}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {!isLoading && styleSpotlight && (
-          <div className="mb-6 flex-shrink-0 p-4 bg-amber-50 dark:bg-amber-950/40 border-l-4 border-amber-500 rounded-r-lg animate-fade-in">
-              <h3 className="text-md font-bold text-amber-600 dark:text-amber-400 mb-2 flex items-center">
-                  <SparklesIcon className="w-5 h-5 mr-2 flex-shrink-0" />
-                  {t('discover.styleSpotlight')} {styleSpotlight.style}
-              </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{styleSpotlight.description}</p>
-              <button
-                  onClick={() => handleThemeClick(styleSpotlight.style)}
-                  disabled={isLoading}
-                  className="bg-amber-500 text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-amber-600 transition-colors"
-              >
-                  {t('discover.exploreStyle', { style: styleSpotlight.style })}
-              </button>
-          </div>
-      )}
-
-      {!isLoading && artworks.length === 0 && !error && (
-        <Welcome onThemeSelect={handleThemeClick} />
-      )}
-
-      {!isLoading && artworks.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-4 flex-grow overflow-y-auto">
-            {artworks.map(art => (
-            <ArtworkItem 
-                key={art.id} 
-                artwork={art} 
-                onAdd={onArtworkAdd}
-                onViewDetails={onArtworkViewDetails}
-            />
-            ))}
-        </div>
-      )}
+     
+      <div className="flex-grow overflow-y-auto">
+        {isLoading ? (
+          <LoadingOverlay message={loadingMessage} />
+        ) : showResultsHeader ? (
+          renderResults()
+        ) : (
+          renderDiscoverHome()
+        )}
+      </div>
     </div>
   );
 };

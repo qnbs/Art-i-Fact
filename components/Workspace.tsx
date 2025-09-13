@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import { Project } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -8,7 +10,7 @@ interface WorkspaceProps {
     projects: Project[];
     onNewProject: () => void;
     onSelectProject: (id: string) => void;
-    onDeleteProject: (id: string) => void;
+    onDeleteProject: (id: string, title: string) => void;
     galleryCountByProject: (projectId: string) => number;
     journalCountByProject: (projectId: string) => number;
 }
@@ -70,7 +72,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ projects, onNewProject, on
                             key={project.id} 
                             project={project} 
                             onSelect={() => onSelectProject(project.id)} 
-                            onDelete={() => onDeleteProject(project.id)}
+                            onDelete={() => onDeleteProject(project.id, project.title)}
                             galleryCount={galleryCountByProject(project.id)}
                             journalCount={journalCountByProject(project.id)}
                         />

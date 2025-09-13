@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import type { Artwork, Gallery, DeepDive } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
-import { generateDeepDive } from '../services/geminiService';
+import { generateDeepDive, getResizedImageUrl } from '../services/geminiService';
 import { ColorPalette } from './ColorPalette';
 import { AccordionItem } from './ui/AccordionItem';
 import { Button } from './ui/Button';
-import { JournalIcon, ChatBubbleLeftEllipsisIcon } from './IconComponents';
+import { JournalIcon, ChatBubbleLeftEllipsisIcon, ShareIcon } from './IconComponents';
+import { ImageWithFallback } from './ui/ImageWithFallback';
 
 interface ArtworkDetailsProps {
     artwork: Artwork;
@@ -19,6 +20,17 @@ interface ArtworkDetailsProps {
     onClose: () => void;
     showToast: (message: string) => void;
 }
+
+const Fact: React.FC<{ label: string; value: string | undefined; }> = ({ label, value }) => {
+    if (!value) return null;
+    return (
+        <div>
+            <h4 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider">{label}</h4>
+            <p className="text-gray-800 dark:text-gray-200">{value}</p>
+        </div>
+    );
+};
+
 
 export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
     artwork,
@@ -53,16 +65,66 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
     }, [artwork, deepDive, showToast, t]);
 
     return (
-        <div className="flex flex-col md:flex-row gap-6">
-            <img src={artwork.imageUrl} alt={artwork.title} className="w-full md:w-1/3 rounded-lg object-cover aspect-[3/4]" loading="lazy"/>
-            <div className="text-gray-700 dark:text-gray-300 flex-grow">
-                <p className="text-lg"><span className="font-semibold text-gray-900 dark:text-gray-100">{t('modal.details.artist')}:</span> {artwork.artist}</p>
-                <p className="text-lg"><span className="font-semibold text-gray-900 dark:text-gray-100">{t('modal.details.year')}:</span> {artwork.year}</p>
-                {artwork.description && <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{artwork.description}</p>}
+        <div className="flex flex-col md:flex-row gap-8">
+            <div className="w-full md:w-1/3 flex-shrink-0">
+                <ImageWithFallback 
+                    src={getResizedImageUrl(artwork.imageUrl, 1200)} 
+                    alt={artwork.title} 
+                    fallbackText={artwork.title}
+                    className="w-full rounded-lg object-contain shadow-lg" 
+                    loading="lazy"
+                />
+                 {artwork.sourceUrl && (
+                    <div className="mt-2 text-xs text-gray-500">
+                        {artwork.imageUrl && artwork.imageUrl !== artwork.sourceUrl ? (
+                            <>
+                                <a href={artwork.imageUrl} target="_blank" rel="noopener noreferrer" className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate">
+                                    {t('modal.details.imageFile')}
+                                </a>
+                                <span className="mx-2 text-gray-300 dark:text-gray-600">|</span>
+                                <a href={artwork.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate">
+                                    {t('modal.details.infoPage')}
+                                </a>
+                            </>
+                        ) : (
+                            <a href={artwork.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate">
+                                {t('modal.details.source')}: {new URL(artwork.sourceUrl).hostname}
+                            </a>
+                        )}
+                    </div>
+                )}
                 {artwork.colorPalette && <ColorPalette colors={artwork.colorPalette} />}
+            </div>
+            
+            <div className="text-gray-700 dark:text-gray-300 flex-grow">
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{artwork.title}</h3>
+                <p className="text-xl text-gray-500 dark:text-gray-400 mt-1">{artwork.artist}</p>
+                
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-4 my-6 p-4 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                    <Fact label={t('modal.details.year')} value={artwork.year} />
+                    <Fact label={t('modal.details.medium')} value={artwork.medium} />
+                    <Fact label={t('modal.details.dimensions')} value={artwork.dimensions} />
+                    <Fact label={t('modal.details.location')} value={artwork.location} />
+                </div>
+
+                <div className="space-y-4 text-sm">
+                    {artwork.description && (
+                        <div>
+                            <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-1">{t('modal.details.about')}</h4>
+                            <p className="leading-relaxed">{artwork.description}</p>
+                        </div>
+                    )}
+                    {artwork.historicalContext && (
+                         <div>
+                            <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-1">{t('modal.details.context')}</h4>
+                            <p className="leading-relaxed">{artwork.historicalContext}</p>
+                        </div>
+                    )}
+                </div>
+
 
                 {artwork.tags && artwork.tags.length > 0 && (
-                    <div className="mt-4">
+                    <div className="mt-6">
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('modal.details.tags')}</h4>
                         <div className="flex flex-wrap gap-2">
                             {artwork.tags.map(tag => (
@@ -82,7 +144,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                 )}
 
                 {isInGallery && (
-                    <div className="mt-4">
+                    <div className="mt-6">
                         <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{t('modal.details.notes')}</label>
                         <textarea 
                             defaultValue={galleryArtwork?.comment}
@@ -129,7 +191,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                     )}
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-2">
+                <div className="mt-6 flex flex-wrap gap-2 border-t border-gray-200 dark:border-gray-700/50 pt-4">
                     <Button onClick={() => { onFindSimilar(artwork); onClose(); }}>{t('modal.details.findSimilar')}</Button>
                     {isInGallery 
                         ? <Button variant="danger" onClick={() => onRemoveFromGallery(artwork.id)}>{t('modal.details.removeFromGallery')}</Button>

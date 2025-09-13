@@ -193,7 +193,8 @@ export const Setup: React.FC<SetupProps> = ({
                 <p>{t('settings.about.description')}</p>
                 <div className="mt-4">
                     <a href="#" className="text-amber-600 dark:text-amber-500 hover:underline mr-4">{t('settings.about.privacy')}</a>
-                    <a href="#" className="text-amber-600 dark:text-amber-500 hover:underline">{t('settings.about.terms')}</a>
+                    <a href="#" className="text-amber-600 dark:text-amber-500 hover:underline mr-4">{t('settings.about.terms')}</a>
+                    <a href="https://github.com/qnbs/Art-i-Fact" target="_blank" rel="noopener noreferrer" className="text-amber-600 dark:text-amber-500 hover:underline">{t('settings.about.sourceCode')}</a>
                 </div>
             </div>
         </Section>

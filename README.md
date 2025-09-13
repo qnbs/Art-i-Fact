@@ -16,9 +16,10 @@
     -   **Critique:** Receive a professional, constructive critique of your gallery.
     -   **Audio Guide:** Create a complete, AI-narrated audio guide for your exhibition.
     -   **Cinematic Trailer:** Generate a short, atmospheric video trailer for your gallery to share.
--   **Curator's Journal:** Keep a personal journal to jot down your thoughts and research. Link entries to specific galleries and use AI writing tools to expand, summarize, improve, or research selected text.
+-   **Curator's Journal with Rich Text:** Keep a personal journal to jot down your thoughts and research. Use the **Markdown-based WYSIWYG editor** to format your text. Link entries to specific galleries and use AI writing tools to expand, summarize, improve, or **research selected text with sourced results**.
 -   **Command Palette:** Access all major functions, navigate quickly, and search through all your content (galleries, journals, artworks) from anywhere with a simple `Ctrl+K` command.
--   **Exhibit & Share:** Present your finished galleries in a beautiful, immersive exhibition mode. Share your creations with the world via a simple link for viewing or as a template for others to use.
+-   **Exhibit & Share:** Present your finished galleries in a beautiful, immersive exhibition mode. **Share your creations with the world via a simple, data-encoded link** for a read-only viewing experience.
+-   **Full Data Control:** **Export and import your entire workspace** (galleries, projects, journal, settings) as a single JSON file. Your data belongs to you.
 -   **Personalization:** Create a curator profile, track your stats, and customize the app's appearance and behavior in the settings.
 
 ## 🚀 Getting Started
@@ -28,7 +29,7 @@ The workflow is simple and intuitive:
 1.  **Discover or Create:** Use the **Discover** tab to find existing artworks based on your ideas, or visit the **Studio** to generate your own.
 2.  **Add to Gallery:** Click on any artwork you like to add it to your current gallery. If you don't have one, a new one will be created for you.
 3.  **Curate & Enhance:** Go to the **Workspace** tab to manage your projects and galleries. Select a gallery to edit the title, description, and reorder the art. Use the **AI Assistant** ✨ to get suggestions, generate text, create an audio guide, and more.
-4.  **Exhibit & Share:** Once you're happy with your gallery, click "Exhibit" to view it in an immersive slideshow mode or "Share" to get a link to send to others.
+4.  **Exhibit & Share:** Once you're happy with your gallery, click "Exhibit" to view it in an immersive slideshow mode or **"Share"** to get a link to send to others.
 
 ## 🎨 AI Studio Explained
 
@@ -44,9 +45,18 @@ The AI Studio is your personal canvas for digital art creation. Powered by Googl
 -   **Styling:** Tailwind CSS
 -   **AI (Google Gemini API):**
     -   **Text & Analysis:** Gemini 2.5 Flash
-    -   **Image Generation:** Imagen 4.0
-    -   **Image Editing (Remix):** Gemini 2.5 Flash Image Preview
-    -   **Video Generation:** Veo 2.0
+    -   **Image Generation:** imagen-4.0-generate-001
+    -   **Image Editing (Remix):** gemini-2.5-flash-image-preview
+    -   **Video Generation:** veo-2.0-generate-001
+    -   **Web Research:** Gemini 2.5 Flash with Google Search grounding
+
+## 💻 Source Code & Contribution
+
+This project is open source! You can view the full source code, report issues, or contribute to its development on our GitHub repository:
+
+**[https://github.com/qnbs/Art-i-Fact](https://github.com/qnbs/Art-i-Fact)**
+
+We welcome your feedback and contributions!
 
 ## 📄 License
 
@@ -73,9 +83,10 @@ This project is licensed under the MIT License.
     -   **Kritik:** Erhalten Sie eine professionelle, konstruktive Kritik Ihrer Galerie.
     -   **Audioguide:** Erstellen Sie einen kompletten, von der KI gesprochenen Audioguide für Ihre Ausstellung.
     -   **Kinotrailer:** Generieren Sie einen kurzen, atmosphärischen Video-Trailer für Ihre Galerie zum Teilen.
--   **Kuratoren-Journal:** Führen Sie ein persönliches Journal, um Ihre Gedanken und Recherchen festzuhalten. Verknüpfen Sie Einträge mit bestimmten Galerien und nutzen Sie KI-Schreibwerkzeuge, um ausgewählten Text zu erweitern, zusammenzufassen, zu verbessern oder zu recherchieren.
+-   **Kuratoren-Journal mit Rich Text:** Führen Sie ein persönliches Journal, um Ihre Gedanken und Recherchen festzuhalten. Nutzen Sie den **Markdown-basierten WYSIWYG-Editor**, um Ihren Text zu formatieren. Verknüpfen Sie Einträge mit bestimmten Galerien und nutzen Sie KI-Schreibwerkzeuge, um ausgewählten Text zu erweitern, zusammenzufassen, zu verbessern oder **mit Quellenangaben zu recherchieren**.
 -   **Befehlspalette:** Greifen Sie auf alle wichtigen Funktionen zu, navigieren Sie schnell und durchsuchen Sie all Ihre Inhalte (Galerien, Journale, Kunstwerke) von überall aus mit dem einfachen Befehl `Strg+K`.
--   **Ausstellen & Teilen:** Präsentieren Sie Ihre fertigen Galerien in einem schönen, immersiven Ausstellungsmodus. Teilen Sie Ihre Kreationen mit der Welt über einen einfachen Link zur Ansicht oder als Vorlage für andere.
+-   **Ausstellen & Teilen:** Präsentieren Sie Ihre fertigen Galerien in einem schönen, immersiven Ausstellungsmodus. **Teilen Sie Ihre Kreationen mit der Welt über einen einfachen, datenkodierten Link** für ein schreibgeschütztes Seherlebnis.
+-   **Volle Datenkontrolle:** **Exportieren und importieren Sie Ihren gesamten Arbeitsbereich** (Galerien, Projekte, Journal, Einstellungen) als einzelne JSON-Datei. Ihre Daten gehören Ihnen.
 -   **Personalisierung:** Erstellen Sie ein Kuratorenprofil, verfolgen Sie Ihre Statistiken und passen Sie das Aussehen und Verhalten der App in den Einstellungen an.
 
 ## 🚀 Erste Schritte
@@ -85,7 +96,7 @@ Der Arbeitsablauf ist einfach und intuitiv:
 1.  **Entdecken oder Erstellen:** Nutzen Sie den Tab **"Entdecken"**, um bestehende Kunstwerke basierend auf Ihren Ideen zu finden, oder besuchen Sie das **"Studio"**, um Ihre eigenen zu erstellen.
 2.  **Zur Galerie hinzufügen:** Klicken Sie auf ein Kunstwerk, das Ihnen gefällt, um es zu Ihrer aktuellen Galerie hinzuzufügen. Wenn Sie keine haben, wird eine neue für Sie erstellt.
 3.  **Kuratieren & Verbessern:** Gehen Sie zum Tab **"Workspace"**, um Ihre Projekte und Galerien zu verwalten. Wählen Sie eine Galerie aus, um den Titel und die Beschreibung zu bearbeiten und die Kunstwerke neu anzuordnen. Nutzen Sie den **KI-Assistenten** ✨, um Vorschläge zu erhalten, Texte zu generieren, einen Audioguide zu erstellen und vieles mehr.
-4.  **Ausstellen & Teilen:** Sobald Sie mit Ihrer Galerie zufrieden sind, klicken Sie auf "Ausstellen", um sie in einem immersiven Diashow-Modus anzuzeigen, oder auf "Teilen", um einen Link zum Versenden an andere zu erhalten.
+4.  **Ausstellen & Teilen:** Sobald Sie mit Ihrer Galerie zufrieden sind, klicken Sie auf "Ausstellen", um sie in einem immersiven Diashow-Modus anzuzeigen, oder auf **"Teilen"**, um einen Link zum Versenden an andere zu erhalten.
 
 ## 🎨 Das KI-Studio erklärt
 
@@ -101,9 +112,18 @@ Das KI-Studio ist Ihre persönliche Leinwand für die digitale Kunstschaffung. A
 -   **Styling:** Tailwind CSS
 -   **KI (Google Gemini API):**
     -   **Text & Analyse:** Gemini 2.5 Flash
-    -   **Bilderzeugung:** Imagen 4.0
-    -   **Bildbearbeitung (Remix):** Gemini 2.5 Flash Image Preview
-    -   **Videoerzeugung:** Veo 2.0
+    -   **Bilderzeugung:** imagen-4.0-generate-001
+    -   **Bildbearbeitung (Remix):** gemini-2.5-flash-image-preview
+    -   **Videoerzeugung:** veo-2.0-generate-001
+    -   **Web-Recherche:** Gemini 2.5 Flash mit Google Search Grounding
+
+## 💻 Quellcode & Mitwirkung
+
+Dieses Projekt ist Open Source! Sie können den vollständigen Quellcode einsehen, Probleme melden oder zur Entwicklung beitragen in unserem GitHub-Repository:
+
+**[https://github.com/qnbs/Art-i-Fact](https://github.com/qnbs/Art-i-Fact)**
+
+Wir freuen uns über Ihr Feedback und Ihre Beiträge!
 
 ## 📄 Lizenz
 

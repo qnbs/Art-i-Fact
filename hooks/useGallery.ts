@@ -3,29 +3,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Gallery, Artwork } from '../types';
 import { GALLERY_LOCAL_STORAGE_KEY } from '../constants';
+import { sanitizeInput } from '../services/geminiService';
 
-const generateGalleryThumbnail = (artworks: Artwork[]): string => {
-    if (artworks.length === 0) {
-        // Return a default placeholder SVG for an empty gallery
-        const svg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#e5e7eb"/><text x="50" y="55" font-family="sans-serif" font-size="12" fill="#9ca3af" text-anchor="middle">Empty</text></svg>`;
-        return `data:image/svg+xml;base64,${btoa(svg)}`;
+const getGalleryThumbnail = (artworks: Artwork[]): string => {
+    if (artworks.length > 0 && artworks[0].imageUrl) {
+        return artworks[0].imageUrl;
     }
-
-    const collageArtworks = artworks.slice(0, 4);
-    const images = collageArtworks.map((art, index) => {
-        const x = (index % 2) * 50;
-        const y = Math.floor(index / 2) * 50;
-        // The artwork imageUrl is a base64 encoded SVG, so we need to decode it to embed it.
-        const base64Svg = art.imageUrl.split(',')[1];
-        const decodedSvg = atob(base64Svg);
-        // We need to remove width/height attributes to let the <image> tag control the size.
-        const cleanedSvg = decodedSvg.replace(/width=".*?"/g, '').replace(/height=".*?"/g, '');
-        const reEncodedSvg = btoa(cleanedSvg);
-        return `<image href="data:image/svg+xml;base64,${reEncodedSvg}" x="${x}" y="${y}" width="50" height="50" />`;
-    });
-
-    const svg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${images.join('')}</svg>`;
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    // Return a default placeholder SVG for an empty gallery
+    const svg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#e5e7eb"/><text x="50" y="55" font-family="sans-serif" font-size="12" fill="#9ca3af" text-anchor="middle">Empty</text></svg>`;
+    try {
+        return `data:image/svg+xml;base64,${btoa(svg)}`;
+    } catch (e) {
+        console.error("Failed to encode SVG thumbnail", e);
+        return '';
+    }
 };
 
 
@@ -53,12 +44,24 @@ export const useGallery = () => {
   const activeGallery = galleries.find(g => g.id === activeGalleryId) || null;
 
   const updateGallery = useCallback((id: string, updater: (gallery: Gallery) => Gallery) => {
-      setGalleries(prev => prev.map(g => g.id === id ? {...updater(g), updatedAt: new Date().toISOString() } : g));
+      setGalleries(prev => prev.map(g => {
+        if (g.id !== id) return g;
+        const updated = updater(g);
+        // Sanitize user-provided text fields for security
+        return {
+            ...updated,
+            title: sanitizeInput(updated.title),
+            description: sanitizeInput(updated.description),
+            curatorIntro: updated.curatorIntro ? sanitizeInput(updated.curatorIntro) : undefined,
+            updatedAt: new Date().toISOString()
+        };
+      }));
   }, []);
   
-  const updateActiveGallery = useCallback((updater: (gallery: Gallery) => Gallery) => {
-      if(!activeGalleryId) return;
-      updateGallery(activeGalleryId, updater);
+  const updateActiveGallery = useCallback((updater: (gallery: Gallery) => Gallery, galleryId?: string) => {
+      const idToUpdate = galleryId || activeGalleryId;
+      if(!idToUpdate) return;
+      updateGallery(idToUpdate, updater);
   }, [activeGalleryId, updateGallery]);
 
 
@@ -67,17 +70,16 @@ export const useGallery = () => {
       const now = new Date().toISOString();
       const newGallery: Gallery = {
           id: newId,
-          title: '',
-          description: '',
-          artworks: [],
+          title: initialData?.title ? sanitizeInput(initialData.title) : '',
+          description: initialData?.description ? sanitizeInput(initialData.description) : '',
+          artworks: initialData?.artworks || [],
           createdAt: now,
           updatedAt: now,
           projectId: projectId,
           ...initialData,
       };
-      if (newGallery.artworks.length > 0 && !newGallery.thumbnailUrl) {
-          newGallery.thumbnailUrl = generateGalleryThumbnail(newGallery.artworks);
-      }
+      newGallery.thumbnailUrl = getGalleryThumbnail(newGallery.artworks);
+      
       setGalleries(prev => [...prev, newGallery]);
       return newId;
   }, []);
@@ -109,7 +111,7 @@ export const useGallery = () => {
         const updatedGallery = { 
             ...gallery, 
             artworks: newArtworks, 
-            thumbnailUrl: generateGalleryThumbnail(newArtworks),
+            thumbnailUrl: getGalleryThumbnail(newArtworks),
             updatedAt: new Date().toISOString()
         };
 
@@ -123,7 +125,7 @@ export const useGallery = () => {
   const removeArtworkFromActiveGallery = useCallback((artworkId: string) => {
     updateActiveGallery(g => {
       const newArtworks = g.artworks.filter(art => art.id !== artworkId)
-      return { ...g, artworks: newArtworks, thumbnailUrl: generateGalleryThumbnail(newArtworks) };
+      return { ...g, artworks: newArtworks, thumbnailUrl: getGalleryThumbnail(newArtworks) };
     });
   }, [updateActiveGallery]);
 
@@ -132,9 +134,10 @@ export const useGallery = () => {
   }, [updateActiveGallery]);
 
   const addCommentToArtwork = useCallback((artworkId: string, comment: string) => {
+    const sanitizedComment = sanitizeInput(comment);
     updateActiveGallery(g => ({
         ...g,
-        artworks: g.artworks.map(art => art.id === artworkId ? { ...art, comment } : art),
+        artworks: g.artworks.map(art => art.id === artworkId ? { ...art, comment: sanitizedComment } : art),
     }));
   }, [updateActiveGallery]);
 
@@ -144,12 +147,20 @@ export const useGallery = () => {
   }, []);
 
   const importGalleries = useCallback((importedGalleries: Gallery[], mode: 'merge' | 'replace') => {
+      const sanitizedImport = importedGalleries.map(g => ({
+          ...g,
+          title: sanitizeInput(g.title),
+          description: sanitizeInput(g.description),
+          curatorIntro: g.curatorIntro ? sanitizeInput(g.curatorIntro) : undefined,
+          artworks: g.artworks.map(a => ({...a, comment: a.comment ? sanitizeInput(a.comment) : undefined}))
+      }));
+
       if(mode === 'replace') {
-          setGalleries(importedGalleries);
+          setGalleries(sanitizedImport);
       } else {
           setGalleries(prev => {
               const galleryMap = new Map(prev.map(g => [g.id, g]));
-              importedGalleries.forEach(g => galleryMap.set(g.id, g));
+              sanitizedImport.forEach(g => galleryMap.set(g.id, g));
               return Array.from(galleryMap.values());
           });
       }
@@ -157,7 +168,9 @@ export const useGallery = () => {
 
   return {
     galleries,
+    setGalleries,
     activeGallery,
+    activeGalleryId,
     setActiveGalleryId,
     createNewGallery,
     deleteGallery,
