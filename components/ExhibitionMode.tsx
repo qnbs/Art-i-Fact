@@ -4,7 +4,7 @@ import { CloseIcon, ArrowLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, SpeakerW
 import { useTranslation } from '../contexts/TranslationContext';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import { ImageWithFallback } from './ui/ImageWithFallback';
-import { getResizedImageUrl } from '../services/geminiService';
+import { getWikimediaImageUrl } from '../services/wikimediaService';
 
 interface ExhibitionModeProps {
   artworks: Artwork[];
@@ -198,7 +198,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
         <div className="relative w-full md:w-1/2 h-2/3 md:h-full flex items-center justify-center">
             <ImageWithFallback 
               key={currentArtwork.id}
-              src={getResizedImageUrl(currentArtwork.imageUrl, 1920)} 
+              src={getWikimediaImageUrl(currentArtwork.imageUrl, 1280)} 
               alt={currentArtwork.title} 
               fallbackText={currentArtwork.title}
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-fade-in"

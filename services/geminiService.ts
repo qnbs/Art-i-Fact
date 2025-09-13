@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, GenerateContentResponse, Chat, Modality } from "@google/genai";
 import { Artwork, DeepDive, Gallery, GalleryCritique, AudioGuide, ImageAspectRatio } from '../types';
 import { searchWikimedia } from './wikimediaService';
@@ -18,18 +19,6 @@ export const sanitizeInput = (input: string): string => {
     .replace(/'/g, '&#039;');
 };
 
-/**
- * Generates a resized image URL from Google Cloud Storage.
- */
-export const getResizedImageUrl = (url: string | undefined, width: number): string => {
-  if (!url) return '';
-  // Basic check for Google Storage URLs
-  if (url.startsWith('https://storage.googleapis.com/')) {
-    return `${url}?=w${width}`;
-  }
-  return url;
-};
-
 // Helper function to extract JSON from a model's text response
 const extractJson = <T>(response: GenerateContentResponse, fallback: T): T => {
     try {
@@ -47,7 +36,7 @@ const searchArtTool = {
     functionDeclarations: [
         {
             name: "search_artwork_on_wikimedia",
-            description: "Searches for artworks on Wikimedia Commons based on a user's query.",
+            description: "Searches for artworks on Wikimedia Commons based on a user's query. This must be used for any request to find or see art.",
             parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -66,8 +55,13 @@ export const findArtworks = async (query: string, count: number): Promise<Artwor
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `Please find artworks related to: "${query}"`,
+            contents: `User query: "${query}"`,
             config: {
+                systemInstruction: `You are a search query router. Your ONLY job is to call the 'search_artwork_on_wikimedia' function.
+- **Analyze the User Query:** Your task is to determine the most effective search term for the 'query' parameter based on the user's input.
+- **Rule for Curated Themes:** If the user query is a specific art term or phrase like "Renaissance-Porträts", "Barockes Chiaroscuro", or "Impasto-Textur", you MUST use this term EXACTLY as provided for the 'query' parameter. These are expert terms, do not modify them.
+- **Rule for Conversational Queries:** If the user query is a natural language question (e.g., "show me pictures of the mona lisa"), you MUST convert it into a simple, effective keyword-based search term (e.g., "Mona Lisa").
+- **Strict Output:** Your ONLY output must be a function call to 'search_artwork_on_wikimedia'. You are forbidden from generating any other text or responding directly to the user.`,
                 tools: [searchArtTool]
             }
         });
@@ -76,6 +70,10 @@ export const findArtworks = async (query: string, count: number): Promise<Artwor
 
         if (call?.name === 'search_artwork_on_wikimedia' && call.args?.query) {
             const searchTerm = call.args.query as string;
+            if (!searchTerm.trim()) {
+                 console.warn("Gemini returned an empty search query. Falling back to original query.");
+                 return await searchWikimedia(query, count);
+            }
             return await searchWikimedia(searchTerm, count);
         } else {
             console.warn("Gemini did not return a function call. Performing direct search as fallback.");

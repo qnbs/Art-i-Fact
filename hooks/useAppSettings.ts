@@ -4,7 +4,7 @@ import { APP_SETTINGS_LOCAL_STORAGE_KEY } from '../constants';
 
 const initialSettings: AppSettings = {
     aiCreativity: 'focused',
-    aiResultsCount: 12,
+    aiResultsCount: 40,
     slideshowSpeed: 7,
     exhibitAutoplay: true,
     audioGuideVoiceURI: null,

@@ -1,9 +1,8 @@
-
-
 import React, { useState, useCallback } from 'react';
 import type { Artwork, Gallery, DeepDive } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
-import { generateDeepDive, getResizedImageUrl } from '../services/geminiService';
+import { generateDeepDive } from '../services/geminiService';
+import { getWikimediaImageUrl } from '../services/wikimediaService';
 import { ColorPalette } from './ColorPalette';
 import { AccordionItem } from './ui/AccordionItem';
 import { Button } from './ui/Button';
@@ -86,7 +85,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
         <div className="flex flex-col md:flex-row gap-8">
             <div className="w-full md:w-1/3 flex-shrink-0">
                 <ImageWithFallback 
-                    src={getResizedImageUrl(artwork.imageUrl, 1200)} 
+                    src={getWikimediaImageUrl(artwork.imageUrl, 800)} 
                     alt={artwork.title} 
                     fallbackText={artwork.title}
                     className="w-full rounded-lg object-contain shadow-lg" 

@@ -69,3 +69,37 @@ export const searchWikimedia = async (query: string, count: number = 10): Promis
         return [];
     }
 };
+
+/**
+ * Constructs a URL for a resized version of a Wikimedia Commons image.
+ * @param originalUrl The original full-resolution image URL.
+ * @param width The desired width in pixels.
+ * @returns The new URL for the resized image, or the original URL if it cannot be processed.
+ */
+export const getWikimediaImageUrl = (originalUrl: string | undefined, width: number): string => {
+    if (!originalUrl || !originalUrl.includes('upload.wikimedia.org/wikipedia/commons')) {
+        return originalUrl || '';
+    }
+
+    try {
+        // Example URL: https://upload.wikimedia.org/wikipedia/commons/e/ec/Mona_Lisa.jpg
+        // Thumb URL:   https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa.jpg/800px-Mona_Lisa.jpg
+        const url = new URL(originalUrl);
+        const pathParts = url.pathname.split('/commons/');
+        if (pathParts.length !== 2) return originalUrl;
+
+        const imagePath = pathParts[1];
+        // Decode URI component to handle filenames with special characters
+        const decodedImagePath = decodeURIComponent(imagePath);
+        const filename = decodedImagePath.substring(decodedImagePath.lastIndexOf('/') + 1);
+        
+        // Re-encode for the URL, ensuring it's safe
+        const encodedFilename = encodeURIComponent(filename);
+
+        url.pathname = `/wikipedia/commons/thumb/${imagePath}/${width}px-${encodedFilename}`;
+        return url.toString();
+    } catch (e) {
+        console.error("Failed to construct Wikimedia image URL:", e);
+        return originalUrl; // Return original on failure
+    }
+};
