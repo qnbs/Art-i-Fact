@@ -15,6 +15,7 @@ import * as gemini from '../services/geminiService.ts';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
 import { EmptyState } from './ui/EmptyState.tsx';
+import { useToast } from '../contexts/ToastContext.tsx';
 
 interface GalleryViewProps {
     gallery: Gallery;
@@ -93,6 +94,7 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
     const { handleAiTask, activeAiTask } = useAI();
     const { profile } = useProfile();
     const { appSettings } = useAppSettings();
+    const { showToast } = useToast();
     const aiAssistantMenuRef = useRef<HTMLDetailsElement>(null);
 
     const [isEditing, setIsEditing] = useState(false);
@@ -137,6 +139,36 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
             onUpdate(g => ({ ...g, trailerVideoStatus: 'failed' }));
         }
     }, [handleAiTask, onUpdate, gallery]);
+
+    const handleViewTrailer = useCallback(() => {
+        if (!gallery.trailerVideoUrl) {
+            console.error("Trailer URL is missing.");
+            showToast(t('toast.error.url'), 'error');
+            return;
+        }
+
+        const apiKey = process.env.API_KEY;
+
+        if (!apiKey) {
+            console.error("API_KEY is missing from environment. Cannot play trailer.");
+            showToast(t('toast.error.generic'), 'error');
+            return;
+        }
+
+        const separator = gallery.trailerVideoUrl.includes('?') ? '&' : '?';
+        const fullUrl = `${gallery.trailerVideoUrl}${separator}key=${apiKey}`;
+
+        try {
+            new URL(fullUrl); // Basic validation
+            const newTab = window.open(fullUrl, '_blank', 'noopener,noreferrer');
+            if (!newTab) {
+                showToast(t('toast.error.popup'), 'error');
+            }
+        } catch (e) {
+            console.error("Invalid trailer URL:", fullUrl, e);
+            showToast(t('toast.error.url'), 'error');
+        }
+    }, [gallery.trailerVideoUrl, showToast, t]);
     
     const handleShare = useCallback(() => {
         showModal(t('share.modal.title'), <ShareModal gallery={gallery} profile={profile} onClose={hideModal} />);
@@ -222,7 +254,7 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
                     {t('share')}
                 </Button>
                  {gallery.trailerVideoStatus === 'ready' && gallery.trailerVideoUrl && (
-                    <Button variant="secondary" onClick={() => window.open(`${gallery.trailerVideoUrl}&key=${process.env.API_KEY}`, '_blank')}>
+                    <Button variant="secondary" onClick={handleViewTrailer}>
                         <VideoCameraIcon className="w-5 h-5 mr-2" />
                         {t('gallery.ai.viewTrailer')}
                     </Button>

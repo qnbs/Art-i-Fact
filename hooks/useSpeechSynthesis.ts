@@ -1,5 +1,3 @@
-
-
 import { useState, useCallback, useEffect } from 'react';
 import type { AppSettings } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
@@ -7,8 +5,24 @@ import { useTranslation } from '../contexts/TranslationContext.tsx';
 
 export const useSpeechSynthesis = (onEnd: () => void, settings: Pick<AppSettings, 'audioGuideVoiceURI' | 'audioGuideSpeed'>) => {
     const { language } = useTranslation();
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
+
+    useEffect(() => {
+        const loadVoices = () => {
+            const availableVoices = window.speechSynthesis.getVoices();
+            if (availableVoices.length > 0) {
+                setVoices(availableVoices);
+            }
+        };
+        // Initial load + event listener for async population
+        loadVoices();
+        window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+        return () => {
+            window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+        };
+    }, []);
 
     const speak = useCallback((text: string) => {
         if (typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -20,10 +34,17 @@ export const useSpeechSynthesis = (onEnd: () => void, settings: Pick<AppSettings
         utterance.lang = language === 'de' ? 'de-DE' : 'en-US';
         utterance.rate = settings.audioGuideSpeed;
         
-        const voices = window.speechSynthesis.getVoices();
-        const selectedVoice = voices.find(v => v.voiceURI === settings.audioGuideVoiceURI);
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
+        if (voices.length > 0) {
+            const selectedVoice = voices.find(v => v.voiceURI === settings.audioGuideVoiceURI);
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            } else {
+                // Fallback to find a voice matching the current language if no specific voice is set/found
+                const fallbackVoice = voices.find(v => v.lang.startsWith(language)); // e.g., 'en-US', 'en-GB'
+                if(fallbackVoice) {
+                    utterance.voice = fallbackVoice;
+                }
+            }
         }
 
         utterance.onstart = () => setIsSpeaking(true);
@@ -31,12 +52,12 @@ export const useSpeechSynthesis = (onEnd: () => void, settings: Pick<AppSettings
             setIsSpeaking(false);
             onEnd();
         };
-        utterance.onerror = () => {
+        utterance.onerror = (e) => {
+            console.error("Speech Synthesis Error:", e);
             setIsSpeaking(false);
-            // Don't call onEnd here to prevent skipping on error
         };
         speechSynthesis.speak(utterance);
-    }, [onEnd, language, settings]);
+    }, [onEnd, language, settings, voices]);
 
     const cancel = useCallback(() => {
         if (typeof window === 'undefined' || !window.speechSynthesis) return;

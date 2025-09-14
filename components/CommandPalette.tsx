@@ -110,7 +110,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
 
     return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-start md:pt-20 animate-fade-in"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-start md:pt-[4.5rem] animate-fade-in"
             onClick={onClose}
             role="dialog"
             aria-modal="true"

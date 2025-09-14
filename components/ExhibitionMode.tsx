@@ -35,6 +35,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   const [transformStyle, setTransformStyle] = useState({});
   const exhibitionRef = useRef<HTMLDivElement>(null);
   const inactivityTimerRef = useRef<number | null>(null);
+  const [hasIntroPlayed, setHasIntroPlayed] = useState(false);
 
   const currentArtwork = artworks[currentIndex];
 
@@ -111,7 +112,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
     setCurrentIndex(prevIndex => (prevIndex - 1 + artworks.length) % artworks.length);
   }, [artworks.length]);
 
-  const { speak, cancel, togglePause, isSpeaking, isPaused } = useSpeechSynthesis(isAudioGuideActive ? goToNext : () => {}, appSettings);
+  const { speak, cancel, togglePause, isSpeaking, isPaused } = useSpeechSynthesis(goToNext, appSettings);
 
   const stopAllModes = () => {
       setSlideshowPlaying(false);
@@ -136,6 +137,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
         } else {
             setAudioGuideActive(true);
             setSlideshowPlaying(false);
+            setHasIntroPlayed(false); // Reset intro state
         }
     } else {
         setSlideshowPlaying(prev => !prev);
@@ -180,17 +182,26 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
     const currentArtworkId = artworks[currentIndex].id;
     const segment = audioGuide.segments.find(s => s.artworkId === currentArtworkId);
     
-    // Speak intro only on first artwork when audio guide is initially active
-    if (currentIndex === 0 && !isSpeaking) {
-        speak(audioGuide.introduction);
+    let textToSpeak = '';
+
+    if (currentIndex === 0 && !hasIntroPlayed) {
+        textToSpeak = audioGuide.introduction;
+        if (segment?.script) {
+            textToSpeak += ` \n\n ${segment.script}`;
+        }
+        setHasIntroPlayed(true);
     } else if (segment) {
-        speak(segment.script);
+        textToSpeak = segment.script;
+    }
+    
+    if (textToSpeak) {
+        speak(textToSpeak.trim());
     } else {
         // No segment, advance after timeout
         const timer = window.setTimeout(goToNext, appSettings.slideshowSpeed * 1000);
         return () => clearTimeout(timer);
     }
-  }, [currentIndex, isAudioGuideActive, isPaused, audioGuide, artworks, speak, goToNext, isSpeaking, appSettings.slideshowSpeed]);
+  }, [currentIndex, isAudioGuideActive, isPaused, hasIntroPlayed, audioGuide, artworks, speak, goToNext, appSettings.slideshowSpeed]);
 
 
   useEffect(() => {

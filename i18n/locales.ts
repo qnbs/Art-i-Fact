@@ -95,6 +95,9 @@ const en: Locale = {
       },
       error: {
         gemini: "The AI Assistant couldn't complete the request. Please try again.",
+        generic: "An unexpected error occurred. Please try again.",
+        url: "Could not open link. The URL appears to be invalid.",
+        popup: "Could not open new tab. Please disable your pop-up blocker for this site.",
       }
   },
   
@@ -574,6 +577,9 @@ const de: Locale = {
       },
       error: {
         gemini: "Der KI-Assistent konnte die Anfrage nicht abschließen. Bitte versuche es erneut.",
+        generic: "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+        url: "Der Link konnte nicht geöffnet werden. Die URL scheint ungültig zu sein.",
+        popup: "Neuer Tab konnte nicht geöffnet werden. Bitte deaktivieren Sie Ihren Pop-up-Blocker für diese Seite.",
       }
   },
   

@@ -58,10 +58,19 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onOpe
       {/* Desktop Header */}
       <div className="hidden md:flex items-center justify-between w-full">
         <h1 className="text-xl font-semibold text-gray-900 dark:text-white truncate">{getTitle()}</h1>
-        <button onClick={() => setActiveView('profile')} className="flex items-center gap-2 rounded-full p-1 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
-            <Avatar seed={profile.avatar} className="w-8 h-8"/>
-            <span className="text-sm font-semibold mr-2">{profile.username}</span>
-        </button>
+        <div className="flex items-center gap-4">
+            <button
+              onClick={onOpenCommandPalette}
+              className="rounded-md p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Open command palette"
+            >
+              <CommandLineIcon className="h-6 w-6" />
+            </button>
+            <button onClick={() => setActiveView('profile')} className="flex items-center gap-2 rounded-full p-1 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+                <Avatar seed={profile.avatar} className="w-8 h-8"/>
+                <span className="text-sm font-semibold mr-2">{profile.username}</span>
+            </button>
+        </div>
       </div>
     </header>
   );
