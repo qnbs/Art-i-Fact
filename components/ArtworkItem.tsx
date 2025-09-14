@@ -3,7 +3,7 @@ import React from 'react';
 // FIX: Added .ts extension to fix module resolution error.
 import type { Artwork } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
-import { InfoIcon } from './IconComponents.tsx';
+import { InfoIcon, PlusCircleIcon } from './IconComponents.tsx';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
@@ -11,9 +11,10 @@ import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 interface ArtworkItemProps {
   artwork: Artwork;
   onViewDetails: (artwork: Artwork) => void;
+  onInitiateAdd: (artwork: Artwork) => void;
 }
 
-const ArtworkItemComponent: React.FC<ArtworkItemProps> = ({ artwork, onViewDetails }) => {
+const ArtworkItemComponent: React.FC<ArtworkItemProps> = ({ artwork, onViewDetails, onInitiateAdd }) => {
   const { t } = useTranslation();
   
   const handleCardClick = () => {
@@ -23,6 +24,11 @@ const ArtworkItemComponent: React.FC<ArtworkItemProps> = ({ artwork, onViewDetai
   const handleDetailsClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation(); // Prevents handleCardClick from firing
     onViewDetails(artwork);
+  }
+
+  const handleAddClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation(); // Prevents handleCardClick from firing
+    onInitiateAdd(artwork);
   }
 
   return (
@@ -46,6 +52,14 @@ const ArtworkItemComponent: React.FC<ArtworkItemProps> = ({ artwork, onViewDetai
         <h3 className="font-bold text-base text-white truncate">{artwork.title}</h3>
         <p className="text-sm text-gray-300 truncate">{artwork.artist}</p>
       </div>
+
+      <button 
+        onClick={handleAddClick}
+        className="add-button absolute top-2 left-2 bg-black/50 backdrop-blur-sm rounded-full p-2.5 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-all hover:bg-green-600/70 focus-visible:ring-2 focus-visible:ring-green-400"
+        aria-label={t('modal.details.addToGallery')}
+      >
+        <PlusCircleIcon className="w-5 h-5" />
+      </button>
 
       <button 
         onClick={handleDetailsClick}

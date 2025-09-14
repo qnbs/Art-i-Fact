@@ -1,13 +1,14 @@
 
 
 import React from 'react';
-import type { Gallery } from '../types.ts';
+import type { Artwork, Gallery } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { PlusCircleIcon, GalleryIcon } from './IconComponents.tsx';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 
 interface AddToGalleryModalProps {
+  artwork: Artwork;
   galleries: Gallery[];
   onSelectGallery: (galleryId: string) => void;
   onCreateAndAdd: () => void;
@@ -33,7 +34,7 @@ const GalleryListItem: React.FC<{gallery: Gallery, onSelect: (id: string) => voi
     );
 }
 
-export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ galleries, onSelectGallery, onCreateAndAdd, activeProjectId }) => {
+export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ artwork, galleries, onSelectGallery, onCreateAndAdd, activeProjectId }) => {
   const { t } = useTranslation();
 
   const projectGalleries = activeProjectId ? galleries.filter(g => g.projectId === activeProjectId) : [];
@@ -41,6 +42,19 @@ export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ galleries,
 
   return (
     <div>
+        <div className="flex items-center gap-4 mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <ImageWithFallback 
+                src={artwork.thumbnailUrl || artwork.imageUrl} 
+                alt={artwork.title}
+                fallbackText={artwork.title}
+                className="w-16 h-16 rounded-md object-cover flex-shrink-0 bg-gray-300"
+            />
+            <div>
+                <h3 className="font-bold text-gray-900 dark:text-white truncate">{artwork.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{artwork.artist}</p>
+            </div>
+        </div>
+
         <button
             onClick={onCreateAndAdd}
             className="w-full flex items-center justify-center p-3 mb-4 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"

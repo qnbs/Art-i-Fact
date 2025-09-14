@@ -154,31 +154,28 @@ const App: React.FC = () => {
     }, [showModal, t, language]);
 
     const handleInitiateAdd = useCallback((artwork: Artwork) => {
-        hideModal();
-        
-        setTimeout(() => {
-            const handleAddToGallery = (galleryId: string) => {
-                addArtworkToGallery(galleryId, artwork);
-                showToast(t('toast.artwork.added', { gallery: galleries.find(g => g.id === galleryId)?.title || '' }), 'success');
-                hideModal();
-            }
-            const handleCreateAndAdd = () => {
-                 const newId = createGallery({
-                    title: t('gallery.new'),
-                    description: '',
-                    projectId: activeProjectId,
-                 });
-                 addArtworkToGallery(newId, artwork);
-                 showToast(t('toast.artwork.added', { gallery: t('gallery.new') }), 'success');
-                 hideModal();
-            }
-            showModal(t('modal.addToGallery.title'), <AddToGalleryModal 
-                galleries={galleries}
-                onSelectGallery={handleAddToGallery}
-                onCreateAndAdd={handleCreateAndAdd}
-                activeProjectId={activeProjectId}
-            />);
-        }, 200);
+        const handleAddToGallery = (galleryId: string) => {
+            addArtworkToGallery(galleryId, artwork);
+            showToast(t('toast.artwork.added', { gallery: galleries.find(g => g.id === galleryId)?.title || '' }), 'success');
+            hideModal();
+        }
+        const handleCreateAndAdd = () => {
+             const newId = createGallery({
+                title: t('gallery.new'),
+                description: '',
+                projectId: activeProjectId,
+             });
+             addArtworkToGallery(newId, artwork);
+             showToast(t('toast.artwork.added', { gallery: t('gallery.new') }), 'success');
+             hideModal();
+        }
+        showModal(t('modal.addToGallery.title'), <AddToGalleryModal 
+            artwork={artwork}
+            galleries={galleries}
+            onSelectGallery={handleAddToGallery}
+            onCreateAndAdd={handleCreateAndAdd}
+            activeProjectId={activeProjectId}
+        />);
     }, [addArtworkToGallery, showToast, t, galleries, hideModal, createGallery, activeProjectId, showModal]);
 
     const handleViewArtworkDetails = useCallback((artwork: Artwork) => {
