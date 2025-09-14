@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Chat } from '@google/genai';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useAppSettings } from '../contexts/AppSettingsContext';
 import { startArtChat } from '../services/geminiService';
 import type { Artwork } from '../types';
 import { SparklesIcon } from './IconComponents';
@@ -10,8 +11,9 @@ interface ChatMessage {
     text: string;
 }
 
-export const ChatModal: React.FC<{ artwork: Artwork; }> = ({ artwork }) => {
+export const ChatModal: React.FC<{ artwork: Artwork; language: 'de' | 'en'; }> = ({ artwork, language }) => {
     const { t } = useTranslation();
+    const { appSettings } = useAppSettings();
     const [chat, setChat] = useState<Chat | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +21,7 @@ export const ChatModal: React.FC<{ artwork: Artwork; }> = ({ artwork }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const chatInstance = startArtChat(artwork);
+        const chatInstance = startArtChat(artwork, appSettings, language);
         setChat(chatInstance);
         const getInitialMessage = async () => {
             setIsLoading(true);
@@ -40,7 +42,7 @@ export const ChatModal: React.FC<{ artwork: Artwork; }> = ({ artwork }) => {
             }
         };
         getInitialMessage();
-    }, [artwork, t]);
+    }, [artwork, t, appSettings, language]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

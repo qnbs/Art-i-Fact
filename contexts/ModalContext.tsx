@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { Modal } from '../components/Modal';
+import { ToastContainer } from '../components/ui/Toast';
 
 interface ModalContextType {
   showModal: (title: string, content: React.ReactNode) => void;
@@ -27,6 +28,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       <Modal isOpen={isOpen} onClose={hideModal} title={modalContent.title}>
         {modalContent.content}
       </Modal>
+      <ToastContainer />
     </ModalContext.Provider>
   );
 };

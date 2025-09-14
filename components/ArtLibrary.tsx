@@ -1,26 +1,25 @@
-
-import React, { useState, useRef, ChangeEvent } from 'react';
-import type { Artwork, AppSettings } from '../types';
+import React, { useState, useRef, ChangeEvent, useCallback } from 'react';
+import type { Artwork } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useAppSettings } from '../contexts/AppSettingsContext';
+import { useAI } from '../contexts/AIStatusContext';
 import { SearchIcon, SparklesIcon, ArrowLeftIcon, ArrowUpTrayIcon, CameraIcon } from './IconComponents';
 import { ArtworkItem } from './ArtworkItem';
 import { Button } from './ui/Button';
 import { ArtworkItemSkeleton } from './ui/ArtworkItemSkeleton';
+import { PageHeader } from './ui/PageHeader';
+import { RetryPrompt } from './ui/RetryPrompt';
 
 interface ArtLibraryProps {
   onSearch: (term: string) => void;
   onAnalyzeImage: (file: File) => void;
-  onAddArtwork: (artwork: Artwork) => void;
   onViewArtworkDetails: (artwork: Artwork) => void;
   onShowCamera: () => void;
   artworks: Artwork[];
   isLoading: boolean;
-  loadingMessage: string;
   searchTerm: string;
   similarTo: Artwork | null;
-  onFindSimilar: (artwork: Artwork) => void;
   featuredArtworks: Artwork[];
-  appSettings: AppSettings;
 }
 
 const themeSuggestions = {
@@ -82,40 +81,39 @@ const SearchResultHeader: React.FC<{ term?: string; similarTo?: Artwork | null; 
 
 
 export const ArtLibrary: React.FC<ArtLibraryProps> = ({
-  onSearch, onAnalyzeImage, onAddArtwork, onViewArtworkDetails, onShowCamera,
-  artworks, isLoading, loadingMessage, searchTerm, similarTo, onFindSimilar,
-  featuredArtworks, appSettings,
+  onSearch, onAnalyzeImage, onViewArtworkDetails, onShowCamera,
+  artworks, isLoading, searchTerm, similarTo,
+  featuredArtworks,
 }) => {
   const { t } = useTranslation();
+  const { appSettings } = useAppSettings();
+  const { aiError } = useAI();
   const [inputValue, setInputValue] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim()) {
       onSearch(inputValue);
     }
-  };
+  }, [inputValue, onSearch]);
 
-  const handleThematicSearch = (query: string) => {
+  const handleThematicSearch = useCallback((query: string) => {
     onSearch(query);
-  };
+  }, [onSearch]);
   
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       onAnalyzeImage(e.target.files[0]);
     }
-  };
+  }, [onAnalyzeImage]);
 
   const showResultsHeader = searchTerm || similarTo;
 
   const renderDiscoverHome = () => (
     <div className="flex-grow flex flex-col justify-center items-center text-center text-gray-500 dark:text-gray-400 p-4">
         <SparklesIcon className="w-16 h-16 text-amber-500 dark:text-amber-400 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('artLibrary.title')}</h2>
-        <p className="max-w-xl mb-8">
-            {t('welcome.subtitle')}
-        </p>
+        <p className="max-w-xl mb-8" dangerouslySetInnerHTML={{ __html: t('welcome.subtitle') }} />
         <div className="w-full max-w-4xl">
             {Object.entries(themeSuggestions).map(([categoryKey, themes]) => (
                 <div key={categoryKey} className="mb-6 animate-fade-in">
@@ -136,17 +134,7 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
                 </div>
             ))}
         </div>
-        <div className="mt-6 flex flex-col sm:flex-row gap-4">
-            <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
-                {t('artLibrary.upload.button')}
-            </Button>
-            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
-            <Button variant="secondary" onClick={onShowCamera}>
-                <CameraIcon className="w-5 h-5 mr-2" />
-                {t('artLibrary.camera.button')}
-            </Button>
-        </div>
+        
         {featuredArtworks.length > 0 && (
             <div className="w-full max-w-6xl mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Featured Artworks</h3>
@@ -155,7 +143,6 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
                         <ArtworkItem
                             key={art.id}
                             artwork={art}
-                            onAdd={onAddArtwork}
                             onViewDetails={onViewArtworkDetails}
                         />
                     ))}
@@ -165,14 +152,17 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
     </div>
   );
 
-  const renderResults = () => (
-    artworks.length > 0 ? (
+  const renderResults = () => {
+    if (aiError) {
+        return <RetryPrompt message={aiError.message} onRetry={aiError.onRetry} />;
+    }
+    
+    return artworks.length > 0 ? (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {artworks.map(art => (
           <ArtworkItem
             key={art.id}
             artwork={art}
-            onAdd={onAddArtwork}
             onViewDetails={onViewArtworkDetails}
           />
         ))}
@@ -188,7 +178,7 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
         </p>
       </div>
     )
-  );
+  };
   
   const renderLoading = () => (
      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -197,7 +187,21 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
   )
 
   return (
-    <div className="flex flex-col h-full bg-white/50 dark:bg-black/20 rounded-lg p-4 md:p-6">
+    <div className="flex flex-col h-full">
+      {!showResultsHeader && (
+        <PageHeader title={t('artLibrary.title')} icon={<SearchIcon className="w-8 h-8" />}>
+           <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                <ArrowUpTrayIcon className="w-5 h-5 md:mr-2" />
+                <span className="hidden md:inline">{t('artLibrary.upload.button')}</span>
+            </Button>
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+            <Button variant="secondary" onClick={onShowCamera}>
+                <CameraIcon className="w-5 h-5 md:mr-2" />
+                <span className="hidden md:inline">{t('artLibrary.camera.button')}</span>
+            </Button>
+        </PageHeader>
+      )}
+      
       <div className="flex-shrink-0">
         {!showResultsHeader ? (
            <form onSubmit={handleSearch} className="mb-6 relative">

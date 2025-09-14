@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Artwork, AudioGuide, AppSettings, Profile } from '../types';
+import { Artwork, AudioGuide, Profile } from '../types';
 import { CloseIcon, ArrowLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, SpeakerWaveIcon, SpeakerXMarkIcon, DocumentTextIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from './IconComponents';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useAppSettings } from '../contexts/AppSettingsContext';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import { ImageWithFallback } from './ui/ImageWithFallback';
 import { getWikimediaImageUrl } from '../services/wikimediaService';
@@ -11,20 +12,20 @@ interface ExhibitionModeProps {
   startIndex?: number;
   onClose: () => void;
   audioGuide?: AudioGuide;
-  settings: AppSettings;
   isPublicView?: boolean;
   galleryTitle?: string;
   curatorProfile?: Profile;
 }
 
 export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({ 
-    artworks, startIndex = 0, onClose, audioGuide, settings, 
+    artworks, startIndex = 0, onClose, audioGuide,
     isPublicView = false, galleryTitle, curatorProfile 
 }) => {
   const { t } = useTranslation();
+  const { appSettings } = useAppSettings();
   const [currentIndex, setCurrentIndex] = useState(startIndex);
-  const [isSlideshowPlaying, setSlideshowPlaying] = useState(settings.exhibitAutoplay && !audioGuide);
-  const [isAudioGuideActive, setAudioGuideActive] = useState(settings.exhibitAutoplay && !!audioGuide);
+  const [isSlideshowPlaying, setSlideshowPlaying] = useState(appSettings.exhibitAutoplay && !audioGuide);
+  const [isAudioGuideActive, setAudioGuideActive] = useState(appSettings.exhibitAutoplay && !!audioGuide);
   const [showTranscript, setShowTranscript] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [areControlsVisible, setAreControlsVisible] = useState(true);
@@ -65,7 +66,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
     setCurrentIndex(prevIndex => (prevIndex - 1 + artworks.length) % artworks.length);
   }, [artworks.length]);
 
-  const { speak, cancel, togglePause, isSpeaking, isPaused } = useSpeechSynthesis(isAudioGuideActive ? goToNext : () => {}, settings);
+  const { speak, cancel, togglePause, isSpeaking, isPaused } = useSpeechSynthesis(isAudioGuideActive ? goToNext : () => {}, appSettings);
 
   const stopAllModes = () => {
       setSlideshowPlaying(false);
@@ -121,10 +122,10 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   useEffect(() => {
     let timer: number;
     if (isSlideshowPlaying && !isAudioGuideActive) {
-      timer = window.setTimeout(goToNext, settings.slideshowSpeed * 1000);
+      timer = window.setTimeout(goToNext, appSettings.slideshowSpeed * 1000);
     }
     return () => clearTimeout(timer);
-  }, [currentIndex, isSlideshowPlaying, isAudioGuideActive, goToNext, settings.slideshowSpeed]);
+  }, [currentIndex, isSlideshowPlaying, isAudioGuideActive, goToNext, appSettings.slideshowSpeed]);
 
   // Audio guide speech effect
   useEffect(() => {
@@ -141,10 +142,10 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
         speak(segment.script);
     } else {
         // No segment, advance after timeout
-        const timer = window.setTimeout(goToNext, settings.slideshowSpeed * 1000);
+        const timer = window.setTimeout(goToNext, appSettings.slideshowSpeed * 1000);
         return () => clearTimeout(timer);
     }
-  }, [currentIndex, isAudioGuideActive, isPaused, audioGuide, artworks, speak, goToNext, isSpeaking, settings.slideshowSpeed]);
+  }, [currentIndex, isAudioGuideActive, isPaused, audioGuide, artworks, speak, goToNext, isSpeaking, appSettings.slideshowSpeed]);
 
 
   useEffect(() => {

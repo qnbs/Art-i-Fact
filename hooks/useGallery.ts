@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Gallery, Artwork } from '../types';
 import { GALLERY_LOCAL_STORAGE_KEY } from '../constants';
 import { sanitizeInput } from '../services/geminiService';
@@ -26,7 +26,7 @@ const getGalleryThumbnail = (artworks: Artwork[]): string => {
 };
 
 
-export const useGallery = () => {
+export const useGallery = (activeGalleryId: string | null) => {
   const [galleries, setGalleries] = useState<Gallery[]>(() => {
     try {
       const savedGalleries = localStorage.getItem(GALLERY_LOCAL_STORAGE_KEY);
@@ -37,8 +37,6 @@ export const useGallery = () => {
     }
   });
 
-  const [activeGalleryId, setActiveGalleryId] = useState<string | null>(null);
-
   useEffect(() => {
     try {
       localStorage.setItem(GALLERY_LOCAL_STORAGE_KEY, JSON.stringify(galleries));
@@ -47,7 +45,7 @@ export const useGallery = () => {
     }
   }, [galleries]);
 
-  const activeGallery = galleries.find(g => g.id === activeGalleryId) || null;
+  const activeGallery = useMemo(() => galleries.find(g => g.id === activeGalleryId) || null, [galleries, activeGalleryId]);
 
   const updateGallery = useCallback((id: string, updater: (gallery: Gallery) => Gallery) => {
       setGalleries(prev => prev.map(g => {
@@ -64,25 +62,23 @@ export const useGallery = () => {
       }));
   }, []);
   
-  const updateActiveGallery = useCallback((updater: (gallery: Gallery) => Gallery, galleryId?: string) => {
-      const idToUpdate = galleryId || activeGalleryId;
-      if(!idToUpdate) return;
-      updateGallery(idToUpdate, updater);
+  const updateActiveGallery = useCallback((updater: (gallery: Gallery) => Gallery) => {
+      if(!activeGalleryId) return;
+      updateGallery(activeGalleryId, updater);
   }, [activeGalleryId, updateGallery]);
 
 
-  const createNewGallery = useCallback((initialData?: Partial<Gallery>, projectId?: string): string => {
+  const createNewGallery = useCallback((initialData?: Partial<Gallery>): string => {
       const newId = `gallery_${Date.now()}`;
       const now = new Date().toISOString();
       const newGallery: Gallery = {
           id: newId,
-          title: initialData?.title ? sanitizeInput(initialData.title) : '',
+          title: initialData?.title ? sanitizeInput(initialData.title) : 'Untitled Gallery',
           description: initialData?.description ? sanitizeInput(initialData.description) : '',
           artworks: initialData?.artworks || [],
           createdAt: now,
           updatedAt: now,
-          projectId: projectId,
-          ...initialData,
+          projectId: initialData?.projectId,
       };
       newGallery.thumbnailUrl = getGalleryThumbnail(newGallery.artworks);
       
@@ -92,10 +88,7 @@ export const useGallery = () => {
 
   const deleteGallery = useCallback((id: string) => {
       setGalleries(prev => prev.filter(g => g.id !== id));
-      if (activeGalleryId === id) {
-          setActiveGalleryId(null);
-      }
-  }, [activeGalleryId]);
+  }, []);
 
   const addArtworkToGallery = useCallback((artworkToAdd: Artwork, galleryId: string): boolean => {
     let success = false;
@@ -149,35 +142,12 @@ export const useGallery = () => {
 
   const clearAllGalleries = useCallback(() => {
     setGalleries([]);
-    setActiveGalleryId(null);
   }, []);
-
-  const importGalleries = useCallback((importedGalleries: Gallery[], mode: 'merge' | 'replace') => {
-      const sanitizedImport = importedGalleries.map(g => ({
-          ...g,
-          title: sanitizeInput(g.title),
-          description: sanitizeInput(g.description),
-          curatorIntro: g.curatorIntro ? sanitizeInput(g.curatorIntro) : undefined,
-          artworks: g.artworks.map(a => ({...a, comment: a.comment ? sanitizeInput(a.comment) : undefined}))
-      }));
-
-      if(mode === 'replace') {
-          setGalleries(sanitizedImport);
-      } else {
-          setGalleries(prev => {
-              const galleryMap = new Map(prev.map(g => [g.id, g]));
-              sanitizedImport.forEach(g => galleryMap.set(g.id, g));
-              return Array.from(galleryMap.values());
-          });
-      }
-  }, []);
-
+  
   return {
     galleries,
     setGalleries,
     activeGallery,
-    activeGalleryId,
-    setActiveGalleryId,
     createNewGallery,
     deleteGallery,
     updateActiveGallery,
@@ -186,6 +156,5 @@ export const useGallery = () => {
     reorderArtworksInActiveGallery,
     addCommentToArtwork,
     clearAllGalleries,
-    importGalleries,
   };
 };

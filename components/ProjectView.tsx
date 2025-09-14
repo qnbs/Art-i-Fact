@@ -1,30 +1,25 @@
-
-
 import React, { useState } from 'react';
 import { Project, Gallery, JournalEntry } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { GalleryManager } from './GalleryManager';
 import { Journal } from './Journal';
 import { Button } from './ui/Button';
-import { PlusCircleIcon, GalleryIcon, JournalIcon, PencilIcon, CheckCircleIcon } from './IconComponents';
-import { sanitizeInput } from '../services/geminiService';
+import { PlusCircleIcon, GalleryIcon, JournalIcon, PencilIcon, CheckCircleIcon, HomeIcon } from './IconComponents';
 import { Tooltip } from './ui/Tooltip';
+import { PageHeader } from './ui/PageHeader';
 
-// All the props from App.tsx
 interface ProjectViewProps {
     project: Project;
     onUpdateProject: (id: string, updatedProject: Partial<Omit<Project, 'id' | 'createdAt'>>) => void;
     galleries: Gallery[];
     journalEntries: JournalEntry[];
+    language: 'de' | 'en';
     onNewGallery: () => void;
     onSelectGallery: (id: string) => void;
     onDeleteGallery: (id: string, title: string) => void;
     onUpdateJournalEntry: (id: string, updatedEntry: Partial<Omit<JournalEntry, 'id' | 'createdAt'>>) => void;
     onDeleteJournalEntry: (id: string) => void;
     onNewJournalEntry: () => string;
-    onJournalResearch: (topic: string) => Promise<string>;
-    activeAiTask: string | null;
-    handleAiTask: <T>(taskName: string, taskFn: () => Promise<T>, options?: { onStart?: () => void; onEnd?: (result: T | undefined) => void; }) => Promise<T | undefined>;
 }
 
 type ProjectTab = 'galleries' | 'journal';
@@ -44,12 +39,18 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
         });
         setIsEditingProject(false);
     };
+    
+    const handleNewJournal = () => {
+        const newId = props.onNewJournalEntry();
+        setActiveJournalId(newId);
+        setActiveTab('journal');
+    }
 
     return (
         <div className="flex flex-col h-full">
             {/* Project Header */}
-            <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
-                {isEditingProject ? (
+            {isEditingProject ? (
+                 <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
                     <div className="space-y-2">
                         <input
                             type="text"
@@ -68,20 +69,21 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                             <Button size="sm" variant="secondary" onClick={() => setIsEditingProject(false)}>{t('cancel')}</Button>
                         </div>
                     </div>
-                ) : (
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{props.project.title}</h1>
-                            <p className="text-gray-600 dark:text-gray-400 mt-1">{props.project.description}</p>
-                        </div>
-                        <Tooltip text={t('workspace.editProject')}>
-                            <Button variant="ghost" size="sm" onClick={() => setIsEditingProject(true)}>
-                                <PencilIcon className="w-5 h-5" />
-                            </Button>
-                        </Tooltip>
-                    </div>
-                )}
-            </div>
+                </div>
+            ) : (
+                <PageHeader 
+                    title={props.project.title} 
+                    subtitle={props.project.description}
+                    icon={<HomeIcon className="w-8 h-8" />}
+                >
+                    <Tooltip text={t('workspace.editProject')}>
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditingProject(true)}>
+                            <PencilIcon className="w-5 h-5" />
+                        </Button>
+                    </Tooltip>
+                </PageHeader>
+            )}
+           
 
             {/* Tabs & Actions */}
             <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700/50 mb-4 flex-shrink-0">
@@ -108,10 +110,7 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                      </Button>
                  )}
                  {activeTab === 'journal' && (
-                      <Button size="sm" onClick={() => {
-                          const newId = props.onNewJournalEntry();
-                          setActiveJournalId(newId);
-                      }}>
+                      <Button size="sm" onClick={handleNewJournal}>
                          <PlusCircleIcon className="w-5 h-5 mr-2" />
                          {t('journal.new')}
                      </Button>
@@ -133,13 +132,12 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                     <Journal
                         entries={props.journalEntries}
                         galleries={props.galleries}
+                        language={props.language}
                         activeEntryId={activeJournalId}
                         onSelectEntry={setActiveJournalId}
                         onUpdateEntry={props.onUpdateJournalEntry}
                         onDeleteEntry={(id) => { props.onDeleteJournalEntry(id); setActiveJournalId(null); }}
-                        onJournalResearch={props.onJournalResearch}
-                        activeAiTask={props.activeAiTask}
-                        handleAiTask={props.handleAiTask}
+                        onNewEntry={props.onNewJournalEntry}
                     />
                 )}
             </div>

@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import type { Artwork } from '../types';
 import { InfoIcon } from './IconComponents';
@@ -8,15 +7,14 @@ import { ImageWithFallback } from './ui/ImageWithFallback';
 
 interface ArtworkItemProps {
   artwork: Artwork;
-  onAdd: (artwork: Artwork) => void;
   onViewDetails: (artwork: Artwork) => void;
 }
 
-const ArtworkItemComponent: React.FC<ArtworkItemProps> = ({ artwork, onAdd, onViewDetails }) => {
+const ArtworkItemComponent: React.FC<ArtworkItemProps> = ({ artwork, onViewDetails }) => {
   const { t } = useTranslation();
   
   const handleCardClick = () => {
-    onAdd(artwork);
+    onViewDetails(artwork);
   };
 
   const handleDetailsClick = (e: React.MouseEvent<HTMLButtonElement>) => {

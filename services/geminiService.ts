@@ -1,7 +1,7 @@
-
 import { GoogleGenAI, Type, GenerateContentResponse, Chat, Modality } from "@google/genai";
-import { Artwork, DeepDive, Gallery, GalleryCritique, AudioGuide, ImageAspectRatio } from '../types';
+import { Artwork, DeepDive, Gallery, GalleryCritique, AudioGuide, ImageAspectRatio, AppSettings, Profile } from '../types';
 import { searchWikimedia } from './wikimediaService';
+import { prompts } from "../i18n/prompts";
 
 // Initialize the Google AI client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
@@ -28,7 +28,16 @@ const extractJson = <T>(response: GenerateContentResponse, fallback: T): T => {
         return JSON.parse(jsonStr) as T;
     } catch (e) {
         console.error("Failed to parse JSON from response:", e);
-        return fallback;
+        throw new Error("The AI returned an invalid JSON response.");
+    }
+};
+
+const getTemperature = (creativity: AppSettings['aiCreativity']): number => {
+    switch (creativity) {
+        case 'focused': return 0.2;
+        case 'balanced': return 0.7;
+        case 'creative': return 1.0;
+        default: return 0.7;
     }
 };
 
@@ -80,44 +89,50 @@ export const findArtworks = async (query: string, count: number): Promise<Artwor
             return await searchWikimedia(query, count);
         }
     } catch (error) {
-        console.error("Error in findArtworks with function calling:", error);
-        return await searchWikimedia(query, count);
+        console.error("Error in findArtworks:", error);
+        throw new Error("Failed to find artworks. The AI or search service may be unavailable.");
     }
 };
 
 export const analyzeImage = async (file: File): Promise<Artwork | null> => {
-    const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(',')[1]);
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-    });
+    try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result as string).split(',')[1]);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
 
-    const identifyResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: {
-            parts: [
-                { inlineData: { mimeType: file.type, data: base64 } },
-                { text: "Identify this artwork. What is its title and who is the artist? Just give the title and artist." }
-            ]
-        }
-    });
+        const identifyResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: {
+                parts: [
+                    { inlineData: { mimeType: file.type, data: base64 } },
+                    { text: "Identify this artwork. What is its title and who is the artist? Just give the title and artist." }
+                ]
+            }
+        });
 
-    const identificationText = identifyResponse.text.trim();
-    if (!identificationText) return null;
+        const identificationText = identifyResponse.text.trim();
+        if (!identificationText) return null;
 
-    const searchResults = await findArtworks(identificationText, 1);
-    return searchResults.length > 0 ? searchResults[0] : null;
+        const searchResults = await findArtworks(identificationText, 1);
+        return searchResults.length > 0 ? searchResults[0] : null;
+    } catch (error) {
+        console.error("Error analyzing image:", error);
+        throw new Error("Failed to analyze the image.");
+    }
 };
 
 /**
  * Generates a "deep dive" analysis of a single artwork.
  */
-export const generateDeepDive = async (artwork: Artwork): Promise<DeepDive> => {
+export const generateDeepDive = async (artwork: Artwork, appSettings: AppSettings, language: 'de' | 'en'): Promise<DeepDive> => {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Provide a "deep dive" analysis of the artwork "${artwork.title}" by ${artwork.artist}.`,
+        contents: prompts[language].deepDive(artwork.title, artwork.artist, artwork.description),
         config: {
+            temperature: getTemperature(appSettings.aiCreativity),
             responseMimeType: 'application/json',
             responseSchema: {
                 type: Type.OBJECT,
@@ -135,12 +150,13 @@ export const generateDeepDive = async (artwork: Artwork): Promise<DeepDive> => {
 /**
  * Generates a critique and suggestions for a gallery.
  */
-export const generateCritique = async (gallery: Gallery): Promise<GalleryCritique> => {
-    const artworkList = gallery.artworks.map(a => `"${a.title}" by ${a.artist}`).join(', ');
+export const generateCritique = async (gallery: Gallery, appSettings: AppSettings, language: 'de' | 'en'): Promise<GalleryCritique> => {
+    const artworkList = gallery.artworks.map(a => ({ title: a.title, artist: a.artist, description: a.description }));
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Critique the thematic coherence of a virtual art gallery titled "${gallery.title}" which contains the following artworks: ${artworkList}.`,
+        contents: prompts[language].critique(gallery.title, JSON.stringify(artworkList)),
         config: {
+            temperature: getTemperature(appSettings.aiCreativity),
             responseMimeType: 'application/json',
             responseSchema: {
                 type: Type.OBJECT,
@@ -158,12 +174,13 @@ export const generateCritique = async (gallery: Gallery): Promise<GalleryCritiqu
 /**
  * Generates a script for an audio guide for a gallery.
  */
-export const generateAudioGuideScript = async (gallery: Gallery, profile: { username: string }): Promise<AudioGuide> => {
-    const artworkData = gallery.artworks.map(a => ({ id: a.id, title: a.title, artist: a.artist }));
+export const generateAudioGuideScript = async (gallery: Gallery, profile: Profile, appSettings: AppSettings, language: 'de' | 'en'): Promise<AudioGuide> => {
+    const artworkData = gallery.artworks.map(a => ({ id: a.id, title: a.title, artist: a.artist, description: a.description }));
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Generate a script for an audio guide for a gallery titled "${gallery.title}", curated by ${profile.username}. The gallery contains these artworks: ${JSON.stringify(artworkData)}`,
+        contents: prompts[language].audioGuide(gallery.title, profile.username, JSON.stringify(artworkData)),
         config: {
+            temperature: getTemperature(appSettings.aiCreativity),
             responseMimeType: 'application/json',
             responseSchema: {
                 type: Type.OBJECT,
@@ -187,25 +204,31 @@ export const generateAudioGuideScript = async (gallery: Gallery, profile: { user
     return extractJson<AudioGuide>(response, { introduction: '', segments: [] });
 };
 
+
 /**
- * Generates insights for a journal entry based on a topic.
+ * Generates insights for a journal entry based on a topic in a streaming fashion.
  */
-export const generateJournalInsights = async (topic: string): Promise<string> => {
-    const response = await ai.models.generateContent({
+export const generateJournalInsightsStream = async (topic: string, appSettings: AppSettings, language: 'de' | 'en'): Promise<AsyncGenerator<GenerateContentResponse>> => {
+    return ai.models.generateContentStream({
         model: 'gemini-2.5-flash',
-        contents: `Provide some thoughtful insights and reflection points about the following topic in art: "${topic}". Write it as a single block of text.`,
+        contents: prompts[language].journal(topic),
+        config: {
+            temperature: getTemperature(appSettings.aiCreativity),
+            tools: [{ googleSearch: {} }],
+        },
     });
-    return response.text;
 };
+
 
 /**
  * Starts a new art-focused chat session.
  */
-export const startArtChat = (artwork: Artwork): Chat => {
+export const startArtChat = (artwork: Artwork, appSettings: AppSettings, language: 'de' | 'en'): Chat => {
     return ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
-            systemInstruction: `You are an engaging and knowledgeable art historian. You are discussing the artwork "${artwork.title}" by ${artwork.artist}. Be conversational and provide interesting facts and interpretations. The artwork's description is: "${artwork.description}".`,
+            systemInstruction: prompts[language].chatSystemInstruction(artwork.title, artwork.artist, artwork.description),
+            temperature: getTemperature(appSettings.aiCreativity),
         }
     });
 };
@@ -214,10 +237,13 @@ export const startArtChat = (artwork: Artwork): Chat => {
 /**
  * Enhances a user's prompt for better image generation results.
  */
-export const enhancePrompt = async (prompt: string): Promise<string> => {
+export const enhancePrompt = async (prompt: string, appSettings: AppSettings, language: 'de' | 'en'): Promise<string> => {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Enhance this user prompt for an AI image generator to be more descriptive and evocative: "${prompt}"`,
+        contents: prompts[language].enhance(prompt),
+        config: {
+            temperature: getTemperature(appSettings.aiCreativity),
+        },
     });
     return response.text.replace(/["']/g, ''); // Clean up quotes from response
 };
@@ -283,13 +309,12 @@ export const generateTrailerVideo = async (gallery: Gallery): Promise<string | n
         
         const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
         if (!downloadLink) {
-            console.error("Video generation finished but no download link was provided.");
-            return null;
+            throw new Error("Video generation finished but no download link was provided.");
         }
-        return downloadLink;
+        return `${downloadLink}&key=${process.env.API_KEY!}`;
 
     } catch (error) {
         console.error("Failed to generate video trailer:", error);
-        return null;
+        throw new Error("Failed to generate video trailer.");
     }
 };

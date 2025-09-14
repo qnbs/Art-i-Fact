@@ -1,4 +1,3 @@
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qnbs/Art-i-Fact)
 # Art-i-Fact: Your Personal AI Art Curator
 
 **Art-i-Fact** is an innovative web application that empowers you to discover, create, organize, and share virtual art galleries using state-of-the-art AI curation tools. It acts as your intelligent assistant, blending your unique curatorial vision with the vast knowledge of AI to craft beautiful and insightful art experiences.
@@ -7,8 +6,8 @@
 
 ## ✨ Key Features
 
--   **Discover Art:** Explore a vast universe of art. Simply enter themes, styles, emotions, or even colors, and let the AI find relevant masterpieces for you. You can also upload an image or use your camera to identify and analyze art.
 -   **Organize with Projects:** Structure your work in the **Workspace**. Each project is a dedicated container for related galleries and journal entries, helping you manage different themes or exhibitions seamlessly.
+-   **Discover Art:** Explore a vast universe of art. Simply enter themes, styles, emotions, or even colors, and let the AI find relevant masterpieces for you. You can also upload an image or use your camera to identify and analyze art.
 -   **AI Studio:** Become an artist! Generate unique, original artworks from your text descriptions. Use the **Enhance Prompt** feature to get more creative ideas, and iteratively refine your creations with the powerful **Remix** tool.
 -   **Curate Virtual Galleries:** Build and organize your own galleries within projects. Add artworks, give your gallery a compelling title and description, and arrange the pieces with drag-and-drop to tell a story.
 -   **AI Assistant:** Enhance your curations with a suite of intelligent tools:
@@ -65,8 +64,8 @@ This project is licensed under the MIT License.
 
 ## ✨ Hauptfunktionen
 
--   **Kunst entdecken:** Erforschen Sie ein riesiges Universum der Kunst. Geben Sie einfach Themen, Stile oder Emotionen ein und lassen Sie die KI relevante Meisterwerke für Sie finden. Sie können auch ein Bild hochladen oder Ihre Kamera verwenden, um Kunst zu identifizieren und zu analysieren.
 -   **Mit Projekten organisieren:** Strukturieren Sie Ihre Arbeit im **Arbeitsbereich**. Jedes Projekt ist ein eigener Container für zusammengehörige Galerien und Journaleinträge, was Ihnen hilft, verschiedene Themen oder Ausstellungen nahtlos zu verwalten.
+-   **Kunst entdecken:** Erforschen Sie ein riesiges Universum der Kunst. Geben Sie einfach Themen, Stile oder Emotionen ein und lassen Sie die KI relevante Meisterwerke für Sie finden. Sie können auch ein Bild hochladen oder Ihre Kamera verwenden, um Kunst zu identifizieren und zu analysieren.
 -   **KI-Studio:** Werden Sie zum Künstler! Erstellen Sie einzigartige, originelle Kunstwerke aus Ihren Textbeschreibungen. Nutzen Sie die **Prompt-Verbesserung**, um kreativere Ideen zu erhalten, und verfeinern Sie Ihre Kreationen iterativ mit dem leistungsstarken **Remix**-Werkzeug.
 -   **Virtuelle Galerien kuratieren:** Bauen und organisieren Sie Ihre eigenen Galerien innerhalb von Projekten. Fügen Sie Kunstwerke hinzu, geben Sie Ihrer Galerie einen überzeugenden Titel und eine Beschreibung und ordnen Sie die Stücke per Drag-and-Drop an, um eine Geschichte zu erzählen.
 -   **KI-Assistent:** Verbessern Sie Ihre Kurationen mit einer Reihe intelligenter Werkzeuge:

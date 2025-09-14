@@ -1,11 +1,11 @@
 import React from 'react';
-import { Profile } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useProfile } from '../contexts/ProfileContext';
 import { Avatar } from './ui/Avatar';
-import { Cog6ToothIcon, QuestionMarkCircleIcon, ChevronRightIcon } from './IconComponents';
+import { Cog6ToothIcon, QuestionMarkCircleIcon, ChevronRightIcon, UserCircleIcon } from './IconComponents';
+import { PageHeader } from './ui/PageHeader';
 
 interface ProfileViewProps {
-    profile: Profile;
     setActiveView: (view: 'setup' | 'help') => void;
     stats: {
         galleriesCurated: number;
@@ -29,11 +29,13 @@ const ProfileLink: React.FC<{ icon: React.ReactNode; label: string; onClick: () 
     </button>
 );
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ profile, setActiveView, stats }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ setActiveView, stats }) => {
     const { t } = useTranslation();
+    const { profile } = useProfile();
 
     return (
-        <div className="flex flex-col h-full p-4 md:p-6 max-w-4xl mx-auto w-full">
+        <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
+            <PageHeader title={t('profile')} icon={<UserCircleIcon className="w-8 h-8" />} />
             <div className="flex flex-col md:flex-row items-center text-center md:text-left p-8 mb-8 bg-white/50 dark:bg-black/20 rounded-xl">
                 <Avatar seed={profile.avatar} className="w-32 h-32 rounded-full mb-4 md:mb-0 md:mr-8 flex-shrink-0" />
                 <div>

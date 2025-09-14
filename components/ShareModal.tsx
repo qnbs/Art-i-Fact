@@ -1,6 +1,7 @@
 import React from 'react';
 import { Gallery, Profile, ShareableGalleryData } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useToast } from '../contexts/ToastContext';
 import { Modal } from './Modal';
 import { Button } from './ui/Button';
 import { ArrowDownTrayIcon, ArrowUpTrayIcon } from './IconComponents';
@@ -9,11 +10,11 @@ interface ShareModalProps {
     gallery: Gallery;
     profile: Profile;
     onClose: () => void;
-    onShowToast: (message: string) => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ gallery, profile, onClose, onShowToast }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ gallery, profile, onClose }) => {
     const { t } = useTranslation();
+    const { showToast } = useToast();
 
     const handleCopyLink = () => {
         const shareableData: ShareableGalleryData = {
@@ -25,7 +26,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ gallery, profile, onClos
         const url = `${window.location.origin}${window.location.pathname}#view=${encodedData}`;
         
         navigator.clipboard.writeText(url)
-            .then(() => onShowToast(t('toast.share.linkCopied')))
+            .then(() => showToast(t('toast.share.linkCopied'), 'success'))
             .catch(err => console.error('Failed to copy link: ', err));
         onClose();
     };

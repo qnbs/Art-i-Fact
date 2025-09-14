@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { SideNavBar } from './components/SideNavBar';
 import { BottomNavBar } from './components/BottomNavBar';
@@ -20,67 +18,73 @@ import { ChatModal } from './components/ChatModal';
 import { CameraAnalysisModal } from './components/CameraAnalysisModal';
 import { CommandPalette, Command } from './components/CommandPalette';
 import { GalleryCreator } from './components/GalleryCreator';
-import { GalleryManager } from './components/GalleryManager';
 import { ExhibitionMode } from './components/ExhibitionMode';
-import { Toast } from './components/ui/Toast';
 import { useTheme } from './hooks/useTheme';
 import { useGallery } from './hooks/useGallery';
 import { useProjects } from './hooks/useProjects';
 import { useJournal } from './hooks/useJournal';
-import { useProfile } from './hooks/useProfile';
-import { useAppSettings } from './hooks/useAppSettings';
 import { useModal } from './contexts/ModalContext';
+import { useToast } from './contexts/ToastContext';
+import { useAI } from './contexts/AIStatusContext';
 import { useTranslation } from './contexts/TranslationContext';
-import { useDynamicLoadingMessage } from './hooks/useDynamicLoadingMessage';
+import { useProfile } from './contexts/ProfileContext';
+import { useAppSettings } from './contexts/AppSettingsContext';
 import * as gemini from './services/geminiService';
-import type { Artwork, Gallery, JournalEntry, Project, ShareableGalleryData } from './types';
+import type { Artwork, ShareableGalleryData } from './types';
 import { WELCOME_PORTAL_SEEN_KEY } from './constants';
+import { Button } from './components/ui/Button';
 import { Cog6ToothIcon, CommandLineIcon, GalleryIcon, HomeIcon, JournalIcon, PaintBrushIcon, QuestionMarkCircleIcon, SearchIcon, UserCircleIcon } from './components/IconComponents';
 
 type ActiveView = 'workspace' | 'discover' | 'studio' | 'gallery' | 'journal' | 'setup' | 'help' | 'profile' | 'glossary' | 'project';
 
+interface NavigationState {
+    view: ActiveView;
+    projectId: string | null;
+    galleryId: string | null;
+}
+
 const App: React.FC = () => {
-    const { t } = useTranslation();
+    const { t, language, setLanguage } = useTranslation();
     const [theme, toggleTheme] = useTheme();
     const { showModal, hideModal } = useModal();
-    const [activeView, setActiveView] = useState<ActiveView>('discover');
+    const { showToast } = useToast();
+    const { handleAiTask, activeAiTask } = useAI();
+    const { profile, setProfile } = useProfile();
+    const { appSettings, setAppSettings } = useAppSettings();
+    
+    // Navigation State
+    const [currentView, setCurrentView] = useState<ActiveView>('discover');
+    const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+    const [currentGalleryId, setCurrentGalleryId] = useState<string | null>(null);
+    const [navigationHistory, setNavigationHistory] = useState<NavigationState[]>([]);
 
-    // State Hooks
-    const { profile, updateProfile, setProfile } = useProfile();
-    const { appSettings, updateAppSettings, setAppSettings } = useAppSettings();
-    const { projects, createProject, updateProject, deleteProject, clearAllProjects, setProjects } = useProjects();
-    const { galleries, createNewGallery, deleteGallery, updateActiveGallery, addArtworkToGallery, removeArtworkFromActiveGallery, reorderArtworksInActiveGallery, addCommentToArtwork, clearAllGalleries, importGalleries, setGalleries, activeGallery, activeGalleryId, setActiveGalleryId } = useGallery();
-    const { journalEntries, createNewJournalEntry, deleteJournalEntry, updateJournalEntry, clearAllJournalEntries, setJournalEntries, unlinkGallery } = useJournal();
+    // Data Hooks
+    const { projects, createProject, updateProject, deleteProject, setProjects } = useProjects();
+    const { galleries, createNewGallery, deleteGallery, updateActiveGallery, addArtworkToGallery, removeArtworkFromActiveGallery, reorderArtworksInActiveGallery, addCommentToArtwork, setGalleries } = useGallery(currentGalleryId);
+    const { journalEntries, createNewJournalEntry, deleteJournalEntry, updateJournalEntry, setJournalEntries, unlinkGallery } = useJournal();
     
     // UI State
-    const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-    const [toastMessage, setToastMessage] = useState<string>('');
-    const [activeAiTask, setActiveAiTask] = useState<string | null>(null);
     const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_PORTAL_SEEN_KEY));
-    
     const [artworks, setArtworks] = useState<Artwork[]>([]);
     const [featuredArtworks, setFeaturedArtworks] = useState<Artwork[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [similarTo, setSimilarTo] = useState<Artwork | null>(null);
-    
     const [artworkToAdd, setArtworkToAdd] = useState<Artwork | null>(null);
     const [isAddModalOpen, setAddModalOpen] = useState(false);
-    
     const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
     const [publicGalleryData, setPublicGalleryData] = useState<ShareableGalleryData | null>(null);
-
-
-    const loadingMessages = useMemo(() => [
-        t('loading.gemini.1'), t('loading.gemini.2'), t('loading.gemini.3'), t('loading.gemini.4')
-    ], [t]);
-    const loadingMessage = useDynamicLoadingMessage(loadingMessages, 3000, !!activeAiTask);
 
     // Effect to fetch featured artworks on initial load
     useEffect(() => {
         const fetchFeaturedArtworks = async () => {
-            const results = await gemini.findArtworks("Most famous paintings in history high resolution", 10);
-            if (results) {
-                setFeaturedArtworks(results);
+            try {
+                const results = await gemini.findArtworks("Most famous paintings in history high resolution", 10);
+                if (results) {
+                    setFeaturedArtworks(results);
+                }
+            } catch (error) {
+                console.error("Failed to fetch featured artworks:", error);
+                // Non-critical, so no toast shown to user
             }
         };
         fetchFeaturedArtworks();
@@ -103,48 +107,47 @@ const App: React.FC = () => {
                 }
             }
         };
-        
-        handleHashChange(); // Check on initial load
+        handleHashChange();
         window.addEventListener('hashchange', handleHashChange);
-
-        return () => {
-            window.removeEventListener('hashchange', handleHashChange);
-        };
+        return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
     // Derived State
-    const activeProject = useMemo(() => projects.find(p => p.id === activeProjectId), [projects, activeProjectId]);
-    const projectGalleries = useMemo(() => galleries.filter(g => g.projectId === activeProjectId), [galleries, activeProjectId]);
-    const projectJournalEntries = useMemo(() => journalEntries.filter(j => j.projectId === activeProjectId), [journalEntries, activeProjectId]);
+    const activeProject = useMemo(() => projects.find(p => p.id === currentProjectId), [projects, currentProjectId]);
+    const activeGallery = useMemo(() => galleries.find(g => g.id === currentGalleryId), [galleries, currentGalleryId]);
+    const projectGalleries = useMemo(() => galleries.filter(g => g.projectId === currentProjectId), [galleries, currentProjectId]);
+    const projectJournalEntries = useMemo(() => journalEntries.filter(j => j.projectId === currentProjectId), [journalEntries, currentProjectId]);
 
-    // Handlers
-    const showToast = (message: string) => {
-        setToastMessage(message);
-        setTimeout(() => setToastMessage(''), 3100);
-    };
-
-    const handleAiTask = useCallback(async <T,>(
-        taskName: string, 
-        taskFn: () => Promise<T>, 
-        options?: { onStart?: () => void, onEnd?: (result: T | undefined) => void }
-    ): Promise<T | undefined> => {
-        setActiveAiTask(taskName);
-        options?.onStart?.();
-        try {
-            const result = await taskFn();
-            options?.onEnd?.(result);
-            return result;
-        } catch (error: any) {
-            console.error(`AI Task "${taskName}" failed:`, error);
-            showToast(t('toast.error.gemini') + (error.message ? `: ${error.message}`: ''));
-            options?.onEnd?.(undefined);
-            return undefined;
-        } finally {
-            setActiveAiTask(null);
+    // Navigation Logic
+    const navigateTo = useCallback((state: Partial<NavigationState>) => {
+        const currentState: NavigationState = { view: currentView, projectId: currentProjectId, galleryId: currentGalleryId };
+        
+        // Push to history only if it's a significant change (e.g., entering a project/gallery)
+        if ((state.projectId && state.projectId !== currentState.projectId) || (state.galleryId && state.galleryId !== currentState.galleryId)) {
+            setNavigationHistory(prev => [...prev, currentState]);
         }
-    }, [t]);
+
+        setCurrentView(state.view ?? currentView);
+        setCurrentProjectId(state.projectId !== undefined ? state.projectId : currentProjectId);
+        setCurrentGalleryId(state.galleryId !== undefined ? state.galleryId : currentGalleryId);
+    }, [currentView, currentProjectId, currentGalleryId]);
+
+    const navigateBack = useCallback(() => {
+        if (navigationHistory.length > 0) {
+            const lastState = navigationHistory[navigationHistory.length - 1];
+            setNavigationHistory(prev => prev.slice(0, -1));
+            setCurrentView(lastState.view);
+            setCurrentProjectId(lastState.projectId);
+            setCurrentGalleryId(lastState.galleryId);
+        } else {
+             // Default back behavior if history is empty
+            if (currentGalleryId) setCurrentGalleryId(null);
+            else if (currentProjectId) setCurrentProjectId(null);
+            else setCurrentView('discover'); // Fallback to a default view
+        }
+    }, [navigationHistory, currentGalleryId, currentProjectId]);
     
-    // Data Search/Analysis
+    // Data Search/Analysis Handlers
     const handleSearch = useCallback(async (term: string) => {
         setSearchTerm(term);
         setSimilarTo(null);
@@ -163,8 +166,8 @@ const App: React.FC = () => {
             const results = await gemini.findArtworks(`artworks similar to ${artwork.title} by ${artwork.artist}`, appSettings.aiResultsCount);
             if (results) setArtworks(results.filter(a => a.id !== artwork.id));
         });
-        setActiveView('discover');
-    }, [appSettings.aiResultsCount, handleAiTask]);
+        navigateTo({ view: 'discover' });
+    }, [appSettings.aiResultsCount, handleAiTask, navigateTo]);
 
     const handleAnalyzeImage = useCallback(async (file: File) => {
         const result = await handleAiTask('analyze', () => gemini.analyzeImage(file));
@@ -173,56 +176,66 @@ const App: React.FC = () => {
             setSearchTerm(result.title);
             setSimilarTo(null);
         } else {
-            showToast(t('toast.error.imageRecognition'));
+            showToast(t('toast.error.imageRecognition'), 'error');
         }
-    }, [handleAiTask, t]);
+    }, [handleAiTask, t, showToast]);
 
-    // Gallery Management
+    // Gallery Management Handlers
     const initiateAddToGallery = useCallback((artwork: Artwork) => {
         setArtworkToAdd(artwork);
         setAddModalOpen(true);
     }, []);
 
-    const handleSelectGalleryForAdd = (galleryId: string) => {
+    const handleSelectGalleryForAdd = useCallback((galleryId: string) => {
         if (artworkToAdd) {
             const success = addArtworkToGallery(artworkToAdd, galleryId);
-            showToast(success ? t('toast.gallery.artworkAdded') : t('toast.gallery.artworkExists'));
+            showToast(success ? t('toast.gallery.artworkAdded') : t('toast.gallery.artworkExists'), success ? 'success' : 'info');
         }
         setAddModalOpen(false);
         setArtworkToAdd(null);
-    };
+    }, [artworkToAdd, addArtworkToGallery, showToast, t]);
 
-    const handleCreateAndAdd = () => {
+    const handleCreateAndAdd = useCallback(() => {
         if (artworkToAdd) {
-            const newId = createNewGallery({ artworks: [artworkToAdd], title: t('gallery.newUntitled'), projectId: activeProjectId || undefined });
-            setActiveGalleryId(newId);
-            setActiveView('gallery');
-            showToast(t('toast.gallery.createdWithArt'));
+            const newId = createNewGallery({ artworks: [artworkToAdd], title: t('gallery.newUntitled'), projectId: currentProjectId || undefined });
+            navigateTo({ galleryId: newId });
+            showToast(t('toast.gallery.createdWithArt'), 'success');
         }
         setAddModalOpen(false);
         setArtworkToAdd(null);
-    };
+    }, [artworkToAdd, createNewGallery, t, currentProjectId, navigateTo, showToast]);
 
     const handleDeleteGallery = useCallback((galleryId: string) => {
         const galleryToDelete = galleries.find(g => g.id === galleryId);
         if (!galleryToDelete) return;
 
-        if (window.confirm(t('gallery.manager.delete.confirm', { title: galleryToDelete.title }))) {
-            deleteGallery(galleryId);
-            unlinkGallery(galleryId);
-        }
-    }, [galleries, deleteGallery, unlinkGallery, t]);
+        showModal(
+            t('gallery.manager.delete.confirm', { title: galleryToDelete.title }),
+            <>
+                <p>{t('gallery.manager.delete.confirm', { title: galleryToDelete.title })}</p>
+                <div className="flex justify-end gap-2 mt-4">
+                    <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                    <Button variant="danger" onClick={() => {
+                        deleteGallery(galleryId);
+                        unlinkGallery(galleryId);
+                        showToast(t('toast.gallery.deleted'), 'success');
+                        hideModal();
+                    }}>{t('remove')}</Button>
+                </div>
+            </>
+        );
+    }, [galleries, deleteGallery, unlinkGallery, t, showToast, showModal, hideModal]);
 
     // Modal Handlers
-    const handleStartChat = (artwork: Artwork) => {
-        showModal(t('chat.modal.title', { title: artwork.title }), <ChatModal artwork={artwork} />);
-    };
+    const handleStartChat = useCallback((artwork: Artwork) => {
+        showModal(t('chat.modal.title', { title: artwork.title }), <ChatModal artwork={artwork} language={language} />);
+    }, [showModal, t, language]);
     
-    const handleShowCamera = () => {
+    const handleShowCamera = useCallback(() => {
         showModal(t('camera.modal.title'), <CameraAnalysisModal onCapture={handleAnalyzeImage} onClose={hideModal} />);
-    };
+    }, [showModal, t, handleAnalyzeImage, hideModal]);
     
-    const handleViewDetails = (artwork: Artwork) => {
+    const handleViewDetails = useCallback((artwork: Artwork) => {
         showModal(
             artwork.title,
             <ArtworkDetails
@@ -232,127 +245,118 @@ const App: React.FC = () => {
                 onInitiateAddToGallery={initiateAddToGallery}
                 onRemoveFromGallery={removeArtworkFromActiveGallery}
                 onAddComment={addCommentToArtwork}
-                onThematicSearch={(tags) => { handleSearch(tags.join(', ')); setActiveView('discover'); }}
+                onThematicSearch={(tags) => { handleSearch(tags.join(', ')); navigateTo({ view: 'discover' }); }}
                 onStartChat={handleStartChat}
                 onClose={hideModal}
-                showToast={showToast}
+                language={language}
             />
         );
-    };
+    }, [activeGallery, handleFindSimilar, initiateAddToGallery, removeArtworkFromActiveGallery, addCommentToArtwork, handleSearch, navigateTo, handleStartChat, hideModal, language, showModal]);
 
-    const handleNewProject = () => {
+    const handleNewProject = useCallback(() => {
         showModal(t('workspace.newProject'), <GalleryCreator onSave={({ title, description }) => {
             const newId = createProject(title, description);
-            setActiveProjectId(newId);
-            setActiveView('project');
+            navigateTo({ view: 'project', projectId: newId, galleryId: null });
             hideModal();
         }} onCancel={hideModal} />)
-    };
+    }, [showModal, t, createProject, navigateTo, hideModal]);
     
-    const handleDeleteProject = (id: string, title: string) => {
-        if(window.confirm(t('workspace.delete.confirm', { title }))) {
-            // This hook updates project state and localStorage for all related items
-            deleteProject(id, galleries, journalEntries);
-            // Manually update React state for galleries and journals to sync the UI
-            setGalleries(prev => prev.filter(g => g.projectId !== id));
-            setJournalEntries(prev => prev.filter(j => j.projectId !== id));
-            showToast(t('toast.project.deleted'));
-        }
-    };
+    const handleDeleteProject = useCallback((id: string, title: string) => {
+         showModal(
+            t('workspace.delete.confirm', { title }),
+            <>
+                <p>{t('workspace.delete.confirm', { title })}</p>
+                 <div className="flex justify-end gap-2 mt-4">
+                    <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                    <Button variant="danger" onClick={() => {
+                        deleteProject(id, galleries, journalEntries);
+                        setGalleries(prev => prev.filter(g => g.projectId !== id));
+                        setJournalEntries(prev => prev.filter(j => j.projectId !== id));
+                        showToast(t('toast.project.deleted'), 'success');
+                        hideModal();
+                    }}>{t('remove')}</Button>
+                </div>
+            </>
+        );
+    }, [showModal, t, deleteProject, galleries, journalEntries, showToast, hideModal, setGalleries, setJournalEntries]);
     
-    const handleNewGalleryForProject = () => {
-        if (!activeProjectId) return;
-        const newId = createNewGallery({ projectId: activeProjectId, title: t('gallery.newUntitled') });
-        setActiveGalleryId(newId);
-        setActiveView('gallery');
-    };
+    const handleNewGalleryForProject = useCallback(() => {
+        if (!currentProjectId) return;
+        const newId = createNewGallery({ projectId: currentProjectId, title: t('gallery.newUntitled') });
+        navigateTo({ galleryId: newId });
+    }, [currentProjectId, createNewGallery, t, navigateTo]);
     
-    const handleNewJournalEntryForProject = (): string => {
-        if (!activeProjectId) return '';
-        return createNewJournalEntry({ projectId: activeProjectId, title: t('journal.newUntitled') });
-    }
+    const handleNewJournalEntryForProject = useCallback((): string => {
+        if (!currentProjectId) return '';
+        return createNewJournalEntry({ projectId: currentProjectId, title: t('journal.newUntitled') });
+    }, [currentProjectId, createNewJournalEntry, t]);
+    
+    const handleNewJournalEntry = useCallback((): string => {
+        return createNewJournalEntry({ title: t('journal.newUntitled') });
+    }, [createNewJournalEntry, t]);
 
-    const handleEnter = () => {
+    const handleEnterWelcome = useCallback(() => {
         localStorage.setItem(WELCOME_PORTAL_SEEN_KEY, 'true');
         setShowWelcome(false);
-    };
+    }, []);
 
-    // App Commands
     const commands: Command[] = useMemo(() => [
-        { id: 'view_workspace', title: t('nav.workspace'), category: t('nav.category'), icon: <HomeIcon className="w-5 h-5"/>, action: () => setActiveView('workspace') },
-        { id: 'view_discover', title: t('nav.discover'), category: t('nav.category'), icon: <SearchIcon className="w-5 h-5"/>, action: () => setActiveView('discover') },
-        { id: 'view_studio', title: t('nav.studio'), category: t('nav.category'), icon: <PaintBrushIcon className="w-5 h-5"/>, action: () => setActiveView('studio') },
-        { id: 'view_journal', title: t('nav.journal'), category: t('nav.category'), icon: <JournalIcon className="w-5 h-5"/>, action: () => setActiveView('journal') },
-        { id: 'view_profile', title: t('nav.profile'), category: t('nav.category'), icon: <UserCircleIcon className="w-5 h-5"/>, action: () => setActiveView('profile') },
-        { id: 'view_settings', title: t('nav.settings'), category: t('nav.category'), icon: <Cog6ToothIcon className="w-5 h-5"/>, action: () => setActiveView('setup') },
-        { id: 'view_help', title: t('nav.help'), category: t('nav.category'), icon: <QuestionMarkCircleIcon className="w-5 h-5"/>, action: () => setActiveView('help') },
+        { id: 'view_workspace', title: t('nav.workspace'), category: t('nav.category'), icon: <HomeIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'workspace', projectId: null, galleryId: null }) },
+        { id: 'view_discover', title: t('nav.discover'), category: t('nav.category'), icon: <SearchIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'discover' }) },
+        { id: 'view_studio', title: t('nav.studio'), category: t('nav.category'), icon: <PaintBrushIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'studio' }) },
+        { id: 'view_journal', title: t('nav.journal'), category: t('nav.category'), icon: <JournalIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'journal', projectId: null, galleryId: null }) },
+        { id: 'view_profile', title: t('nav.profile'), category: t('nav.category'), icon: <UserCircleIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'profile' }) },
+        { id: 'view_settings', title: t('nav.settings'), category: t('nav.category'), icon: <Cog6ToothIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'setup' }) },
+        { id: 'view_help', title: t('nav.help'), category: t('nav.category'), icon: <QuestionMarkCircleIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'help' }) },
         { id: 'toggle_theme', title: t('command.toggleTheme'), category: t('command.category.general'), icon: <CommandLineIcon className="w-5 h-5"/>, action: toggleTheme },
-        ...projects.map(p => ({ id: `proj_${p.id}`, title: t('command.openProject', { title: p.title }), category: t('command.category.projects'), icon: <HomeIcon className="w-5 h-5"/>, action: () => { setActiveProjectId(p.id); setActiveView('project') }})),
+        ...projects.map(p => ({ id: `proj_${p.id}`, title: t('command.openProject', { title: p.title }), category: t('command.category.projects'), icon: <HomeIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'project', projectId: p.id, galleryId: null }) })),
         ...galleries.map(g => ({
             id: `gal_${g.id}`,
             title: t('command.openGallery', { title: g.title }),
             category: t('command.category.galleries'),
             icon: <GalleryIcon className="w-5 h-5"/>,
-            action: () => {
-                if (g.projectId) {
-                    setActiveProjectId(g.projectId);
-                    setActiveView('project');
-                } else {
-                    setActiveProjectId(null); // Ensure we clear project context for standalone galleries
-                    setActiveView('gallery');
-                }
-                setActiveGalleryId(g.id);
-            }
+            action: () => navigateTo({ view: g.projectId ? 'project' : 'gallery', projectId: g.projectId || null, galleryId: g.id })
         })),
-    ], [t, toggleTheme, projects, galleries, setActiveGalleryId, setActiveProjectId]);
+    ], [t, toggleTheme, projects, galleries, navigateTo]);
 
 
-    // Render Logic
     const renderActiveView = () => {
-        if (activeGalleryId) {
+        if (currentGalleryId && activeGallery) {
             return <GalleryView
-                gallery={activeGallery!}
-                profile={profile}
-                onClose={() => setActiveGalleryId(null)}
+                gallery={activeGallery}
+                onClose={() => navigateTo({ galleryId: null })}
                 onUpdate={updateActiveGallery}
                 onRemoveArtwork={removeArtworkFromActiveGallery}
                 onReorderArtworks={reorderArtworksInActiveGallery}
                 onViewDetails={handleViewDetails}
                 onInitiateAdd={initiateAddToGallery}
                 onFindSimilar={handleFindSimilar}
-                handleAiTask={handleAiTask}
-                showToast={showToast}
-                appSettings={appSettings}
+                language={language}
             />
         }
 
-        if (activeProjectId && activeProject) {
+        if (currentProjectId && activeProject) {
             return <ProjectView
                 project={activeProject}
                 onUpdateProject={updateProject}
                 galleries={projectGalleries}
                 journalEntries={projectJournalEntries}
                 onNewGallery={handleNewGalleryForProject}
-                onSelectGallery={(id) => setActiveGalleryId(id)}
+                onSelectGallery={(id) => navigateTo({ galleryId: id })}
                 onDeleteGallery={handleDeleteGallery}
                 onUpdateJournalEntry={updateJournalEntry}
                 onDeleteJournalEntry={deleteJournalEntry}
                 onNewJournalEntry={handleNewJournalEntryForProject}
-                onJournalResearch={async (topic) => {
-                    const insights = await handleAiTask('journal', () => gemini.generateJournalInsights(topic));
-                    return insights || '';
-                }}
-                activeAiTask={activeAiTask}
-                handleAiTask={handleAiTask}
+                language={language}
             />
         }
 
-        switch (activeView) {
+        switch (currentView) {
             case 'workspace':
                 return <Workspace 
                     projects={projects} 
                     onNewProject={handleNewProject}
-                    onSelectProject={(id) => setActiveProjectId(id)}
+                    onSelectProject={(id) => navigateTo({ view: 'project', projectId: id, galleryId: null })}
                     onDeleteProject={handleDeleteProject}
                     galleryCountByProject={(id) => galleries.filter(g => g.projectId === id).length}
                     journalCountByProject={(id) => journalEntries.filter(j => j.projectId === id).length}
@@ -361,57 +365,30 @@ const App: React.FC = () => {
                 return <ArtLibrary 
                     onSearch={handleSearch}
                     onAnalyzeImage={handleAnalyzeImage}
-                    onAddArtwork={initiateAddToGallery}
                     onViewArtworkDetails={handleViewDetails}
                     onShowCamera={handleShowCamera}
                     artworks={artworks}
                     isLoading={activeAiTask === 'search' || activeAiTask === 'similar' || activeAiTask === 'analyze'}
-                    loadingMessage={loadingMessage}
                     searchTerm={searchTerm}
                     similarTo={similarTo}
-                    onFindSimilar={handleFindSimilar}
                     featuredArtworks={featuredArtworks}
-                    appSettings={appSettings}
                 />;
             case 'studio':
                 return <Studio 
-                    onGenerateImage={(p, ar) => handleAiTask('studio', () => gemini.generateImage(p, ar)) as Promise<string>}
-                    onRemixImage={(b64, p) => handleAiTask('remix', () => gemini.remixImage(b64, p)) as Promise<string>}
-                    onEnhancePrompt={(p) => handleAiTask('enhance', () => gemini.enhancePrompt(p)) as Promise<string>}
                     onInitiateAdd={initiateAddToGallery}
-                    activeAiTask={activeAiTask}
-                    showToast={showToast}
-                    handleAiTask={handleAiTask}
-                    loadingMessage={loadingMessage}
                 />
-            case 'gallery':
-                return <GalleryManager
-                    galleries={galleries.filter(g => !g.projectId)}
-                    onCreateNew={() => {
-                        const newId = createNewGallery({ title: t('gallery.newUntitled') });
-                        setActiveGalleryId(newId);
-                    }}
-                    onSelectGallery={(id) => setActiveGalleryId(id)}
-                    onDeleteGallery={(id, title) => handleDeleteGallery(id)}
-                    isProjectView={false}
-                />;
             case 'journal':
                  return <Journal
                     entries={journalEntries.filter(j => !j.projectId)} // Only show non-project entries here
+                    onNewEntry={handleNewJournalEntry}
                     galleries={galleries}
                     onUpdateEntry={updateJournalEntry}
                     onDeleteEntry={deleteJournalEntry}
-                    onJournalResearch={async (topic) => {
-                        const insights = await handleAiTask('journal', () => gemini.generateJournalInsights(topic));
-                        return insights || '';
-                    }}
-                    activeAiTask={activeAiTask}
-                    handleAiTask={handleAiTask}
+                    language={language}
                 />;
             case 'profile':
                 return <ProfileView 
-                    profile={profile} 
-                    setActiveView={(v) => setActiveView(v)}
+                    setActiveView={(v) => navigateTo({ view: v })}
                     stats={{
                         galleriesCurated: galleries.length,
                         artworksDiscovered: galleries.reduce((sum, g) => sum + g.artworks.filter(a => !a.isGenerated).length, 0),
@@ -421,46 +398,7 @@ const App: React.FC = () => {
             case 'setup':
                 return <Setup 
                     theme={theme} onToggleTheme={toggleTheme} 
-                    onClearCache={() => { if(window.confirm(t('settings.galleryCache.confirm'))) { clearAllGalleries(); showToast(t('toast.cacheCleared'))} }}
-                    profile={profile} onUpdateProfile={updateProfile} onShowToast={showToast}
-                    appSettings={appSettings} onUpdateAppSettings={updateAppSettings}
-                    onExportAllData={() => {
-                        const allData = { projects, galleries, journalEntries, profile, appSettings };
-                        const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `art-i-fact_backup_${new Date().toISOString().split('T')[0]}.json`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    }}
-                    onTriggerImport={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'application/json';
-                        input.onchange = (e) => {
-                            const file = (e.target as HTMLInputElement).files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                                try {
-                                    const data = JSON.parse(event.target?.result as string);
-                                    if (window.confirm(t('settings.data.import.confirm'))) {
-                                        setProjects(data.projects || []);
-                                        setGalleries(data.galleries || []);
-                                        setJournalEntries(data.journalEntries || []);
-                                        setProfile(data.profile || profile);
-                                        setAppSettings(data.appSettings || appSettings);
-                                        showToast(t('toast.dataImported'));
-                                    }
-                                } catch (err) {
-                                    showToast(t('toast.error.import'));
-                                }
-                            };
-                            reader.readAsText(file);
-                        };
-                        input.click();
-                    }}
+                    language={language} onSetLanguage={setLanguage}
                 />;
             case 'help':
                 return <Help />;
@@ -477,7 +415,6 @@ const App: React.FC = () => {
                     setPublicGalleryData(null);
                     window.location.hash = ''; // Clear hash on close
                 }}
-                settings={appSettings}
                 isPublicView={true}
                 galleryTitle={publicGalleryData.gallery.title}
                 curatorProfile={publicGalleryData.profile}
@@ -486,43 +423,49 @@ const App: React.FC = () => {
     }
 
     if (showWelcome) {
-        return <WelcomePortal onEnter={handleEnter} />;
+        return <WelcomePortal onEnter={handleEnterWelcome} />;
     }
+    
+    const getPageTitle = () => {
+        if (currentGalleryId && activeGallery) return activeGallery.title;
+        if (currentProjectId && activeProject) return activeProject.title;
+        return undefined; // Let Header component handle the fallback
+    };
+    
+    const activeViewForNav: ActiveView = currentProjectId ? 'project' : (currentGalleryId ? 'gallery' : currentView);
 
     return (
         <div className="flex h-screen w-screen bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-200">
-            <SideNavBar activeView={activeView} setActiveView={setActiveView} galleryItemCount={galleries.length} />
+            <SideNavBar activeView={activeViewForNav} setActiveView={(v) => navigateTo({ view: v, projectId: null, galleryId: null })} galleryItemCount={galleries.filter(g => !g.projectId).length} />
             <main className="flex-1 flex flex-col h-screen">
                 <Header 
-                    activeView={activeView}
-                    isProjectView={!!activeProjectId}
-                    isGalleryView={!!activeGalleryId}
+                    activeView={activeViewForNav}
+                    isProjectView={!!currentProjectId}
+                    isGalleryView={!!currentGalleryId}
+                    pageTitle={getPageTitle()}
                     onNewGallery={handleNewGalleryForProject}
-                    onNewJournalEntry={() => createNewJournalEntry()}
+                    onNewJournalEntry={handleNewJournalEntry}
                     onNewProject={handleNewProject}
                     onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-                    onNavigateBack={() => {
-                        if (activeGalleryId) setActiveGalleryId(null);
-                        else if (activeProjectId) setActiveProjectId(null);
-                    }}
+                    onNavigateBack={navigateBack}
+                    onNavigateToSettings={() => navigateTo({ view: 'setup' })}
+                    onNavigateToHelp={() => navigateTo({ view: 'help' })}
                 />
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
                     {renderActiveView()}
                 </div>
-                <BottomNavBar activeView={activeView} setActiveView={setActiveView} />
+                <BottomNavBar activeView={activeViewForNav} setActiveView={(v) => navigateTo({ view: v, projectId: null, galleryId: null })} />
             </main>
 
-            {/* Modals & Overlays */}
             {isAddModalOpen && <AddToGalleryModal 
                 galleries={galleries}
                 onSelectGallery={handleSelectGalleryForAdd}
                 onCreateAndAdd={handleCreateAndAdd}
                 onClose={() => setAddModalOpen(false)}
                 isOpen={isAddModalOpen}
-                activeProjectId={activeProjectId}
+                activeProjectId={currentProjectId}
             />}
             <CommandPalette isOpen={isCommandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} commands={commands} />
-            {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage('')} />}
             <div id="command-palette-root"></div>
         </div>
     );

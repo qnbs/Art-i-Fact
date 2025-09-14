@@ -1,22 +1,23 @@
-
-
-import React, { useState, useRef, DragEvent } from 'react';
-import { Gallery, Artwork, Profile, AppSettings, AudioGuide, GalleryCritique } from '../types';
+import React, { useState, DragEvent, memo } from 'react';
+import { Gallery, Artwork, AudioGuide, GalleryCritique } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
-import { ArrowLeftIcon, SparklesIcon, PresentationChartBarIcon, ShareIcon, EllipsisVerticalIcon, PlusCircleIcon, TrashIcon, CheckCircleIcon, PencilIcon, SpinnerIcon } from './IconComponents';
+import { useModal } from '../contexts/ModalContext';
+import { useAI } from '../contexts/AIStatusContext';
+import { useProfile } from '../contexts/ProfileContext';
+import { useAppSettings } from '../contexts/AppSettingsContext';
+import { SparklesIcon, PresentationChartBarIcon, ShareIcon, TrashIcon, CheckCircleIcon, PencilIcon, SpinnerIcon, InfoIcon, HomeIcon } from './IconComponents';
 import { Button } from './ui/Button';
 import { ExhibitionMode } from './ExhibitionMode';
-import { useModal } from '../contexts/ModalContext';
 import { CritiqueModalContent } from './CritiqueModalContent';
 import { ShareModal } from './ShareModal';
 import { Tooltip } from './ui/Tooltip';
 import * as gemini from '../services/geminiService';
 import { ImageWithFallback } from './ui/ImageWithFallback';
+import { PageHeader } from './ui/PageHeader';
 
 interface GalleryViewProps {
     gallery: Gallery;
-    profile: Profile;
-    appSettings: AppSettings;
+    language: 'de' | 'en';
     onClose: () => void;
     onUpdate: (updater: (gallery: Gallery) => Gallery) => void;
     onRemoveArtwork: (artworkId: string) => void;
@@ -24,22 +25,75 @@ interface GalleryViewProps {
     onViewDetails: (artwork: Artwork) => void;
     onInitiateAdd: (artwork: Artwork) => void;
     onFindSimilar: (artwork: Artwork) => void;
-    handleAiTask: <T>(taskName: string, taskFn: () => Promise<T>, options?: { onStart?: () => void; onEnd?: (result: T | undefined) => void; }) => Promise<T | undefined>;
-    showToast: (message: string) => void;
 }
 
+const DraggableArtworkItem = memo<{
+    art: Artwork;
+    index: number;
+    draggedIndex: number | null;
+    dropTargetIndex: number | null;
+    onDragStart: (e: DragEvent<HTMLDivElement>, index: number) => void;
+    onDragEnter: (e: DragEvent<HTMLDivElement>, index: number) => void;
+    onDragEnd: () => void;
+    onDrop: (e: DragEvent<HTMLDivElement>, dropIndex: number) => void;
+    onViewDetails: (art: Artwork) => void;
+    onRemoveArtwork: (id: string) => void;
+}>(({ art, index, draggedIndex, dropTargetIndex, onDragStart, onDragEnter, onDragEnd, onDrop, onViewDetails, onRemoveArtwork }) => {
+    const { t } = useTranslation();
+    return (
+        <div
+            draggable
+            onDragStart={(e) => onDragStart(e, index)}
+            onDragEnter={(e) => onDragEnter(e, index)}
+            onDragEnd={onDragEnd}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => onDrop(e, index)}
+            className={`group relative cursor-grab overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 transition-all duration-300 hover:scale-105 hover:shadow-amber-500/20 focus-within:ring-2 focus-within:ring-amber-400 hover:z-20 
+                ${draggedIndex === index ? 'opacity-30' : ''} 
+                ${dropTargetIndex === index ? 'ring-2 ring-amber-500 ring-offset-2 dark:ring-offset-gray-950' : ''}`}
+        >
+           <ImageWithFallback src={art.thumbnailUrl || art.imageUrl} alt={art.title} fallbackText={art.title} className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-75"/>
+           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-end">
+               <h3 className="font-bold text-base text-white truncate">{art.title}</h3>
+               <p className="text-sm text-gray-300 truncate">{art.artist}</p>
+           </div>
+           <button
+                onClick={(e) => { e.stopPropagation(); onViewDetails(art); }}
+                className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm rounded-full p-2.5 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-all hover:bg-amber-600/70 focus-visible:ring-2 focus-visible:ring-amber-400"
+                aria-label={t('artwork.detailsLabel', { title: art.title })}
+            >
+                <InfoIcon className="w-5 h-5" />
+            </button>
+            <button
+                onClick={(e) => { e.stopPropagation(); onRemoveArtwork(art.id); }}
+                className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2.5 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-all hover:bg-red-600/70 focus-visible:ring-2 focus-visible:ring-red-500"
+                aria-label={t('remove')}
+            >
+                <TrashIcon className="w-5 h-5" />
+            </button>
+        </div>
+    );
+});
+
+
 export const GalleryView: React.FC<GalleryViewProps> = ({
-    gallery, profile, appSettings, onClose, onUpdate, onRemoveArtwork, onReorderArtworks,
-    onViewDetails, onInitiateAdd, onFindSimilar, handleAiTask, showToast
+    gallery, language, onClose, onUpdate, onRemoveArtwork, onReorderArtworks,
+    onViewDetails, onInitiateAdd, onFindSimilar
 }) => {
     const { t } = useTranslation();
     const { showModal, hideModal } = useModal();
+    const { handleAiTask } = useAI();
+    const { profile } = useProfile();
+    const { appSettings } = useAppSettings();
+    
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(gallery.title);
     const [editedDescription, setEditedDescription] = useState(gallery.description);
     const [showExhibition, setShowExhibition] = useState(false);
     const [exhibitionAudioGuide, setExhibitionAudioGuide] = useState<AudioGuide | undefined>(undefined);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+
 
     const handleSave = () => {
         onUpdate(g => ({ ...g, title: editedTitle, description: editedDescription }));
@@ -47,14 +101,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     };
 
     const handleCritique = async () => {
-        const result = await handleAiTask('critique', () => gemini.generateCritique(gallery)) as GalleryCritique | undefined;
+        const result = await handleAiTask('critique', () => gemini.generateCritique(gallery, appSettings, language)) as GalleryCritique | undefined;
         if (result) {
             showModal(t('gallery.critique.modal.critique'), <CritiqueModalContent critiqueResult={result} />);
         }
     };
 
     const handleAudioGuide = async () => {
-        const result = await handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile)) as AudioGuide | undefined;
+        const result = await handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile, appSettings, language)) as AudioGuide | undefined;
         if (result) {
             setExhibitionAudioGuide(result);
             setShowExhibition(true);
@@ -78,7 +132,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     const handleShare = () => {
         showModal(
             t('share.modal.title'), 
-            <ShareModal gallery={gallery} profile={profile} onClose={hideModal} onShowToast={showToast} />
+            <ShareModal gallery={gallery} profile={profile} onClose={hideModal} />
         );
     };
 
@@ -86,20 +140,30 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         setDraggedIndex(index);
         e.dataTransfer.effectAllowed = 'move';
     };
-
-    const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    
+    const handleDragEnter = (e: DragEvent<HTMLDivElement>, index: number) => {
         e.preventDefault();
+        if (index !== draggedIndex) {
+            setDropTargetIndex(index);
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
+        setDropTargetIndex(null);
     };
 
     const handleDrop = (e: DragEvent<HTMLDivElement>, dropIndex: number) => {
         e.preventDefault();
         if (draggedIndex === null) return;
+        
         const draggedItem = gallery.artworks[draggedIndex];
         const newArtworks = [...gallery.artworks];
         newArtworks.splice(draggedIndex, 1);
         newArtworks.splice(dropIndex, 0, draggedItem);
+        
         onReorderArtworks(newArtworks);
-        setDraggedIndex(null);
+        handleDragEnd();
     };
 
     return (
@@ -109,17 +173,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     artworks={gallery.artworks}
                     onClose={() => setShowExhibition(false)}
                     audioGuide={exhibitionAudioGuide}
-                    settings={appSettings}
                 />
             )}
             {/* Header */}
-            <div className="flex-shrink-0 mb-6">
-                <button onClick={onClose} className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 mb-2">
-                    <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                    {t('workspace.title')}
-                </button>
-                {isEditing ? (
-                     <div className="space-y-2">
+            {isEditing ? (
+                 <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
+                    <div className="space-y-2">
                         <input
                             type="text"
                             value={editedTitle}
@@ -137,20 +196,20 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                             <Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>{t('cancel')}</Button>
                         </div>
                     </div>
-                ) : (
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{gallery.title}</h1>
-                            <p className="text-gray-600 dark:text-gray-400 mt-1">{gallery.description}</p>
-                        </div>
-                        <Tooltip text={t('workspace.editProject')}>
-                            <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
-                                <PencilIcon className="w-5 h-5" />
-                            </Button>
-                        </Tooltip>
-                    </div>
-                )}
-            </div>
+                </div>
+            ) : (
+                <PageHeader 
+                    title={gallery.title} 
+                    subtitle={gallery.description}
+                    icon={<HomeIcon className="w-8 h-8" />}
+                >
+                    <Tooltip text={t('workspace.editProject')}>
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                            <PencilIcon className="w-5 h-5" />
+                        </Button>
+                    </Tooltip>
+                </PageHeader>
+            )}
 
             {/* Actions */}
              <div className="flex-shrink-0 flex flex-wrap items-center gap-2 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700/50">
@@ -185,32 +244,23 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 {gallery.artworks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
                         <p className="mb-4">{t('gallery.empty.prompt')}</p>
-                        <Button onClick={() => onInitiateAdd(gallery.artworks[0])}>
-                            <PlusCircleIcon className="w-5 h-5 mr-2"/>
-                            {t('gallery.empty.add')}
-                        </Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {gallery.artworks.map((art, index) => (
-                            <div
+                           <DraggableArtworkItem
                                 key={art.id}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, index)}
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleDrop(e, index)}
-                                className={`group relative cursor-pointer overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 transition-transform duration-300 hover:scale-105 hover:shadow-amber-500/20 focus-within:ring-2 focus-within:ring-amber-400 ${draggedIndex === index ? 'opacity-50' : ''}`}
-                            >
-                               <ImageWithFallback src={art.thumbnailUrl || art.imageUrl} alt={art.title} fallbackText={art.title} className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-75"/>
-                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-end">
-                                   <h3 className="font-bold text-base text-white truncate">{art.title}</h3>
-                                   <p className="text-sm text-gray-300 truncate">{art.artist}</p>
-                               </div>
-                               <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button size="sm" variant="ghost" className="bg-black/50 text-white" onClick={() => onViewDetails(art)}><PencilIcon className="w-4 h-4"/></Button>
-                                    <Button size="sm" variant="danger" className="bg-red-600/80" onClick={() => onRemoveArtwork(art.id)}><TrashIcon className="w-4 h-4"/></Button>
-                               </div>
-                            </div>
+                                art={art}
+                                index={index}
+                                draggedIndex={draggedIndex}
+                                dropTargetIndex={dropTargetIndex}
+                                onDragStart={handleDragStart}
+                                onDragEnter={handleDragEnter}
+                                onDragEnd={handleDragEnd}
+                                onDrop={handleDrop}
+                                onViewDetails={onViewDetails}
+                                onRemoveArtwork={onRemoveArtwork}
+                           />
                         ))}
                     </div>
                 )}

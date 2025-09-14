@@ -1,11 +1,10 @@
-
-
 import React from 'react';
 import { Project } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { HomeIcon, PlusCircleIcon, PencilIcon, TrashIcon } from './IconComponents';
 import { Button } from './ui/Button';
 import { EmptyState } from './ui/EmptyState';
+import { PageHeader } from './ui/PageHeader';
 
 interface WorkspaceProps {
     projects: Project[];
@@ -59,6 +58,12 @@ export const Workspace: React.FC<WorkspaceProps> = ({ projects, onNewProject, on
 
     return (
         <div className="flex flex-col h-full">
+             <PageHeader title={t('workspace.title')} icon={<HomeIcon className="w-8 h-8"/>}>
+                <Button onClick={onNewProject}>
+                    <PlusCircleIcon className="w-5 h-5 mr-2" />
+                    {t('workspace.newProject')}
+                </Button>
+            </PageHeader>
             {projects.length === 0 ? (
                  <EmptyState
                     icon={<HomeIcon className="w-16 h-16" />}

@@ -3,6 +3,11 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { TranslationProvider } from './contexts/TranslationContext';
 import { ModalProvider } from './contexts/ModalContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { AIStatusProvider } from './contexts/AIStatusContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { AppSettingsProvider } from './contexts/AppSettingsContext';
+import { ProfileProvider } from './contexts/ProfileContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -12,10 +17,20 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <TranslationProvider>
-      <ModalProvider>
-        <App />
-      </ModalProvider>
-    </TranslationProvider>
+    <ErrorBoundary>
+      <TranslationProvider>
+        <ToastProvider>
+          <AIStatusProvider>
+            <AppSettingsProvider>
+              <ProfileProvider>
+                <ModalProvider>
+                  <App />
+                </ModalProvider>
+              </ProfileProvider>
+            </AppSettingsProvider>
+          </AIStatusProvider>
+        </ToastProvider>
+      </TranslationProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

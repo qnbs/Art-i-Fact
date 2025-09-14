@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
 import { TutorialSteps } from './TutorialSteps';
-import { BookOpenIcon, ChevronRightIcon, CommandLineIcon, MagicWandIcon, ArrowPathIcon, SparklesIcon } from './IconComponents';
+import { BookOpenIcon, ChevronRightIcon, CommandLineIcon, MagicWandIcon, ArrowPathIcon, SparklesIcon, QuestionMarkCircleIcon, ArrowDownTrayIcon } from './IconComponents';
 import { Glossary } from './Glossary';
+import { PageHeader } from './ui/PageHeader';
 
 const TipItem: React.FC<{ icon: React.ReactNode; title: string; content: string; }> = ({ icon, title, content }) => (
     <div className="flex items-start p-4">
         <div className="flex-shrink-0 mr-4 text-amber-500 dark:text-amber-400">{icon}</div>
         <div>
             <h4 className="font-semibold text-lg text-gray-900 dark:text-white">{title}</h4>
-            <p className="text-gray-600 dark:text-gray-400">{content}</p>
+            <p className="text-gray-600 dark:text-gray-400" dangerouslySetInnerHTML={{ __html: content }} />
         </div>
     </div>
 );
@@ -24,6 +25,8 @@ export const Help: React.FC<{}> = () => {
     
     return (
         <div className="flex flex-col h-full animate-fade-in space-y-8">
+            <PageHeader title={t('help.title')} icon={<QuestionMarkCircleIcon className="w-8 h-8" />} />
+            
             <div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('help.tutorial.title')}</h3>
                 <TutorialSteps />
@@ -56,6 +59,7 @@ export const Help: React.FC<{}> = () => {
                     <TipItem icon={<MagicWandIcon className="w-8 h-8"/>} title={t('help.advanced.tip2.title')} content={t('help.advanced.tip2.content')} />
                     <TipItem icon={<ArrowPathIcon className="w-8 h-8"/>} title={t('help.advanced.tip3.title')} content={t('help.advanced.tip3.content')} />
                     <TipItem icon={<SparklesIcon className="w-8 h-8"/>} title={t('help.advanced.tip4.title')} content={t('help.advanced.tip4.content')} />
+                    <TipItem icon={<ArrowDownTrayIcon className="w-8 h-8"/>} title={t('help.advanced.tip5.title')} content={t('help.advanced.tip5.content')} />
                 </div>
             </div>
 

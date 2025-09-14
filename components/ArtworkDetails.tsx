@@ -1,17 +1,20 @@
 import React, { useState, useCallback } from 'react';
 import type { Artwork, Gallery, DeepDive } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useAI } from '../contexts/AIStatusContext';
+import { useAppSettings } from '../contexts/AppSettingsContext';
 import { generateDeepDive } from '../services/geminiService';
 import { getWikimediaImageUrl } from '../services/wikimediaService';
 import { ColorPalette } from './ColorPalette';
 import { AccordionItem } from './ui/AccordionItem';
 import { Button } from './ui/Button';
-import { JournalIcon, ChatBubbleLeftEllipsisIcon, ShareIcon } from './IconComponents';
+import { JournalIcon, ChatBubbleLeftEllipsisIcon } from './IconComponents';
 import { ImageWithFallback } from './ui/ImageWithFallback';
 
 interface ArtworkDetailsProps {
     artwork: Artwork;
     activeGallery: Gallery | null;
+    language: 'de' | 'en';
     onFindSimilar: (artwork: Artwork) => void;
     onInitiateAddToGallery: (artwork: Artwork) => void;
     onRemoveFromGallery: (artworkId: string) => void;
@@ -19,7 +22,6 @@ interface ArtworkDetailsProps {
     onThematicSearch: (themes: string[]) => void;
     onStartChat: (artwork: Artwork) => void;
     onClose: () => void;
-    showToast: (message: string) => void;
 }
 
 const Fact: React.FC<{ label: string; value: string | undefined; }> = ({ label, value }) => {
@@ -36,6 +38,7 @@ const Fact: React.FC<{ label: string; value: string | undefined; }> = ({ label, 
 export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
     artwork,
     activeGallery,
+    language,
     onFindSimilar,
     onInitiateAddToGallery,
     onRemoveFromGallery,
@@ -43,27 +46,23 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
     onThematicSearch,
     onStartChat,
     onClose,
-    showToast,
 }) => {
     const { t } = useTranslation();
+    const { handleAiTask, activeAiTask } = useAI();
+    const { appSettings } = useAppSettings();
     const [deepDive, setDeepDive] = useState<DeepDive | null>(null);
-    const [isLoadingDeepDive, setIsLoadingDeepDive] = useState(false);
 
+    const isLoadingDeepDive = activeAiTask === 'deepDive';
     const isInGallery = activeGallery?.artworks.some(a => a.id === artwork.id) ?? false;
     const galleryArtwork = activeGallery?.artworks.find(a => a.id === artwork.id);
 
     const handleGenerateDeepDive = useCallback(async () => {
         if (deepDive) return;
-        setIsLoadingDeepDive(true);
-        try {
-            const analysis = await generateDeepDive(artwork);
+        const analysis = await handleAiTask('deepDive', () => generateDeepDive(artwork, appSettings, language)) as DeepDive | undefined;
+        if (analysis) {
             setDeepDive(analysis);
-        } catch (err: any) {
-            showToast(t('toast.gallery.deepDiveError'));
-        } finally {
-            setIsLoadingDeepDive(false);
         }
-    }, [artwork, deepDive, showToast, t]);
+    }, [artwork, deepDive, handleAiTask, appSettings, language]);
 
     const createAttributionHtml = () => {
         if (!artwork.license) return null;
@@ -171,7 +170,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                         <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{t('modal.details.notes')}</label>
                         <textarea 
                             defaultValue={galleryArtwork?.comment}
-                            onChange={(e) => onAddComment(artwork.id, e.target.value)}
+                            onBlur={(e) => onAddComment(artwork.id, e.target.value)}
                             placeholder={t('modal.details.notes.placeholder')}
                             className="w-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-900 dark:text-white h-24"
                         />
@@ -188,14 +187,14 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                             <Button
                                 size="sm"
                                 onClick={handleGenerateDeepDive}
-                                disabled={isLoadingDeepDive}
+                                isLoading={isLoadingDeepDive}
                             >
                                 {isLoadingDeepDive ? t('gallery.suggestions.analyzing') : t('generate')}
                             </Button>
                         )}
                     </div>
                     {isLoadingDeepDive && (
-                        <div className="flex justify-center items-center py-4">
+                        <div className="flex justify-center items-center py-4" role="status" aria-label={t('gallery.suggestions.analyzing')}>
                             <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
                     )}

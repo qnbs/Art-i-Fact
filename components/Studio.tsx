@@ -1,23 +1,18 @@
-
-
 import React, { useState } from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
-import { PaintBrushIcon, SparklesIcon, SpinnerIcon, PlusCircleIcon, GalleryIcon, MagicWandIcon, ArrowPathIcon, CloseIcon } from './IconComponents';
+import { useAI } from '../contexts/AIStatusContext';
+import { useAppSettings } from '../contexts/AppSettingsContext';
+import { useToast } from '../contexts/ToastContext';
+import { PaintBrushIcon, SparklesIcon, SpinnerIcon, PlusCircleIcon, GalleryIcon, MagicWandIcon, CloseIcon } from './IconComponents';
 import type { Artwork } from '../types';
 import { Button } from './ui/Button';
 import { Skeleton } from './ui/Skeleton';
 import { ImageWithFallback } from './ui/ImageWithFallback';
-import { LoadingOverlay } from './ui/LoadingOverlay';
+import { PageHeader } from './ui/PageHeader';
+import * as gemini from '../services/geminiService';
 
 interface StudioProps {
-    onGenerateImage: (prompt: string, aspectRatio: '1:1' | '16:9' | '9:16' | '4:3' | '3:4') => Promise<string>;
-    onRemixImage: (base64Image: string, prompt: string) => Promise<string>;
-    onEnhancePrompt: (prompt: string) => Promise<string>;
     onInitiateAdd: (artwork: Artwork) => void;
-    activeAiTask: string | null;
-    showToast: (message: string) => void;
-    handleAiTask: <T>(taskName: string, taskFn: () => Promise<T>, options?: { onStart?: () => void; onEnd?: (result: T | undefined) => void; }) => Promise<T | undefined>;
-    loadingMessage: string;
 }
 
 const aspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:4'] as const;
@@ -32,29 +27,31 @@ const aspectRatioClasses: Record<AspectRatio, string> = {
 };
 
 
-export const Studio: React.FC<StudioProps> = ({
-    onGenerateImage, onRemixImage, onEnhancePrompt, onInitiateAdd, activeAiTask, showToast, handleAiTask, loadingMessage
-}) => {
-    const { t } = useTranslation();
+export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
+    const { t, language } = useTranslation();
+    const { handleAiTask, activeAiTask, loadingMessage } = useAI();
+    const { appSettings } = useAppSettings();
+    const { showToast } = useToast();
+    
     const [prompt, setPrompt] = useState('');
     const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
     const [generatedImage, setGeneratedImage] = useState<string | null>(null);
     const [isImageVisible, setIsImageVisible] = useState(false);
-    const [isEnhancing, setIsEnhancing] = useState(false);
     const [isRemixMode, setIsRemixMode] = useState(false);
     const [originalPrompt, setOriginalPrompt] = useState('');
 
-    const isLoading = activeAiTask === 'studio' || activeAiTask === 'remix';
+    const isLoading = activeAiTask === 'studioGenerate' || activeAiTask === 'remix';
+    const isEnhancing = activeAiTask === 'enhance';
 
     const handleGenerateOrRemix = async () => {
         if (!prompt.trim()) return;
         
-        const taskName = isRemixMode ? 'remix' : 'studio';
+        const taskName = isRemixMode ? 'remix' : 'studioGenerate';
         const apiFn = isRemixMode 
-            ? () => onRemixImage(generatedImage!, prompt)
-            : () => onGenerateImage(prompt, aspectRatio);
+            ? () => gemini.remixImage(generatedImage!, prompt)
+            : () => gemini.generateImage(prompt, aspectRatio);
 
-        const result = await handleAiTask(taskName, apiFn);
+        const result = await handleAiTask(taskName, apiFn) as string | undefined;
 
         if (result) {
             setIsImageVisible(false); // Hide before setting new image to re-trigger fade-in
@@ -80,13 +77,11 @@ export const Studio: React.FC<StudioProps> = ({
 
     const handleEnhance = async () => {
         if (!prompt.trim()) return;
-        setIsEnhancing(true);
-        const enhancedPrompt = await handleAiTask('enhance', () => onEnhancePrompt(prompt));
-        setIsEnhancing(false);
+        const enhancedPrompt = await handleAiTask('enhance', () => gemini.enhancePrompt(prompt, appSettings, language)) as string | undefined;
 
         if (enhancedPrompt) {
             setPrompt(enhancedPrompt);
-            showToast(t('toast.studio.promptEnhanced'));
+            showToast(t('toast.studio.promptEnhanced'), 'success');
         }
     };
 
@@ -109,14 +104,12 @@ export const Studio: React.FC<StudioProps> = ({
     }
 
     return (
-        <div className="flex flex-col h-full bg-white/50 dark:bg-black/20 rounded-lg p-4 md:p-6 overflow-y-auto">
-            <div className="flex-shrink-0">
-                <h2 className="text-2xl font-bold mb-2 text-amber-500 dark:text-amber-400 flex items-center">
-                    <PaintBrushIcon className="w-7 h-7 mr-2" />
-                    {t('studio.title')}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">{t('studio.subtitle')}</p>
-            </div>
+        <div className="flex flex-col h-full">
+            <PageHeader 
+                title={t('studio.title')} 
+                subtitle={t('studio.subtitle')}
+                icon={<PaintBrushIcon className="w-8 h-8" />}
+            />
 
             <div className="flex-grow flex flex-col md:flex-row gap-6">
                 {/* Controls */}
@@ -127,6 +120,7 @@ export const Studio: React.FC<StudioProps> = ({
                         placeholder={isRemixMode ? t('studio.remix.placeholder') : t('studio.prompt.placeholder')}
                         className="w-full flex-grow bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none min-h-[150px]"
                         disabled={isLoading || isEnhancing}
+                        aria-label={t('studio.prompt.placeholder')}
                     />
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('studio.aspectRatio')}</label>
@@ -137,6 +131,7 @@ export const Studio: React.FC<StudioProps> = ({
                                     onClick={() => setAspectRatio(ar)}
                                     className={`py-2 px-1 text-sm rounded-md transition-colors ${aspectRatio === ar ? 'bg-amber-600 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
                                     disabled={isLoading || isEnhancing || isRemixMode}
+                                    aria-pressed={aspectRatio === ar}
                                 >
                                     {ar}
                                 </button>
@@ -151,6 +146,7 @@ export const Studio: React.FC<StudioProps> = ({
                                 disabled={isLoading || isEnhancing || !prompt.trim() || isRemixMode}
                                 className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-lg p-3 flex items-center justify-center font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 title={t('studio.enhancePrompt')}
+                                aria-label={t('studio.enhancePrompt')}
                             >
                                 {isEnhancing ? <SpinnerIcon className="w-5 h-5" /> : <MagicWandIcon className="w-5 h-5" />}
                             </button>
@@ -207,9 +203,9 @@ export const Studio: React.FC<StudioProps> = ({
                 </div>
 
                 {/* Image Display */}
-                <div className="md:w-2/3 flex-grow bg-gray-100 dark:bg-gray-900/50 rounded-lg flex items-center justify-center p-4 min-h-[300px] relative">
+                <div className="md:w-2/3 flex-grow bg-gray-100 dark:bg-gray-900/50 rounded-lg flex items-center justify-center p-4 min-h-[300px] relative" role="region" aria-live="polite" aria-label="Generated image display">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center w-full h-full text-center">
+                        <div className="flex flex-col items-center justify-center w-full h-full text-center" role="status" aria-label={loadingMessage}>
                             <div className={`w-full max-w-md ${aspectRatioClasses[aspectRatio]}`}>
                                 <Skeleton className="w-full h-full" />
                             </div>

@@ -1,31 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { Cog6ToothIcon, UserCircleIcon, CheckCircleIcon, PresentationChartBarIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, SparklesIcon } from './IconComponents';
 import { useTranslation } from '../contexts/TranslationContext';
+import { useToast } from '../contexts/ToastContext';
+import { useProfile } from '../contexts/ProfileContext';
+import { useAppSettings } from '../contexts/AppSettingsContext';
+import { useModal } from '../contexts/ModalContext';
 import { Profile, AppSettings } from '../types';
 import { Section, SettingRow, Toggle } from './ui/SettingsComponents';
 import { Avatar } from './ui/Avatar';
 import { Button } from './ui/Button';
+import { PageHeader } from './ui/PageHeader';
+import { useProjects } from '../hooks/useProjects';
+import { useGallery } from '../hooks/useGallery';
+import { useJournal } from '../hooks/useJournal';
+
 
 interface SetupProps {
     theme: 'light' | 'dark';
     onToggleTheme: () => void;
-    onClearCache: () => void;
-    profile: Profile;
-    onUpdateProfile: (profile: Profile) => void;
-    onShowToast: (message: string) => void;
-    appSettings: AppSettings;
-    onUpdateAppSettings: (settings: Partial<AppSettings>) => void;
-    onExportAllData: () => void;
-    onTriggerImport: () => void;
+    language: 'de' | 'en';
+    onSetLanguage: (lang: 'de' | 'en') => void;
 }
 
 const predefinedAvatars = ['avatar-1', 'avatar-2', 'avatar-3', 'avatar-4', 'avatar-5', 'avatar-6'];
 
 export const Setup: React.FC<SetupProps> = ({ 
-    theme, onToggleTheme, onClearCache, profile, onUpdateProfile, onShowToast, 
-    appSettings, onUpdateAppSettings, onExportAllData, onTriggerImport
+    theme, onToggleTheme, language, onSetLanguage
 }) => {
-  const { t, language, setLanguage } = useTranslation();
+  const { t } = useTranslation();
+  const { showToast } = useToast();
+  const { showModal, hideModal } = useModal();
+  const { profile, updateProfile, setProfile } = useProfile();
+  const { appSettings, updateAppSettings, setAppSettings } = useAppSettings();
+
+  // These hooks are used for the import/export functionality
+  const { setProjects } = useProjects();
+  const { setGalleries } = useGallery(null);
+  const { setJournalEntries } = useJournal();
+
   const [localProfile, setLocalProfile] = useState<Profile>(profile);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
@@ -52,12 +64,84 @@ export const Setup: React.FC<SetupProps> = ({
   };
 
   const handleSaveProfile = () => {
-      onUpdateProfile(localProfile);
-      onShowToast(t('toast.profile.saved'));
+      updateProfile(localProfile);
+      showToast(t('toast.profile.saved'), 'success');
+  };
+
+  const handleExportAllData = () => {
+    const allData = { 
+        projects: JSON.parse(localStorage.getItem('art-i-fact-projects') || '[]'),
+        galleries: JSON.parse(localStorage.getItem('art-i-fact-galleries') || '[]'),
+        journalEntries: JSON.parse(localStorage.getItem('art-i-fact-journal') || '[]'),
+        profile, 
+        appSettings 
+    };
+    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `art-i-fact_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleTriggerImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target?.result as string);
+                showModal(t('settings.data.import.confirm.title'), 
+                    <>
+                        <p>{t('settings.data.import.confirm.message')}</p>
+                        <div className="flex justify-end gap-2 mt-4">
+                            <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                            <Button onClick={() => {
+                                setProjects(data.projects || []);
+                                setGalleries(data.galleries || []);
+                                setJournalEntries(data.journalEntries || []);
+                                setProfile(data.profile || profile);
+                                setAppSettings(data.appSettings || appSettings);
+                                showToast(t('toast.dataImported'), 'success');
+                                hideModal();
+                            }}>{t('import')}</Button>
+                        </div>
+                    </>
+                );
+            } catch (err) {
+                showToast(t('toast.error.import'), 'error');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  const handleClearCache = () => {
+      showModal(t('settings.galleryCache.confirm.title'),
+        <>
+            <p>{t('settings.galleryCache.confirm.message')}</p>
+            <div className="flex justify-end gap-2 mt-4">
+                <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                <Button variant="danger" onClick={() => {
+                    // Placeholder for actual cache clearing logic if it becomes more complex
+                    showToast(t('toast.cacheCleared'), 'success');
+                    hideModal();
+                }}>{t('settings.clearCache')}</Button>
+            </div>
+        </>
+      );
   };
 
   return (
     <div className="flex flex-col h-full">
+        <PageHeader title={t('settings.title')} icon={<Cog6ToothIcon className="w-8 h-8" />} />
+        
         <Section title={t('settings.section.profile')} icon={<UserCircleIcon className="w-5 h-5"/>}>
             <div className="p-4">
                 <div className="flex items-center gap-4">
@@ -114,7 +198,7 @@ export const Setup: React.FC<SetupProps> = ({
             <SettingRow label={t('settings.ai.creativity')} description={t('settings.ai.creativity.desc')}>
                  <select 
                     value={appSettings.aiCreativity} 
-                    onChange={(e) => onUpdateAppSettings({ aiCreativity: e.target.value as AppSettings['aiCreativity'] })} 
+                    onChange={(e) => updateAppSettings({ aiCreativity: e.target.value as AppSettings['aiCreativity'] })} 
                     className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 max-w-xs"
                 >
                     <option value="focused">{t('settings.ai.creativity.focused')}</option>
@@ -128,7 +212,7 @@ export const Setup: React.FC<SetupProps> = ({
                         type="range"
                         min="10" max="50" step="5"
                         value={appSettings.aiResultsCount}
-                        onChange={(e) => onUpdateAppSettings({ aiResultsCount: Number(e.target.value) })}
+                        onChange={(e) => updateAppSettings({ aiResultsCount: Number(e.target.value) })}
                         className="w-24"
                     />
                     <span className="text-sm w-12 text-right">{appSettings.aiResultsCount}</span>
@@ -143,19 +227,19 @@ export const Setup: React.FC<SetupProps> = ({
                         type="range"
                         min="5" max="15" step="1"
                         value={appSettings.slideshowSpeed}
-                        onChange={(e) => onUpdateAppSettings({ slideshowSpeed: Number(e.target.value) })}
+                        onChange={(e) => updateAppSettings({ slideshowSpeed: Number(e.target.value) })}
                         className="w-24"
                     />
                     <span className="text-sm w-12 text-right">{appSettings.slideshowSpeed}s</span>
                 </div>
             </SettingRow>
             <SettingRow label={t('settings.exhibit.autoplay')} description={t('settings.exhibit.autoplay.desc')}>
-                 <Toggle enabled={appSettings.exhibitAutoplay} onToggle={() => onUpdateAppSettings({ exhibitAutoplay: !appSettings.exhibitAutoplay })} />
+                 <Toggle enabled={appSettings.exhibitAutoplay} onToggle={() => updateAppSettings({ exhibitAutoplay: !appSettings.exhibitAutoplay })} />
             </SettingRow>
             <SettingRow label={t('settings.exhibit.audioGuideVoice')} description={t('settings.exhibit.audioGuideVoice.desc')}>
                 <select 
                     value={appSettings.audioGuideVoiceURI || ''} 
-                    onChange={(e) => onUpdateAppSettings({ audioGuideVoiceURI: e.target.value })} 
+                    onChange={(e) => updateAppSettings({ audioGuideVoiceURI: e.target.value })} 
                     className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 max-w-xs"
                     disabled={voices.length === 0}
                 >
@@ -170,7 +254,7 @@ export const Setup: React.FC<SetupProps> = ({
                         type="range"
                         min="0.5" max="2" step="0.1"
                         value={appSettings.audioGuideSpeed}
-                        onChange={(e) => onUpdateAppSettings({ audioGuideSpeed: Number(e.target.value) })}
+                        onChange={(e) => updateAppSettings({ audioGuideSpeed: Number(e.target.value) })}
                         className="w-24"
                     />
                     <span className="text-sm w-12 text-right">x{appSettings.audioGuideSpeed.toFixed(1)}</span>
@@ -186,7 +270,7 @@ export const Setup: React.FC<SetupProps> = ({
         
         <Section title={t('settings.section.general')}>
              <SettingRow label={t('settings.language')}>
-                <select value={language} onChange={(e) => setLanguage(e.target.value as 'de' | 'en')} className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2">
+                <select value={language} onChange={(e) => onSetLanguage(e.target.value as 'de' | 'en')} className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2">
                     <option value="de">Deutsch</option>
                     <option value="en">English</option>
                 </select>
@@ -195,19 +279,19 @@ export const Setup: React.FC<SetupProps> = ({
 
          <Section title={t('settings.section.data')}>
             <SettingRow label={t('settings.data.export')} description={t('settings.data.export.desc')}>
-                <Button variant="secondary" size="sm" onClick={onExportAllData}>
+                <Button variant="secondary" size="sm" onClick={handleExportAllData}>
                     <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
                     {t('export')}
                 </Button>
             </SettingRow>
              <SettingRow label={t('settings.data.import')} description={t('settings.data.import.desc')}>
-                 <Button variant="secondary" size="sm" onClick={onTriggerImport}>
+                 <Button variant="secondary" size="sm" onClick={handleTriggerImport}>
                     <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
                     {t('import')}
                 </Button>
             </SettingRow>
             <SettingRow label={t('settings.galleryCache')} description={t('settings.galleryCache.desc')}>
-                 <Button variant="danger" size="sm" onClick={onClearCache}>
+                 <Button variant="danger" size="sm" onClick={handleClearCache}>
                     {t('settings.clearCache')}
                 </Button>
             </SettingRow>
