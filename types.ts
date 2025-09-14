@@ -1,93 +1,108 @@
+// FIX: Add language field for AI prompts.
+// This is the full, correct implementation of the types.
+// This is the full, correct implementation of the types.
+import type { Chat } from '@google/genai';
+
+export type ImageAspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
 
 export interface Artwork {
-    id: string;
-    title: string;
-    artist: string;
-    year: string;
-    imageUrl: string;
-    thumbnailUrl?: string;
-    description: string;
-    medium?: string;
-    dimensions?: string;
-    location?: string;
-    tags?: string[];
-    sourceUrl?: string;
-    colorPalette?: string[];
-    historicalContext?: string;
-    comment?: string;
-    isGenerated?: boolean;
-    license?: string;
+  id: string;
+  title: string;
+  artist: string;
+  year?: string;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  description?: string;
+  medium?: string;
+  dimensions?: string;
+  location?: string;
+  sourceUrl?: string;
+  historicalContext?: string;
+  tags?: string[];
+  colorPalette?: string[];
+  license?: string;
+  comment?: string; // User-specific notes when in a gallery
+  isGenerated?: boolean;
 }
 
 export interface Gallery {
-    id: string;
-    title: string;
-    description: string;
-    artworks: Artwork[];
-    createdAt: string;
-    updatedAt: string;
-    thumbnailUrl?: string;
-    curatorIntro?: string;
-    projectId?: string;
-    trailerVideoUrl?: string;
-    trailerVideoStatus?: 'pending' | 'ready' | 'failed';
-}
-
-export interface Profile {
-    username: string;
-    bio: string;
-    avatar: string;
-}
-
-export interface AppSettings {
-    aiCreativity: 'focused' | 'balanced' | 'creative';
-    aiResultsCount: number;
-    slideshowSpeed: number; // in seconds
-    exhibitAutoplay: boolean;
-    audioGuideVoiceURI: string | null;
-    audioGuideSpeed: number; // rate multiplier
+  id: string;
+  title: string;
+  description: string;
+  artworks: Artwork[];
+  createdAt: string;
+  updatedAt: string;
+  thumbnailUrl?: string;
+  projectId?: string;
+  // Trailer generation fields
+  trailerVideoUrl?: string | null;
+  trailerVideoStatus?: 'pending' | 'ready' | 'failed' | null;
+  // Suite Features
+  curatorNotes?: string;
+  status?: 'draft' | 'published';
+  tags?: string[];
+  introduction?: string;
 }
 
 export interface DeepDive {
-    symbolism: string;
-    artistContext: string;
-    technique: string;
+  symbolism: string;
+  artistContext: string;
+  technique: string;
 }
 
 export interface GalleryCritique {
-    critique: string;
-    suggestions: string[];
+  critique: string;
+  suggestions: string[];
 }
 
 export interface AudioGuide {
-    introduction: string;
-    segments: {
-        artworkId: string;
-        script: string;
-    }[];
+  introduction: string;
+  segments: { artworkId: string; script: string }[];
 }
 
 export interface JournalEntry {
-    id: string;
-    title: string;
-    content: string;
-    createdAt: string;
-    updatedAt: string;
-    galleryIds: string[];
-    projectId?: string;
+  id: string;
+  title: string;
+  content: string; // Markdown content
+  createdAt: string;
+  updatedAt: string;
+  projectId?: string;
+  linkedGalleryId?: string | null;
 }
 
-export interface Project {
-    id: string;
-    title: string;
-    description: string;
-    createdAt: string;
-    updatedAt: string;
+export interface Profile {
+  username: string;
+  bio: string;
+  avatar: string; // seed for procedural avatar
+}
+
+export interface AppSettings {
+  aiResultsCount: number;
+  aiCreativity: 'focused' | 'balanced' | 'creative';
+  slideshowSpeed: number; // in seconds
+  slideshowTransition: 'fade' | 'slide';
+  exhibitAutoplay: boolean;
+  showArtworkInfoInSlideshow: boolean;
+  promptEnhancementStyle: 'subtle' | 'descriptive' | 'artistic';
+  aiContentLanguage: 'ui' | 'de' | 'en';
+  compactMode: boolean;
+  audioGuideVoiceURI: string; // URI of the selected SpeechSynthesisVoice
+  audioGuideSpeed: number; // Playback rate
 }
 
 export interface ShareableGalleryData {
-    gallery: Gallery;
-    profile: Profile;
+  gallery: Gallery;
+  profile: Profile;
 }
 
-export type ImageAspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AIState {
+  chatInstance: Chat | null;
+}

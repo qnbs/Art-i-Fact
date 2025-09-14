@@ -1,11 +1,12 @@
+
 import React, { useState, DragEvent, memo } from 'react';
-import { Gallery, Artwork, AudioGuide, GalleryCritique } from '../types';
+import type { Gallery, Artwork, AudioGuide, GalleryCritique } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useModal } from '../contexts/ModalContext';
 import { useAI } from '../contexts/AIStatusContext';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAppSettings } from '../contexts/AppSettingsContext';
-import { SparklesIcon, PresentationChartBarIcon, ShareIcon, TrashIcon, CheckCircleIcon, PencilIcon, SpinnerIcon, InfoIcon, HomeIcon } from './IconComponents';
+import { SparklesIcon, PresentationChartBarIcon, ShareIcon, TrashIcon, CheckCircleIcon, PencilIcon, SpinnerIcon, InfoIcon, HomeIcon, ArrowDownIcon } from './IconComponents';
 import { Button } from './ui/Button';
 import { ExhibitionMode } from './ExhibitionMode';
 import { CritiqueModalContent } from './CritiqueModalContent';
@@ -64,13 +65,15 @@ const DraggableArtworkItem = memo<{
             >
                 <InfoIcon className="w-5 h-5" />
             </button>
-            <button
-                onClick={(e) => { e.stopPropagation(); onRemoveArtwork(art.id); }}
-                className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2.5 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-all hover:bg-red-600/70 focus-visible:ring-2 focus-visible:ring-red-500"
-                aria-label={t('remove')}
-            >
-                <TrashIcon className="w-5 h-5" />
-            </button>
+            <Tooltip text={t('remove')}>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onRemoveArtwork(art.id); }}
+                    className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2.5 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-all hover:bg-red-600/70 focus-visible:ring-2 focus-visible:ring-red-500"
+                    aria-label={t('remove')}
+                >
+                    <TrashIcon className="w-5 h-5" />
+                </button>
+            </Tooltip>
         </div>
     );
 });
@@ -93,6 +96,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     const [exhibitionAudioGuide, setExhibitionAudioGuide] = useState<AudioGuide | undefined>(undefined);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+    const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
 
 
     const handleSave = () => {
@@ -100,22 +104,29 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         setIsEditing(false);
     };
 
-    const handleCritique = async () => {
-        const result = await handleAiTask('critique', () => gemini.generateCritique(gallery, appSettings, language)) as GalleryCritique | undefined;
-        if (result) {
-            showModal(t('gallery.critique.modal.critique'), <CritiqueModalContent critiqueResult={result} />);
-        }
+    const handleCritique = () => {
+        setIsAiMenuOpen(false);
+        const result = handleAiTask('critique', () => gemini.generateCritique(gallery, appSettings, language)) as Promise<GalleryCritique | undefined>;
+        result.then(critiqueResult => {
+            if (critiqueResult) {
+                showModal(t('gallery.critique.modal.critique'), <CritiqueModalContent critiqueResult={critiqueResult} />);
+            }
+        });
     };
 
-    const handleAudioGuide = async () => {
-        const result = await handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile, appSettings, language)) as AudioGuide | undefined;
-        if (result) {
-            setExhibitionAudioGuide(result);
-            setShowExhibition(true);
-        }
+    const handleAudioGuide = () => {
+        setIsAiMenuOpen(false);
+        const result = handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile, appSettings, language)) as Promise<AudioGuide | undefined>;
+        result.then(audioGuideResult => {
+            if (audioGuideResult) {
+                setExhibitionAudioGuide(audioGuideResult);
+                setShowExhibition(true);
+            }
+        });
     };
     
-    const handleTrailer = async () => {
+    const handleTrailer = () => {
+        setIsAiMenuOpen(false);
         if (gallery.trailerVideoStatus === 'pending') return;
         handleAiTask('trailer', () => gemini.generateTrailerVideo(gallery), {
             onStart: () => onUpdate(g => ({ ...g, trailerVideoStatus: 'pending' })),
@@ -221,20 +232,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     <ShareIcon className="w-5 h-5 mr-2" />
                     {t('gallery.share')}
                 </Button>
-                <div className="relative inline-block">
-                     <Button variant="secondary" className="peer">
-                        <SparklesIcon className="w-5 h-5 mr-2" />
-                        AI Assistant
-                    </Button>
-                    <div className="absolute z-10 top-full mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 opacity-0 peer-focus:opacity-100 hover:opacity-100 transition-opacity focus-within:opacity-100">
-                        <div className="py-1" role="menu" aria-orientation="vertical">
-                            <a href="#" onClick={handleCritique} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.critique')}</a>
-                            <a href="#" onClick={handleAudioGuide} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.audioGuide')}</a>
-                            <a href="#" onClick={handleTrailer} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.trailer')}</a>
+                <details className="relative" onToggle={(e) => setIsAiMenuOpen(e.currentTarget.open)}>
+                    <summary className="list-none">
+                        <Button variant="secondary" as="div" className="flex items-center">
+                            <SparklesIcon className="w-5 h-5 mr-2" />
+                            AI Assistant
+                            <ArrowDownIcon className="w-4 h-4 ml-2" />
+                        </Button>
+                    </summary>
+                     {isAiMenuOpen && (
+                        <div className="absolute z-10 top-full mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 animate-fade-in">
+                            <div className="py-1" role="menu" aria-orientation="vertical">
+                                <button onClick={handleCritique} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.critique')}</button>
+                                <button onClick={handleAudioGuide} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.audioGuide')}</button>
+                                <button onClick={handleTrailer} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.trailer')}</button>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                {gallery.trailerVideoUrl && gallery.trailerVideoStatus === 'ready' && <a href={`${gallery.trailerVideoUrl}&key=${process.env.API_KEY}`} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600">{t('gallery.ai.trailer.ready')}</a>}
+                    )}
+                </details>
+                {gallery.trailerVideoUrl && gallery.trailerVideoStatus === 'ready' && <a href={`${gallery.trailerVideoUrl}&key=${process.env.API_KEY!}`} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600">{t('gallery.ai.trailer.ready')}</a>}
                 {gallery.trailerVideoStatus === 'pending' && <p className="text-sm text-amber-600 flex items-center gap-2"><SpinnerIcon className="w-4 h-4" /> {t('gallery.ai.trailer.pending')}</p>}
                 {gallery.trailerVideoStatus === 'failed' && <p className="text-sm text-red-600">{t('gallery.ai.trailer.failed')}</p>}
             </div>

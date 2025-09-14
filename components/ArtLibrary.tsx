@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, ChangeEvent, useCallback } from 'react';
 import type { Artwork } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';

@@ -1,314 +1,237 @@
-import React, { useState, useEffect } from 'react';
-import { Cog6ToothIcon, UserCircleIcon, CheckCircleIcon, PresentationChartBarIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, SparklesIcon } from './IconComponents';
+
+import React, { useState } from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
-import { useToast } from '../contexts/ToastContext';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAppSettings } from '../contexts/AppSettingsContext';
 import { useModal } from '../contexts/ModalContext';
-import { Profile, AppSettings } from '../types';
 import { Section, SettingRow, Toggle } from './ui/SettingsComponents';
-import { Avatar } from './ui/Avatar';
-import { Button } from './ui/Button';
 import { PageHeader } from './ui/PageHeader';
-import { useProjects } from '../hooks/useProjects';
-import { useGallery } from '../hooks/useGallery';
-import { useJournal } from '../hooks/useJournal';
+import { Cog6ToothIcon, UserCircleIcon, SparklesIcon, PaintBrushIcon, PresentationChartBarIcon, TrashIcon } from './IconComponents';
+import { Button } from './ui/Button';
+import { Avatar } from './ui/Avatar';
 
+const AppResetModal: React.FC<{ onConfirm: () => void, onClose: () => void }> = ({ onConfirm, onClose }) => {
+    const { t } = useTranslation();
+    const [confirmationText, setConfirmationText] = useState('');
+    const [finalConfirm, setFinalConfirm] = useState(false);
+    const APP_NAME = "Art-i-Fact";
+    const isConfirmed = confirmationText === APP_NAME;
+
+    const handleInitialConfirm = () => {
+        if (isConfirmed) {
+            setFinalConfirm(true);
+        }
+    }
+
+    if (finalConfirm) {
+        return (
+            <div>
+                <h3 className="font-bold text-lg text-red-600 mb-2">{t('settings.danger.reset.final.title')}</h3>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">{t('settings.danger.reset.final.desc')}</p>
+                <div className="flex justify-end gap-2">
+                    <Button variant="secondary" onClick={onClose}>{t('cancel')}</Button>
+                    <Button variant="danger" onClick={onConfirm}>{t('confirm')}</Button>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">{t('settings.danger.reset.confirm.desc', { appName: APP_NAME })}</p>
+            <input
+                type="text"
+                value={confirmationText}
+                onChange={(e) => setConfirmationText(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={onClose}>{t('cancel')}</Button>
+                <Button variant="danger" onClick={handleInitialConfirm} disabled={!isConfirmed}>{t('confirm')}</Button>
+            </div>
+        </div>
+    );
+};
 
 interface SetupProps {
     theme: 'light' | 'dark';
     onToggleTheme: () => void;
     language: 'de' | 'en';
     onSetLanguage: (lang: 'de' | 'en') => void;
+    onImportClick: () => void;
+    onExport: () => void;
+    onResetApp: () => void;
 }
 
-const predefinedAvatars = ['avatar-1', 'avatar-2', 'avatar-3', 'avatar-4', 'avatar-5', 'avatar-6'];
-
-export const Setup: React.FC<SetupProps> = ({ 
-    theme, onToggleTheme, language, onSetLanguage
-}) => {
-  const { t } = useTranslation();
-  const { showToast } = useToast();
-  const { showModal, hideModal } = useModal();
-  const { profile, updateProfile, setProfile } = useProfile();
-  const { appSettings, updateAppSettings, setAppSettings } = useAppSettings();
-
-  // These hooks are used for the import/export functionality
-  const { setProjects } = useProjects();
-  const { setGalleries } = useGallery(null);
-  const { setJournalEntries } = useJournal();
-
-  const [localProfile, setLocalProfile] = useState<Profile>(profile);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-
-  useEffect(() => {
-    const getVoices = () => {
-        const availableVoices = window.speechSynthesis.getVoices();
-        const langPrefix = language === 'de' ? 'de' : 'en';
-        const filteredVoices = availableVoices.filter(v => v.lang.startsWith(langPrefix));
-        setVoices(filteredVoices.length > 0 ? filteredVoices : availableVoices);
+export const Setup: React.FC<SetupProps> = ({ theme, onToggleTheme, language, onSetLanguage, onImportClick, onExport, onResetApp }) => {
+    const { t } = useTranslation();
+    const { profile, setProfile } = useProfile();
+    const { appSettings, setAppSettings } = useAppSettings();
+    const { showModal, hideModal } = useModal();
+    
+    const handleProfileChange = (field: keyof typeof profile, value: string) => {
+        setProfile({ [field]: value });
     };
-    getVoices();
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = getVoices;
-    }
-  }, [language]);
 
-
-  useEffect(() => {
-      setLocalProfile(profile);
-  }, [profile]);
-
-  const handleProfileChange = (field: keyof Profile, value: string) => {
-      setLocalProfile(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveProfile = () => {
-      updateProfile(localProfile);
-      showToast(t('toast.profile.saved'), 'success');
-  };
-
-  const handleExportAllData = () => {
-    const allData = { 
-        projects: JSON.parse(localStorage.getItem('art-i-fact-projects') || '[]'),
-        galleries: JSON.parse(localStorage.getItem('art-i-fact-galleries') || '[]'),
-        journalEntries: JSON.parse(localStorage.getItem('art-i-fact-journal') || '[]'),
-        profile, 
-        appSettings 
+    const handleSettingsChange = (field: keyof typeof appSettings, value: any) => {
+        setAppSettings({ [field]: value });
     };
-    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `art-i-fact_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleTriggerImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json';
-    input.onchange = (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const data = JSON.parse(event.target?.result as string);
-                showModal(t('settings.data.import.confirm.title'), 
-                    <>
-                        <p>{t('settings.data.import.confirm.message')}</p>
-                        <div className="flex justify-end gap-2 mt-4">
-                            <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
-                            <Button onClick={() => {
-                                setProjects(data.projects || []);
-                                setGalleries(data.galleries || []);
-                                setJournalEntries(data.journalEntries || []);
-                                setProfile(data.profile || profile);
-                                setAppSettings(data.appSettings || appSettings);
-                                showToast(t('toast.dataImported'), 'success');
-                                hideModal();
-                            }}>{t('import')}</Button>
-                        </div>
-                    </>
-                );
-            } catch (err) {
-                showToast(t('toast.error.import'), 'error');
-            }
-        };
-        reader.readAsText(file);
+    
+    const openResetModal = () => {
+        showModal(
+            t('settings.danger.reset.confirm.title'),
+            <AppResetModal onConfirm={onResetApp} onClose={hideModal} />
+        );
     };
-    input.click();
-  };
 
-  const handleClearCache = () => {
-      showModal(t('settings.galleryCache.confirm.title'),
-        <>
-            <p>{t('settings.galleryCache.confirm.message')}</p>
-            <div className="flex justify-end gap-2 mt-4">
-                <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
-                <Button variant="danger" onClick={() => {
-                    // Placeholder for actual cache clearing logic if it becomes more complex
-                    showToast(t('toast.cacheCleared'), 'success');
-                    hideModal();
-                }}>{t('settings.clearCache')}</Button>
-            </div>
-        </>
-      );
-  };
+    const availableAvatars = ['avatar-1', 'avatar-2', 'avatar-3', 'avatar-4', 'avatar-5', 'avatar-6'];
 
-  return (
-    <div className="flex flex-col h-full">
-        <PageHeader title={t('settings.title')} icon={<Cog6ToothIcon className="w-8 h-8" />} />
-        
-        <Section title={t('settings.section.profile')} icon={<UserCircleIcon className="w-5 h-5"/>}>
-            <div className="p-4">
-                <div className="flex items-center gap-4">
-                    <Avatar seed={localProfile.avatar} className="w-20 h-20 rounded-full flex-shrink-0" />
-                    <div className="flex-grow">
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('settings.profile.username')}</label>
-                        <input
-                          id="username"
-                          type="text"
-                          value={localProfile.username}
-                          onChange={(e) => handleProfileChange('username', e.target.value)}
-                          placeholder={t('settings.profile.username.placeholder')}
-                          className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
-                    </div>
-                </div>
+    return (
+        <div className="max-w-4xl mx-auto">
+            <PageHeader title={t('settings.title')} icon={<Cog6ToothIcon className="w-8 h-8" />} />
 
-                <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('settings.profile.avatar')}</label>
-                    <div className="flex flex-wrap gap-2">
-                        {predefinedAvatars.map(avatarId => (
-                            <button 
-                                key={avatarId}
-                                onClick={() => handleProfileChange('avatar', avatarId)}
-                                className={`rounded-full p-1 transition-all ${localProfile.avatar === avatarId ? 'ring-2 ring-amber-500' : ''}`}
-                            >
-                                <Avatar seed={avatarId} className="w-12 h-12" />
+            <Section title={t('settings.profile.title')} icon={<UserCircleIcon className="w-5 h-5" />}>
+                <SettingRow label={t('settings.profile.username')}>
+                    <input
+                        type="text"
+                        value={profile.username}
+                        onChange={(e) => handleProfileChange('username', e.target.value)}
+                        className="w-48 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2 text-right"
+                    />
+                </SettingRow>
+                <SettingRow label={t('settings.profile.bio')}>
+                    <textarea
+                        value={profile.bio}
+                        onChange={(e) => handleProfileChange('bio', e.target.value)}
+                        className="w-48 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2 text-right"
+                        rows={2}
+                    />
+                </SettingRow>
+                <SettingRow label={t('settings.profile.avatar')}>
+                    <div className="flex gap-2">
+                        {availableAvatars.map(avatarId => (
+                            <button key={avatarId} onClick={() => handleProfileChange('avatar', avatarId)} className={`rounded-full p-1 ${profile.avatar === avatarId ? 'ring-2 ring-amber-500' : ''}`}>
+                                <Avatar seed={avatarId} className="w-10 h-10" />
                             </button>
                         ))}
                     </div>
-                </div>
+                </SettingRow>
+            </Section>
 
-                <div className="mt-4">
-                     <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('settings.profile.bio')}</label>
-                     <textarea
-                       id="bio"
-                       value={localProfile.bio}
-                       onChange={(e) => handleProfileChange('bio', e.target.value)}
-                       placeholder={t('settings.profile.bio.placeholder')}
-                       rows={3}
-                       className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                     />
-                </div>
-                <div className="mt-4 flex justify-end">
-                    <Button onClick={handleSaveProfile}>
-                        <CheckCircleIcon className="w-5 h-5 mr-2"/>
-                        {t('settings.profile.save')}
-                    </Button>
-                </div>
-            </div>
-        </Section>
+            <Section title={t('settings.general.title')} icon={<Cog6ToothIcon className="w-5 h-5" />}>
+                <SettingRow label={t('settings.general.language')}>
+                    <div className="flex gap-1 bg-gray-200 dark:bg-gray-800 p-1 rounded-md">
+                        <Button size="sm" variant={language === 'de' ? 'primary' : 'ghost'} onClick={() => onSetLanguage('de')}>DE</Button>
+                        <Button size="sm" variant={language === 'en' ? 'primary' : 'ghost'} onClick={() => onSetLanguage('en')}>EN</Button>
+                    </div>
+                </SettingRow>
+                <SettingRow label={t('settings.general.theme')}>
+                     <div className="flex gap-1 bg-gray-200 dark:bg-gray-800 p-1 rounded-md">
+                        <Button size="sm" variant={theme === 'light' ? 'primary' : 'ghost'} onClick={() => theme === 'dark' && onToggleTheme()}>Light</Button>
+                        <Button size="sm" variant={theme === 'dark' ? 'primary' : 'ghost'} onClick={() => theme === 'light' && onToggleTheme()}>Dark</Button>
+                    </div>
+                </SettingRow>
+                <SettingRow label={t('settings.general.compactMode')} description={t('settings.general.compactMode.desc')}>
+                    <Toggle enabled={appSettings.compactMode} onToggle={() => handleSettingsChange('compactMode', !appSettings.compactMode)} />
+                </SettingRow>
+            </Section>
 
-        <Section title={t('settings.section.ai')} icon={<SparklesIcon className="w-5 h-5" />}>
-            <SettingRow label={t('settings.ai.creativity')} description={t('settings.ai.creativity.desc')}>
-                 <select 
-                    value={appSettings.aiCreativity} 
-                    onChange={(e) => updateAppSettings({ aiCreativity: e.target.value as AppSettings['aiCreativity'] })} 
-                    className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 max-w-xs"
-                >
-                    <option value="focused">{t('settings.ai.creativity.focused')}</option>
-                    <option value="balanced">{t('settings.ai.creativity.balanced')}</option>
-                    <option value="creative">{t('settings.ai.creativity.creative')}</option>
-                </select>
-            </SettingRow>
-            <SettingRow label={t('settings.ai.resultsCount')} description={t('settings.ai.resultsCount.desc')}>
-                <div className="flex items-center gap-2">
-                    <input 
-                        type="range"
-                        min="10" max="50" step="5"
+            <Section title={t('settings.ai.title')} icon={<SparklesIcon className="w-5 h-5" />}>
+                 <SettingRow label={t('settings.ai.language')} description={t('settings.ai.language.desc')}>
+                    <select
+                        value={appSettings.aiContentLanguage}
+                        onChange={(e) => handleSettingsChange('aiContentLanguage', e.target.value)}
+                        className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2"
+                    >
+                        <option value="ui">{t('settings.ai.language.ui')}</option>
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </SettingRow>
+                <SettingRow label={t('settings.ai.creativity')} description={t('settings.ai.creativity.desc')}>
+                    <select
+                        value={appSettings.aiCreativity}
+                        onChange={(e) => handleSettingsChange('aiCreativity', e.target.value)}
+                        className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2"
+                    >
+                        <option value="focused">{t('settings.ai.creativity.focused')}</option>
+                        <option value="balanced">{t('settings.ai.creativity.balanced')}</option>
+                        <option value="creative">{t('settings.ai.creativity.creative')}</option>
+                    </select>
+                </SettingRow>
+                <SettingRow label={t('settings.ai.resultsCount')} description={t('settings.ai.resultsCount.desc')}>
+                    <input
+                        type="number"
+                        min="5"
+                        max="50"
+                        step="5"
                         value={appSettings.aiResultsCount}
-                        onChange={(e) => updateAppSettings({ aiResultsCount: Number(e.target.value) })}
-                        className="w-24"
+                        onChange={(e) => handleSettingsChange('aiResultsCount', parseInt(e.target.value, 10))}
+                        className="w-20 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2 text-right"
                     />
-                    <span className="text-sm w-12 text-right">{appSettings.aiResultsCount}</span>
-                </div>
-            </SettingRow>
-        </Section>
+                </SettingRow>
+            </Section>
+            
+            <Section title={t('settings.studio.title')} icon={<PaintBrushIcon className="w-5 h-5" />}>
+                 <SettingRow label={t('settings.studio.enhancementStyle')} description={t('settings.studio.enhancementStyle.desc')}>
+                    <select
+                        value={appSettings.promptEnhancementStyle}
+                        onChange={(e) => handleSettingsChange('promptEnhancementStyle', e.target.value)}
+                        className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2"
+                    >
+                        <option value="descriptive">{t('settings.studio.enhancementStyle.descriptive')}</option>
+                        <option value="subtle">{t('settings.studio.enhancementStyle.subtle')}</option>
+                        <option value="artistic">{t('settings.studio.enhancementStyle.artistic')}</option>
+                    </select>
+                </SettingRow>
+            </Section>
 
-        <Section title={t('settings.section.exhibition')} icon={<PresentationChartBarIcon className="w-5 h-5" />}>
-            <SettingRow label={t('settings.exhibit.slideshowSpeed')} description={t('settings.exhibit.slideshowSpeed.desc')}>
-                <div className="flex items-center gap-2">
-                    <input 
+            <Section title={t('settings.exhibit.title')} icon={<PresentationChartBarIcon className="w-5 h-5" />}>
+                 <SettingRow label={t('settings.exhibit.autoplay')} description={t('settings.exhibit.autoplay.desc')}>
+                    <Toggle enabled={appSettings.exhibitAutoplay} onToggle={() => handleSettingsChange('exhibitAutoplay', !appSettings.exhibitAutoplay)} />
+                 </SettingRow>
+                 <SettingRow label={t('settings.exhibit.speed')} description={t('settings.exhibit.speed.desc')}>
+                     <input
                         type="range"
-                        min="5" max="15" step="1"
+                        min="3"
+                        max="15"
+                        step="1"
                         value={appSettings.slideshowSpeed}
-                        onChange={(e) => updateAppSettings({ slideshowSpeed: Number(e.target.value) })}
-                        className="w-24"
+                        onChange={(e) => handleSettingsChange('slideshowSpeed', parseInt(e.target.value, 10))}
+                        className="w-32"
                     />
-                    <span className="text-sm w-12 text-right">{appSettings.slideshowSpeed}s</span>
-                </div>
-            </SettingRow>
-            <SettingRow label={t('settings.exhibit.autoplay')} description={t('settings.exhibit.autoplay.desc')}>
-                 <Toggle enabled={appSettings.exhibitAutoplay} onToggle={() => updateAppSettings({ exhibitAutoplay: !appSettings.exhibitAutoplay })} />
-            </SettingRow>
-            <SettingRow label={t('settings.exhibit.audioGuideVoice')} description={t('settings.exhibit.audioGuideVoice.desc')}>
-                <select 
-                    value={appSettings.audioGuideVoiceURI || ''} 
-                    onChange={(e) => updateAppSettings({ audioGuideVoiceURI: e.target.value })} 
-                    className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 max-w-xs"
-                    disabled={voices.length === 0}
-                >
-                    {voices.map(voice => (
-                        <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} ({voice.lang})</option>
-                    ))}
-                </select>
-            </SettingRow>
-             <SettingRow label={t('settings.exhibit.audioGuideSpeed')} description={t('settings.exhibit.audioGuideSpeed.desc')}>
-                <div className="flex items-center gap-2">
-                    <input 
-                        type="range"
-                        min="0.5" max="2" step="0.1"
-                        value={appSettings.audioGuideSpeed}
-                        onChange={(e) => updateAppSettings({ audioGuideSpeed: Number(e.target.value) })}
-                        className="w-24"
-                    />
-                    <span className="text-sm w-12 text-right">x{appSettings.audioGuideSpeed.toFixed(1)}</span>
-                </div>
-            </SettingRow>
-        </Section>
-        
-        <Section title={t('settings.section.appearance')}>
-            <SettingRow label={t('settings.darkMode')}>
-                <Toggle enabled={theme === 'dark'} onToggle={onToggleTheme} />
-            </SettingRow>
-        </Section>
-        
-        <Section title={t('settings.section.general')}>
-             <SettingRow label={t('settings.language')}>
-                <select value={language} onChange={(e) => onSetLanguage(e.target.value as 'de' | 'en')} className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2">
-                    <option value="de">Deutsch</option>
-                    <option value="en">English</option>
-                </select>
-            </SettingRow>
-        </Section>
+                    <span className="ml-4 text-sm font-mono">{appSettings.slideshowSpeed}s</span>
+                 </SettingRow>
+                  <SettingRow label={t('settings.exhibit.transition')} description={t('settings.exhibit.transition.desc')}>
+                    <select
+                        value={appSettings.slideshowTransition}
+                        onChange={(e) => handleSettingsChange('slideshowTransition', e.target.value)}
+                        className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2"
+                    >
+                        <option value="fade">{t('settings.exhibit.transition.fade')}</option>
+                        <option value="slide">{t('settings.exhibit.transition.slide')}</option>
+                    </select>
+                </SettingRow>
+                 <SettingRow label={t('settings.exhibit.showInfo')} description={t('settings.exhibit.showInfo.desc')}>
+                    <Toggle enabled={appSettings.showArtworkInfoInSlideshow} onToggle={() => handleSettingsChange('showArtworkInfoInSlideshow', !appSettings.showArtworkInfoInSlideshow)} />
+                 </SettingRow>
+            </Section>
+            
+             <Section title={t('settings.data.title')} icon={<Cog6ToothIcon className="w-5 h-5" />}>
+                <SettingRow label={t('settings.data.import.label')} description={t('settings.data.import.desc')}>
+                    <Button variant="secondary" onClick={onImportClick}>{t('settings.data.import.button')}</Button>
+                </SettingRow>
+                 <SettingRow label={t('settings.data.export.label')} description={t('settings.data.export.desc')}>
+                    <Button variant="secondary" onClick={onExport}>{t('settings.data.export.button')}</Button>
+                </SettingRow>
+            </Section>
 
-         <Section title={t('settings.section.data')}>
-            <SettingRow label={t('settings.data.export')} description={t('settings.data.export.desc')}>
-                <Button variant="secondary" size="sm" onClick={handleExportAllData}>
-                    <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
-                    {t('export')}
-                </Button>
-            </SettingRow>
-             <SettingRow label={t('settings.data.import')} description={t('settings.data.import.desc')}>
-                 <Button variant="secondary" size="sm" onClick={handleTriggerImport}>
-                    <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
-                    {t('import')}
-                </Button>
-            </SettingRow>
-            <SettingRow label={t('settings.galleryCache')} description={t('settings.galleryCache.desc')}>
-                 <Button variant="danger" size="sm" onClick={handleClearCache}>
-                    {t('settings.clearCache')}
-                </Button>
-            </SettingRow>
-        </Section>
-
-        <Section title={t('settings.section.about')}>
-            <div className="p-4 text-gray-600 dark:text-gray-400 text-sm">
-                <p className="mb-2"><strong>Art-i-Fact</strong> {t('settings.about.version')}</p>
-                <p>{t('settings.about.description')}</p>
-                <div className="mt-4">
-                    <a href="#" className="text-amber-600 dark:text-amber-500 hover:underline mr-4">{t('settings.about.privacy')}</a>
-                    <a href="#" className="text-amber-600 dark:text-amber-500 hover:underline mr-4">{t('settings.about.terms')}</a>
-                    <a href="https://github.com/qnbs/Art-i-Fact" target="_blank" rel="noopener noreferrer" className="text-amber-600 dark:text-amber-500 hover:underline">{t('settings.about.sourceCode')}</a>
-                </div>
+            <div className="mb-8 p-4 border-2 border-red-500/50 dark:border-red-400/50 rounded-lg bg-red-50 dark:bg-red-900/20">
+                <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-2 flex items-center"><TrashIcon className="w-5 h-5 mr-2" />{t('settings.danger.title')}</h3>
+                <SettingRow label={t('settings.danger.reset.label')} description={t('settings.danger.reset.desc')}>
+                    <Button variant="danger" onClick={openResetModal}>{t('settings.danger.reset.button')}</Button>
+                </SettingRow>
             </div>
-        </Section>
-        
-    </div>
-  );
+        </div>
+    );
 };

@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type, GenerateContentResponse, Chat, Modality } from "@google/genai";
-import { Artwork, DeepDive, Gallery, GalleryCritique, AudioGuide, ImageAspectRatio, AppSettings, Profile } from '../types';
+import type { Artwork, DeepDive, Gallery, GalleryCritique, AudioGuide, ImageAspectRatio, AppSettings, Profile } from '../types';
 import { searchWikimedia } from './wikimediaService';
 import { prompts } from "../i18n/prompts";
 
@@ -130,7 +131,7 @@ export const analyzeImage = async (file: File): Promise<Artwork | null> => {
 export const generateDeepDive = async (artwork: Artwork, appSettings: AppSettings, language: 'de' | 'en'): Promise<DeepDive> => {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: prompts[language].deepDive(artwork.title, artwork.artist, artwork.description),
+        contents: prompts[language].deepDive(artwork.title, artwork.artist, artwork.description || ''),
         config: {
             temperature: getTemperature(appSettings.aiCreativity),
             responseMimeType: 'application/json',
@@ -170,6 +171,21 @@ export const generateCritique = async (gallery: Gallery, appSettings: AppSetting
     return extractJson<GalleryCritique>(response, { critique: '', suggestions: [] });
 };
 
+/**
+ * Generates an introduction for a gallery.
+ */
+export const generateGalleryIntroduction = async (gallery: Gallery, appSettings: AppSettings, language: 'de' | 'en'): Promise<string> => {
+    const artworkList = gallery.artworks.map(a => `${a.title} by ${a.artist}`).join(', ');
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompts[language].galleryIntroduction(gallery.title, gallery.description, artworkList),
+        config: {
+            temperature: getTemperature(appSettings.aiCreativity),
+        }
+    });
+    return response.text;
+};
+
 
 /**
  * Generates a script for an audio guide for a gallery.
@@ -193,10 +209,12 @@ export const generateAudioGuideScript = async (gallery: Gallery, profile: Profil
                             properties: {
                                 artworkId: { type: Type.STRING },
                                 script: { type: Type.STRING, description: "A 1-2 paragraph script for this specific artwork." }
-                            }
+                            },
+                            required: ["artworkId", "script"]
                         }
                     }
-                }
+                },
+                required: ["introduction", "segments"]
             }
         }
     });
@@ -227,7 +245,7 @@ export const startArtChat = (artwork: Artwork, appSettings: AppSettings, languag
     return ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
-            systemInstruction: prompts[language].chatSystemInstruction(artwork.title, artwork.artist, artwork.description),
+            systemInstruction: prompts[language].chatSystemInstruction(artwork.title, artwork.artist, artwork.description || ''),
             temperature: getTemperature(appSettings.aiCreativity),
         }
     });
@@ -240,7 +258,7 @@ export const startArtChat = (artwork: Artwork, appSettings: AppSettings, languag
 export const enhancePrompt = async (prompt: string, appSettings: AppSettings, language: 'de' | 'en'): Promise<string> => {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: prompts[language].enhance(prompt),
+        contents: prompts[language].enhance(prompt, appSettings.promptEnhancementStyle),
         config: {
             temperature: getTemperature(appSettings.aiCreativity),
         },

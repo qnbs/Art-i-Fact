@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
-import { GalleryCritique } from '../types';
+import type { GalleryCritique } from '../types';
 
 export const CritiqueModalContent: React.FC<{ critiqueResult: GalleryCritique }> = ({ critiqueResult }) => {
     const { t } = useTranslation();

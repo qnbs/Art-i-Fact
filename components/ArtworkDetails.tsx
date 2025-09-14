@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import type { Artwork, Gallery, DeepDive } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';

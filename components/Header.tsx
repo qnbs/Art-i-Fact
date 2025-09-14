@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { useTranslation } from '../contexts/TranslationContext';
 import { PlusCircleIcon, CommandLineIcon, ArrowLeftIcon, Cog6ToothIcon, QuestionMarkCircleIcon } from './IconComponents';
+import { Tooltip } from './ui/Tooltip';
 
 type ActiveView = 'workspace' | 'discover' | 'studio' | 'gallery' | 'journal' | 'setup' | 'help' | 'profile' | 'glossary' | 'project';
 
@@ -39,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
     discover: t('artLibrary.title'),
     studio: t('studio.title'),
     workspace: t('workspace.title'),
+    gallery: t('gallery'),
     journal: t('journal.title'),
     profile: t('profile'),
     setup: t('settings.title'),
@@ -51,13 +54,17 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="md:hidden sticky top-0 z-30 grid grid-cols-3 items-center h-16 px-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-white/10">
       <div className="flex items-center gap-2 justify-start">
-         <button onClick={onOpenCommandPalette} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400" title="Open Command Palette">
-          <CommandLineIcon className="w-6 h-6" />
-        </button>
-        {showBackButton && (
-          <button onClick={onNavigateBack} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700" aria-label={t('navigateBack')}>
-            <ArrowLeftIcon className="w-6 h-6" />
+        <Tooltip text={t('commandPalette.placeholder')}>
+          <button onClick={onOpenCommandPalette} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+            <CommandLineIcon className="w-6 h-6" />
           </button>
+        </Tooltip>
+        {showBackButton && (
+          <Tooltip text={t('navigateBack')}>
+            <button onClick={onNavigateBack} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+              <ArrowLeftIcon className="w-6 h-6" />
+            </button>
+          </Tooltip>
         )}
       </div>
 
@@ -67,26 +74,43 @@ export const Header: React.FC<HeaderProps> = ({
 
       <div className="flex items-center gap-2 justify-end">
         {activeView === 'workspace' && !isProjectView && (
-            <button onClick={onNewProject} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400" title={t('workspace.newProject')}>
-                <PlusCircleIcon className="w-7 h-7" />
-            </button>
+            <Tooltip text={t('workspace.newProject')}>
+              <button onClick={onNewProject} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+                  <PlusCircleIcon className="w-7 h-7" />
+              </button>
+            </Tooltip>
         )}
         {isProjectView && (
-             <button onClick={onNewGallery} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400" title={t('gallery.manager.create')}>
-                <PlusCircleIcon className="w-7 h-7" />
-            </button>
+             <Tooltip text={t('gallery.manager.create')}>
+              <button onClick={onNewGallery} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+                  <PlusCircleIcon className="w-7 h-7" />
+              </button>
+            </Tooltip>
+        )}
+        {activeView === 'gallery' && !isProjectView && !isGalleryView && (
+            <Tooltip text={t('gallery.manager.create')}>
+              <button onClick={onNewGallery} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+                  <PlusCircleIcon className="w-7 h-7" />
+              </button>
+            </Tooltip>
         )}
         {activeView === 'journal' && !isProjectView && (
-            <button onClick={onNewJournalEntry} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400" title={t('journal.new')}>
-                <PlusCircleIcon className="w-7 h-7" />
-            </button>
+            <Tooltip text={t('journal.new')}>
+              <button onClick={onNewJournalEntry} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+                  <PlusCircleIcon className="w-7 h-7" />
+              </button>
+            </Tooltip>
         )}
-        <button onClick={onNavigateToSettings} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400" title={t('settings.title')}>
-            <Cog6ToothIcon className="w-6 h-6" />
-        </button>
-         <button onClick={onNavigateToHelp} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400" title={t('help.title')}>
-            <QuestionMarkCircleIcon className="w-6 h-6" />
-        </button>
+        <Tooltip text={t('settings.title')}>
+          <button onClick={onNavigateToSettings} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+              <Cog6ToothIcon className="w-6 h-6" />
+          </button>
+        </Tooltip>
+         <Tooltip text={t('help.title')}>
+          <button onClick={onNavigateToHelp} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+              <QuestionMarkCircleIcon className="w-6 h-6" />
+          </button>
+        </Tooltip>
       </div>
     </header>
   );

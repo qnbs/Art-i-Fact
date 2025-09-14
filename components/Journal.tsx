@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { JournalEntry, Gallery } from '../types';
+import type { JournalEntry, Gallery } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useAI } from '../contexts/AIStatusContext';
 import { useAppSettings } from '../contexts/AppSettingsContext';
@@ -236,8 +237,8 @@ export const Journal: React.FC<JournalProps> = (props) => {
                 </Button>
             </PageHeader>}
 
-            <div className="flex h-full gap-6 flex-grow">
-                <div className="w-1/3 flex-shrink-0 flex flex-col">
+            <div className="flex flex-col md:flex-row h-full gap-6 flex-grow">
+                <div className="w-full md:w-1/3 md:h-full flex-shrink-0 flex flex-col">
                     <div className="flex-grow overflow-y-auto pr-2">
                         <div className="space-y-2">
                         {entries.map(entry => (
@@ -265,11 +266,11 @@ export const Journal: React.FC<JournalProps> = (props) => {
                     </div>
                 </div>
 
-                <div className="w-2/3 flex-grow">
+                <div className="w-full md:w-2/3 md:h-full flex-grow">
                     {activeEntry ? (
                         <JournalEditor {...props} entry={activeEntry} />
                     ) : (
-                         <div className="flex-grow flex justify-center items-center text-center">
+                         <div className="flex-grow flex justify-center items-center text-center h-full">
                             <div className="text-gray-500 max-w-md p-8">
                                 <BookOpenIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
                                 <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">{t('journal.select.title')}</h3>

@@ -1,55 +1,39 @@
 
-
 import { useState, useEffect, useCallback } from 'react';
-import type { Profile } from '../types';
 import { PROFILE_LOCAL_STORAGE_KEY } from '../constants';
-import { sanitizeInput } from '../services/geminiService';
+import type { Profile } from '../types';
 
-const initialProfile: Profile = { 
-    username: 'Art Enthusiast', 
-    bio: 'Discovering the world, one masterpiece at a time.', 
-    avatar: 'avatar-1' 
+const defaultProfile: Profile = {
+    username: 'Art Enthusiast',
+    bio: 'Exploring the world of art, one masterpiece at a time.',
+    avatar: 'avatar-1',
 };
 
-const sanitizeProfile = (p: Profile): Profile => ({
-    ...p,
-    username: sanitizeInput(p.username),
-    bio: sanitizeInput(p.bio),
-});
+export const useProfile = (): { profile: Profile; setProfile: (profile: Partial<Profile>) => void; resetProfile: () => void; } => {
+    const [profile, setProfileState] = useState<Profile>(() => {
+        try {
+            const savedProfile = localStorage.getItem(PROFILE_LOCAL_STORAGE_KEY);
+            return savedProfile ? { ...defaultProfile, ...JSON.parse(savedProfile) } : defaultProfile;
+        } catch {
+            return defaultProfile;
+        }
+    });
 
-export const useProfile = () => {
-  const [profile, setProfileState] = useState<Profile>(() => {
-    let p = initialProfile;
-    try {
-      const savedProfile = localStorage.getItem(PROFILE_LOCAL_STORAGE_KEY);
-      if (savedProfile) {
-        p = { ...initialProfile, ...JSON.parse(savedProfile) };
-      }
-    } catch (error) {
-      console.error("Could not parse saved profile:", error);
-    }
-    return sanitizeProfile(p);
-  });
+    useEffect(() => {
+        try {
+            localStorage.setItem(PROFILE_LOCAL_STORAGE_KEY, JSON.stringify(profile));
+        } catch (error) {
+            console.warn("Could not save profile:", error);
+        }
+    }, [profile]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(PROFILE_LOCAL_STORAGE_KEY, JSON.stringify(profile));
-    } catch (error) {
-        console.warn("Could not save profile to local storage:", error);
-    }
-  }, [profile]);
+    const setProfile = useCallback((newProfile: Partial<Profile>) => {
+        setProfileState(prev => ({ ...prev, ...newProfile }));
+    }, []);
 
-  const setProfile = useCallback((newProfile: Profile) => {
-    setProfileState(sanitizeProfile(newProfile));
-  }, []);
+    const resetProfile = useCallback(() => {
+        setProfileState(defaultProfile);
+    }, []);
 
-  const updateProfile = useCallback((newProfile: Profile) => {
-    setProfile(newProfile);
-  }, [setProfile]);
-
-  return {
-    profile,
-    updateProfile,
-    setProfile,
-  };
+    return { profile, setProfile, resetProfile };
 };

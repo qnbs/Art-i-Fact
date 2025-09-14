@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Project, Gallery, JournalEntry } from '../types';
+import type { Project, Gallery, JournalEntry } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { GalleryManager } from './GalleryManager';
 import { Journal } from './Journal';
@@ -16,7 +17,7 @@ interface ProjectViewProps {
     language: 'de' | 'en';
     onNewGallery: () => void;
     onSelectGallery: (id: string) => void;
-    onDeleteGallery: (id: string, title: string) => void;
+    onDeleteGallery: (id: string) => void;
     onUpdateJournalEntry: (id: string, updatedEntry: Partial<Omit<JournalEntry, 'id' | 'createdAt'>>) => void;
     onDeleteJournalEntry: (id: string) => void;
     onNewJournalEntry: () => string;
@@ -125,7 +126,7 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                         onCreateNew={props.onNewGallery}
                         onSelectGallery={props.onSelectGallery}
                         onDeleteGallery={props.onDeleteGallery}
-                        isProjectView={true}
+                        hideHeader={true}
                     />
                 )}
                 {activeTab === 'journal' && (

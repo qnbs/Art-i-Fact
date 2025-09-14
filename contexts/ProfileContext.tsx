@@ -1,13 +1,23 @@
+
 import React, { createContext, useContext } from 'react';
 import { useProfile as useProfileHook } from '../hooks/useProfile';
+import type { Profile } from '../types';
 
-type ProfileContextType = ReturnType<typeof useProfileHook>;
+type ProfileContextType = {
+  profile: Profile;
+  setProfile: (profile: Partial<Profile>) => void;
+  resetProfile: () => void;
+};
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const value = useProfileHook();
-  return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
+  const { profile, setProfile, resetProfile } = useProfileHook();
+  return (
+    <ProfileContext.Provider value={{ profile, setProfile, resetProfile }}>
+      {children}
+    </ProfileContext.Provider>
+  );
 };
 
 export const useProfile = (): ProfileContextType => {

@@ -9,6 +9,7 @@ export interface Command {
     category: string;
     action: () => void;
     icon?: React.ReactNode;
+    shortcut?: string;
 }
 
 interface CommandPaletteProps {
@@ -37,7 +38,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
         const lowercasedTerm = searchTerm.toLowerCase();
         return commands.filter(command =>
             command.title.toLowerCase().includes(lowercasedTerm) ||
-            command.category.toLowerCase().includes(lowercasedTerm)
+            command.category.toLowerCase().includes(lowercasedTerm) ||
+            command.shortcut?.toLowerCase().includes(lowercasedTerm)
         );
     }, [searchTerm, commands]);
 
@@ -111,10 +113,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                                             key={command.id}
                                             data-index={currentIndex}
                                             onClick={() => { command.action(); onClose(); }}
-                                            className={`flex items-center gap-3 p-3 rounded-md cursor-pointer ${isSelected ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
+                                            className={`flex items-center justify-between gap-3 p-3 rounded-md cursor-pointer ${isSelected ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}
                                         >
-                                            <span className="w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-400">{command.icon}</span>
-                                            <span>{command.title}</span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-400">{command.icon}</span>
+                                                <span>{command.title}</span>
+                                            </div>
+                                            {command.shortcut && <span className="text-xs bg-gray-200 dark:bg-gray-700 rounded px-1.5 py-0.5">{command.shortcut}</span>}
                                         </li>
                                         )
                                     })}

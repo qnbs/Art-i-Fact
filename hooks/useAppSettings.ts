@@ -1,46 +1,47 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { AppSettings } from '../types';
-import { APP_SETTINGS_LOCAL_STORAGE_KEY } from '../constants';
 
-const initialSettings: AppSettings = {
-    aiCreativity: 'focused',
-    aiResultsCount: 40,
-    slideshowSpeed: 7,
-    exhibitAutoplay: true,
-    audioGuideVoiceURI: null,
-    audioGuideSpeed: 1,
+import { useState, useEffect, useCallback } from 'react';
+import { APP_SETTINGS_LOCAL_STORAGE_KEY } from '../constants';
+import type { AppSettings } from '../types';
+
+const defaultAppSettings: AppSettings = {
+  aiResultsCount: 15,
+  aiCreativity: 'balanced',
+  slideshowSpeed: 5,
+  slideshowTransition: 'fade',
+  exhibitAutoplay: false,
+  showArtworkInfoInSlideshow: true,
+  promptEnhancementStyle: 'descriptive',
+  aiContentLanguage: 'ui',
+  compactMode: false,
+  audioGuideVoiceURI: '',
+  audioGuideSpeed: 1,
 };
 
-export const useAppSettings = () => {
-    const [appSettings, setAppSettings] = useState<AppSettings>(() => {
-        try {
-            const savedSettings = localStorage.getItem(APP_SETTINGS_LOCAL_STORAGE_KEY);
-            if (savedSettings) {
-                const parsed = JSON.parse(savedSettings);
-                return { ...initialSettings, ...parsed };
-            }
-            return initialSettings;
-        } catch (error) {
-            console.error("Could not parse saved app settings:", error);
-            return initialSettings;
-        }
-    });
+export const useAppSettings = (): { appSettings: AppSettings; setAppSettings: (settings: Partial<AppSettings>) => void; resetAppSettings: () => void; } => {
+  const [appSettings, setSettings] = useState<AppSettings>(() => {
+    try {
+      const savedSettings = localStorage.getItem(APP_SETTINGS_LOCAL_STORAGE_KEY);
+      return savedSettings ? { ...defaultAppSettings, ...JSON.parse(savedSettings) } : defaultAppSettings;
+    } catch {
+      return defaultAppSettings;
+    }
+  });
 
-    useEffect(() => {
-        try {
-            localStorage.setItem(APP_SETTINGS_LOCAL_STORAGE_KEY, JSON.stringify(appSettings));
-        } catch (error) {
-            console.warn("Could not save app settings to local storage:", error);
-        }
-    }, [appSettings]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(APP_SETTINGS_LOCAL_STORAGE_KEY, JSON.stringify(appSettings));
+    } catch (error) {
+      console.warn("Could not save app settings:", error);
+    }
+  }, [appSettings]);
 
-    const updateAppSettings = useCallback((newSettings: Partial<AppSettings>) => {
-        setAppSettings(prev => ({ ...prev, ...newSettings }));
-    }, []);
+  const setAppSettings = useCallback((newSettings: Partial<AppSettings>) => {
+    setSettings(prev => ({ ...prev, ...newSettings }));
+  }, []);
 
-    return {
-        appSettings,
-        updateAppSettings,
-        setAppSettings,
-    };
+  const resetAppSettings = useCallback(() => {
+      setSettings(defaultAppSettings);
+  }, []);
+
+  return { appSettings, setAppSettings, resetAppSettings };
 };

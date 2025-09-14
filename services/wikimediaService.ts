@@ -1,4 +1,5 @@
-import { Artwork } from '../types';
+
+import type { Artwork } from '../types';
 
 const stripHtml = (html: string): string => {
   if (!html) return '';

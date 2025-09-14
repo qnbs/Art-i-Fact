@@ -1,31 +1,47 @@
 
-
 import React from 'react';
-import type { Gallery } from '../types';
+import type { Gallery, Project } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
-import { GalleryIcon, PlusCircleIcon, TrashIcon } from './IconComponents';
+import { GalleryIcon, PlusCircleIcon, TrashIcon, DocumentDuplicateIcon, EllipsisVerticalIcon, HomeIcon } from './IconComponents';
 import { ImageWithFallback } from './ui/ImageWithFallback';
 import { EmptyState } from './ui/EmptyState';
 import { Button } from './ui/Button';
+import { PageHeader } from './ui/PageHeader';
 
 interface GalleryManagerProps {
     galleries: Gallery[];
+    projects?: Project[];
     onCreateNew: () => void;
     onSelectGallery: (id: string) => void;
-    onDeleteGallery: (id: string, title: string) => void;
-    isProjectView: boolean;
+    onDeleteGallery: (id: string) => void;
+    onDuplicateGallery?: (id: string) => void;
+    hideHeader?: boolean;
 }
 
-const GalleryCard: React.FC<{ gallery: Gallery; onSelect: () => void; onDelete: () => void; }> = ({ gallery, onSelect, onDelete }) => {
+const StatusBadge: React.FC<{status: 'draft' | 'published'}> = ({ status }) => {
     const { t } = useTranslation();
-    const handleDelete = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        onDelete();
-    };
+    const isDraft = status === 'draft';
+    return (
+        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${isDraft ? 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}`}>
+            {isDraft ? t('gallery.status.draft') : t('gallery.status.published')}
+        </span>
+    );
+};
+
+const GalleryCard: React.FC<{ 
+    gallery: Gallery; 
+    project?: Project;
+    onSelect: () => void; 
+    onDelete: () => void;
+    onDuplicate?: () => void;
+}> = ({ gallery, project, onSelect, onDelete, onDuplicate }) => {
+    const { t } = useTranslation();
+    
+    const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
     return (
         <div 
-            className="group relative bg-white dark:bg-gray-900 rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] hover:shadow-amber-500/20 transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-800 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            className="group relative bg-white dark:bg-gray-900 rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] hover:shadow-amber-500/20 transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-800 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             onClick={onSelect}
             onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}
             tabIndex={0}
@@ -36,59 +52,93 @@ const GalleryCard: React.FC<{ gallery: Gallery; onSelect: () => void; onDelete: 
                 fallbackText={gallery.title}
                 className="w-full h-40 object-cover"
             />
-            <div className="p-4">
+            <div className="p-4 flex flex-col flex-grow">
+                {project && (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 font-semibold mb-1 flex items-center gap-1">
+                        <HomeIcon className="w-3 h-3" /> {project.title}
+                    </div>
+                )}
                 <h3 className="font-bold text-lg truncate">{gallery.title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{gallery.description}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">{t('gallery.manager.artworkCount', { count: String(gallery.artworks.length) })}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate flex-grow">{gallery.description}</p>
+                
+                {gallery.tags && gallery.tags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                        {gallery.tags.slice(0, 3).map(tag => (
+                            <span key={tag} className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">{tag}</span>
+                        ))}
+                    </div>
+                )}
+                
+                <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800/50">
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('gallery.manager.artworkCount', { count: String(gallery.artworks.length) })}</p>
+                    <StatusBadge status={gallery.status || 'draft'} />
+                </div>
             </div>
-            <button
-                onClick={handleDelete}
-                className="absolute top-2 right-2 p-2 bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-red-600 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                title={t('remove')}
-            >
-                <TrashIcon className="w-4 h-4"/>
-            </button>
+            
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" onClick={stopPropagation}>
+                 <details className="relative">
+                    <summary className="list-none cursor-pointer p-2 bg-black/40 text-white rounded-full hover:bg-black/60">
+                        <EllipsisVerticalIcon className="w-5 h-5"/>
+                    </summary>
+                    <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                        {onDuplicate && (
+                            <button onClick={onDuplicate} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <DocumentDuplicateIcon className="w-4 h-4" /> {t('gallery.actions.duplicate')}
+                            </button>
+                        )}
+                        <button onClick={onDelete} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/50">
+                            <TrashIcon className="w-4 h-4" /> {t('remove')}
+                        </button>
+                    </div>
+                </details>
+            </div>
         </div>
     );
 };
 
-export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, onCreateNew, onSelectGallery, onDeleteGallery, isProjectView }) => {
+export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, projects, onCreateNew, onSelectGallery, onDeleteGallery, onDuplicateGallery, hideHeader = false }) => {
     const { t } = useTranslation();
     
-    if (galleries.length === 0 && !isProjectView) {
+    if (galleries.length === 0 && !hideHeader) {
          return (
-             <EmptyState
-                icon={<GalleryIcon className="w-16 h-16" />}
-                title={t('gallery.manager.empty.title')}
-                message={t('gallery.manager.empty.prompt')}
-            >
-                <Button onClick={onCreateNew}>
-                    <PlusCircleIcon className="w-5 h-5 mr-2" />
-                    {t('gallery.manager.create')}
-                </Button>
-            </EmptyState>
+            <>
+                <PageHeader title={t('gallery.suite.title')} icon={<GalleryIcon className="w-8 h-8" />} />
+                <EmptyState
+                    icon={<GalleryIcon className="w-16 h-16" />}
+                    title={t('gallery.manager.empty.title')}
+                    message={t('gallery.manager.empty.prompt')}
+                >
+                    <Button onClick={onCreateNew}>
+                        <PlusCircleIcon className="w-5 h-5 mr-2" />
+                        {t('gallery.manager.create')}
+                    </Button>
+                </EmptyState>
+            </>
         );
     }
     
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {!isProjectView && (
-                <button
-                    onClick={onCreateNew}
-                    className="flex flex-col items-center justify-center h-full p-6 bg-gray-100 dark:bg-gray-900/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-amber-500 dark:hover:border-amber-400 hover:bg-gray-200 dark:hover:bg-gray-800/80 transition-all text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                >
-                    <PlusCircleIcon className="w-12 h-12 mb-2" />
-                    <span className="font-semibold">{t('gallery.manager.create')}</span>
-                </button>
+        <div className="h-full flex flex-col">
+            {!hideHeader && (
+                <PageHeader title={t('gallery.suite.title')} icon={<GalleryIcon className="w-8 h-8" />}>
+                     <Button onClick={onCreateNew}>
+                        <PlusCircleIcon className="w-5 h-5 mr-2" />
+                        {t('gallery.manager.create')}
+                    </Button>
+                </PageHeader>
             )}
-            {galleries.map(gallery => (
-                <GalleryCard 
-                    key={gallery.id} 
-                    gallery={gallery} 
-                    onSelect={() => onSelectGallery(gallery.id)} 
-                    onDelete={() => onDeleteGallery(gallery.id, gallery.title)}
-                />
-            ))}
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {galleries.sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map(gallery => (
+                    <GalleryCard 
+                        key={gallery.id} 
+                        gallery={gallery} 
+                        project={projects?.find(p => p.id === gallery.projectId)}
+                        onSelect={() => onSelectGallery(gallery.id)} 
+                        onDelete={() => onDeleteGallery(gallery.id)}
+                        onDuplicate={onDuplicateGallery ? () => onDuplicateGallery(gallery.id) : undefined}
+                    />
+                ))}
+            </div>
         </div>
     );
 };

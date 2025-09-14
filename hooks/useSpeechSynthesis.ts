@@ -1,5 +1,6 @@
+
 import { useState, useCallback, useEffect } from 'react';
-import { AppSettings } from '../types';
+import type { AppSettings } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 
 export const useSpeechSynthesis = (onEnd: () => void, settings: Pick<AppSettings, 'audioGuideVoiceURI' | 'audioGuideSpeed'>) => {

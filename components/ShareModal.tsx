@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Gallery, Profile, ShareableGalleryData } from '../types';
+import type { Gallery, Profile, ShareableGalleryData } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useToast } from '../contexts/ToastContext';
 import { Modal } from './Modal';

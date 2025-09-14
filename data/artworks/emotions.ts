@@ -1,3 +1,4 @@
-import { Artwork } from '../../types';
+
+import type { Artwork } from '../../types';
 
 export const emotionArtworks: Artwork[] = [];

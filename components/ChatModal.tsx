@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import type { Chat } from '@google/genai';
 import { useTranslation } from '../contexts/TranslationContext';

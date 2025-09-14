@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Project } from '../types';
+import type { Project } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { HomeIcon, PlusCircleIcon, PencilIcon, TrashIcon } from './IconComponents';
 import { Button } from './ui/Button';

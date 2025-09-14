@@ -4,6 +4,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  as?: React.ElementType;
   variant?: ButtonVariant;
   size?: ButtonSize;
   children: React.ReactNode;
@@ -25,18 +26,33 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: 'px-6 py-3 text-lg',
 };
 
+export const Button = React.forwardRef<HTMLElement, ButtonProps>(
+  ({ variant = 'primary', size = 'md', className = '', children, isLoading, as: Component = 'button', ...props }, ref) => {
+    const isDisabled = isLoading || props.disabled;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { disabled, ...restProps } = props;
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', className = '', children, isLoading, ...props }, ref) => {
+    const allProps: any = {
+      ...restProps,
+      ref,
+      className: `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`,
+    };
+
+    // Apply disabled attribute only if it's a real button
+    if (Component === 'button') {
+      allProps.disabled = isDisabled;
+    } 
+    // For other elements, use aria-disabled for accessibility and prevent interaction
+    else if (isDisabled) {
+      allProps['aria-disabled'] = true;
+      allProps.style = { ...allProps.style, pointerEvents: 'none' };
+    }
+    
     return (
-      <button
-        ref={ref}
-        className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
-        disabled={isLoading || props.disabled}
-        {...props}
-      >
+      <Component {...allProps}>
         {children}
-      </button>
+      </Component>
     );
   }
 );
+Button.displayName = 'Button';

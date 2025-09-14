@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Gallery } from '../types';
+import type { Gallery } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
 import { PlusCircleIcon } from './IconComponents';
 import { Modal } from './Modal';

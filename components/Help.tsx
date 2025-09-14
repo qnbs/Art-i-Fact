@@ -1,71 +1,87 @@
-import React, { useState } from 'react';
-import { useTranslation } from '../contexts/TranslationContext';
-import { TutorialSteps } from './TutorialSteps';
-import { BookOpenIcon, ChevronRightIcon, CommandLineIcon, MagicWandIcon, ArrowPathIcon, SparklesIcon, QuestionMarkCircleIcon, ArrowDownTrayIcon } from './IconComponents';
-import { Glossary } from './Glossary';
-import { PageHeader } from './ui/PageHeader';
 
-const TipItem: React.FC<{ icon: React.ReactNode; title: string; content: string; }> = ({ icon, title, content }) => (
-    <div className="flex items-start p-4">
-        <div className="flex-shrink-0 mr-4 text-amber-500 dark:text-amber-400">{icon}</div>
-        <div>
-            <h4 className="font-semibold text-lg text-gray-900 dark:text-white">{title}</h4>
-            <p className="text-gray-600 dark:text-gray-400" dangerouslySetInnerHTML={{ __html: content }} />
+import React from 'react';
+import { useTranslation } from '../contexts/TranslationContext';
+import { useModal } from '../contexts/ModalContext';
+import { AccordionItem } from './ui/AccordionItem';
+import { PageHeader } from './ui/PageHeader';
+import { QuestionMarkCircleIcon, SparklesIcon, BookOpenIcon } from './IconComponents';
+import { TutorialSteps } from './TutorialSteps';
+import { Glossary } from './Glossary';
+import { Button } from './ui/Button';
+
+const HelpSection: React.FC<{title: string, icon: React.ReactNode, children: React.ReactNode}> = ({ title, icon, children }) => (
+    <div className="mb-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+            <span className="mr-3 text-amber-500 dark:text-amber-400">{icon}</span>
+            {title}
+        </h3>
+        <div className="p-4 md:p-6 bg-white/50 dark:bg-black/20 rounded-lg space-y-4">
+            {children}
         </div>
     </div>
 );
 
-export const Help: React.FC<{}> = () => {
+export const Help: React.FC = () => {
     const { t } = useTranslation();
-    const [showGlossary, setShowGlossary] = useState(false);
+    const { showModal, hideModal } = useModal();
 
-    if (showGlossary) {
-        return <Glossary onBack={() => setShowGlossary(false)} />;
-    }
-    
+    const openGlossary = () => {
+        showModal(t('glossary.title'), <Glossary />);
+    };
+
     return (
-        <div className="flex flex-col h-full animate-fade-in space-y-8">
+        <div className="max-w-4xl mx-auto">
             <PageHeader title={t('help.title')} icon={<QuestionMarkCircleIcon className="w-8 h-8" />} />
             
-            <div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('help.tutorial.title')}</h3>
+            <div className="mb-8">
+                <Button onClick={openGlossary} variant="secondary" className="w-full">
+                    <BookOpenIcon className="w-5 h-5 mr-2" />
+                    {t('help.glossary.button')}
+                </Button>
+            </div>
+
+            <HelpSection title={t('help.tutorial.title')} icon={<SparklesIcon className="w-6 h-6" />}>
                 <TutorialSteps />
-            </div>
+            </HelpSection>
 
-            <div
-                onClick={() => setShowGlossary(true)}
-                className="p-6 bg-white dark:bg-gray-900/70 rounded-lg shadow-md cursor-pointer group hover:bg-amber-50 dark:hover:bg-gray-800/80 transition-colors duration-200"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowGlossary(true); }}
-                aria-label={t('help.glossary.open')}
-            >
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center pr-4">
-                        <BookOpenIcon className="w-8 h-8 text-amber-500 dark:text-amber-400 mr-4 flex-shrink-0" />
-                        <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">{t('help.glossary.title')}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('help.glossary.description')}</p>
-                        </div>
-                    </div>
-                    <ChevronRightIcon className="w-7 h-7 text-gray-400 dark:text-gray-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-transform transform group-hover:translate-x-1 flex-shrink-0" />
-                </div>
-            </div>
+            <HelpSection title={t('help.tips.title')} icon={<SparklesIcon className="w-6 h-6" />}>
+                <AccordionItem title={t('help.tips.tip1.title')}>
+                    <p dangerouslySetInnerHTML={{ __html: t('help.tips.tip1.content') }} />
+                </AccordionItem>
+                 <AccordionItem title={t('help.tips.tip2.title')}>
+                    <p dangerouslySetInnerHTML={{ __html: t('help.tips.tip2.content') }} />
+                </AccordionItem>
+                 <AccordionItem title={t('help.tips.tip3.title')}>
+                    <p dangerouslySetInnerHTML={{ __html: t('help.tips.tip3.content') }} />
+                </AccordionItem>
+                 <AccordionItem title={t('help.tips.tip4.title')}>
+                    <p dangerouslySetInnerHTML={{ __html: t('help.tips.tip4.content') }} />
+                </AccordionItem>
+            </HelpSection>
+
+            <HelpSection title={t('help.faq.title')} icon={<QuestionMarkCircleIcon className="w-6 h-6" />}>
+                <AccordionItem title={t('help.faq.q1.q')}>
+                    <p dangerouslySetInnerHTML={{ __html: t('help.faq.q1.a') }} />
+                </AccordionItem>
+                <AccordionItem title={t('help.faq.q2.q')}>
+                    <p dangerouslySetInnerHTML={{ __html: t('help.faq.q2.a') }} />
+                </AccordionItem>
+                <AccordionItem title={t('help.faq.q3.q')}>
+                    <p dangerouslySetInnerHTML={{ __html: t('help.faq.q3.a') }} />
+                </AccordionItem>
+                    <AccordionItem title={t('help.faq.q4.q')}>
+                    <p dangerouslySetInnerHTML={{ __html: t('help.faq.q4.a') }} />
+                </AccordionItem>
+            </HelpSection>
             
-            <div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('help.advanced.title')}</h3>
-                <div className="bg-white dark:bg-gray-900/70 rounded-lg shadow-md divide-y divide-gray-200 dark:divide-gray-800">
-                    <TipItem icon={<CommandLineIcon className="w-8 h-8"/>} title={t('help.advanced.tip1.title')} content={t('help.advanced.tip1.content')} />
-                    <TipItem icon={<MagicWandIcon className="w-8 h-8"/>} title={t('help.advanced.tip2.title')} content={t('help.advanced.tip2.content')} />
-                    <TipItem icon={<ArrowPathIcon className="w-8 h-8"/>} title={t('help.advanced.tip3.title')} content={t('help.advanced.tip3.content')} />
-                    <TipItem icon={<SparklesIcon className="w-8 h-8"/>} title={t('help.advanced.tip4.title')} content={t('help.advanced.tip4.content')} />
-                    <TipItem icon={<ArrowDownTrayIcon className="w-8 h-8"/>} title={t('help.advanced.tip5.title')} content={t('help.advanced.tip5.content')} />
-                </div>
-            </div>
+            <HelpSection title={t('help.philosophy.title')} icon={<SparklesIcon className="w-6 h-6" />}>
+                 <p className="text-gray-700 dark:text-gray-300">{t('help.philosophy.content')}</p>
+            </HelpSection>
 
-            <div className="mt-4 text-center">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('help.philosophy.title')}</h3>
-                <p className="text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">{t('help.philosophy.content')}</p>
+
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400 p-4 mt-8">
+                <p><strong>Art-i-Fact</strong> {t('settings.about.version')}</p>
+                <p>&copy; {new Date().getFullYear()}. {t('settings.about.license')}</p>
             </div>
         </div>
     );

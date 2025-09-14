@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Artwork, AudioGuide, Profile } from '../types';
+import type { Artwork, AudioGuide, Profile } from '../types';
 import { CloseIcon, ArrowLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, SpeakerWaveIcon, SpeakerXMarkIcon, DocumentTextIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from './IconComponents';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useAppSettings } from '../contexts/AppSettingsContext';
@@ -29,6 +30,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   const [showTranscript, setShowTranscript] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [areControlsVisible, setAreControlsVisible] = useState(true);
+  const [slideDirection, setSlideDirection] = useState<'in' | 'out'>('in');
   const exhibitionRef = useRef<HTMLDivElement>(null);
   const inactivityTimerRef = useRef<number | null>(null);
 
@@ -59,10 +61,19 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   }, [resetInactivityTimer]);
 
   const goToNext = useCallback(() => {
-    setCurrentIndex(prevIndex => (prevIndex + 1) % artworks.length);
-  }, [artworks.length]);
+    if (appSettings.slideshowTransition === 'slide') {
+        setSlideDirection('out');
+        setTimeout(() => {
+            setCurrentIndex(prevIndex => (prevIndex + 1) % artworks.length);
+            setSlideDirection('in');
+        }, 500);
+    } else {
+        setCurrentIndex(prevIndex => (prevIndex + 1) % artworks.length);
+    }
+  }, [artworks.length, appSettings.slideshowTransition]);
 
   const goToPrevious = useCallback(() => {
+    // Note: Slide transition for previous is not implemented to keep it simple
     setCurrentIndex(prevIndex => (prevIndex - 1 + artworks.length) % artworks.length);
   }, [artworks.length]);
 
@@ -166,6 +177,10 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   
   const isPlaying = audioGuide ? (isAudioGuideActive && isSpeaking) : isSlideshowPlaying;
   const currentScript = audioGuide ? (currentIndex === 0 ? audioGuide.introduction : audioGuide.segments.find(s => s.artworkId === currentArtwork.id)?.script) : null;
+  
+  const animationClass = appSettings.slideshowTransition === 'slide' 
+    ? (slideDirection === 'in' ? 'animate-slide-in' : 'animate-slide-out') 
+    : 'animate-fade-in';
 
   return (
     <div ref={exhibitionRef} className="fixed inset-0 bg-gray-950/95 backdrop-blur-xl z-50 flex flex-col p-4 md:p-8 text-white animate-fade-in" onMouseMove={resetInactivityTimer}>
@@ -202,8 +217,14 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
               src={getWikimediaImageUrl(currentArtwork.imageUrl, 1280)} 
               alt={currentArtwork.title} 
               fallbackText={currentArtwork.title}
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-fade-in"
+              className={`max-w-full max-h-full object-contain rounded-lg shadow-2xl ${animationClass}`}
             />
+             {appSettings.showArtworkInfoInSlideshow && (
+                <div className={`absolute bottom-4 left-4 right-4 bg-black/50 p-2 rounded-lg text-center transition-opacity duration-300 ${areControlsVisible ? 'opacity-100' : 'opacity-0'}`}>
+                    <h3 className="font-bold text-white truncate">{currentArtwork.title}</h3>
+                    <p className="text-sm text-gray-300 truncate">{currentArtwork.artist}</p>
+                </div>
+            )}
         </div>
         <div className="w-full md:w-1/3 h-1/3 md:h-full overflow-y-auto p-4 relative">
           <h2 className="text-3xl font-bold text-amber-400">{currentArtwork.title}</h2>

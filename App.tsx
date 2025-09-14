@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+import React, { useState, useEffect, useCallback, useMemo, useRef, ChangeEvent } from 'react';
 import { SideNavBar } from './components/SideNavBar';
 import { BottomNavBar } from './components/BottomNavBar';
 import { Header } from './components/Header';
@@ -7,6 +8,7 @@ import { Studio } from './components/Studio';
 import { Workspace } from './components/Workspace';
 import { ProjectView } from './components/ProjectView';
 import { GalleryView } from './components/GalleryView';
+import { GalleryManager } from './components/GalleryManager';
 import { Journal } from './components/Journal';
 import { ProfileView } from './components/ProfileView';
 import { Setup } from './components/Setup';
@@ -30,10 +32,11 @@ import { useTranslation } from './contexts/TranslationContext';
 import { useProfile } from './contexts/ProfileContext';
 import { useAppSettings } from './contexts/AppSettingsContext';
 import * as gemini from './services/geminiService';
-import type { Artwork, ShareableGalleryData } from './types';
-import { WELCOME_PORTAL_SEEN_KEY } from './constants';
+import type { Artwork, GalleryCritique, AudioGuide, ShareableGalleryData } from './types';
+import { WELCOME_PORTAL_SEEN_KEY, PROJECTS_LOCAL_STORAGE_KEY, GALLERY_LOCAL_STORAGE_KEY, JOURNAL_LOCAL_STORAGE_KEY, PROFILE_LOCAL_STORAGE_KEY, APP_SETTINGS_LOCAL_STORAGE_KEY } from './constants';
 import { Button } from './components/ui/Button';
-import { Cog6ToothIcon, CommandLineIcon, GalleryIcon, HomeIcon, JournalIcon, PaintBrushIcon, QuestionMarkCircleIcon, SearchIcon, UserCircleIcon } from './components/IconComponents';
+import { Cog6ToothIcon, CommandLineIcon, GalleryIcon, HomeIcon, JournalIcon, PaintBrushIcon, QuestionMarkCircleIcon, SearchIcon, UserCircleIcon, PlusCircleIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, TrashIcon, SparklesIcon, ChatBubbleLeftEllipsisIcon } from './components/IconComponents';
+import { CritiqueModalContent } from './components/CritiqueModalContent';
 
 type ActiveView = 'workspace' | 'discover' | 'studio' | 'gallery' | 'journal' | 'setup' | 'help' | 'profile' | 'glossary' | 'project';
 
@@ -49,7 +52,7 @@ const App: React.FC = () => {
     const { showModal, hideModal } = useModal();
     const { showToast } = useToast();
     const { handleAiTask, activeAiTask } = useAI();
-    const { profile, setProfile } = useProfile();
+    const { profile } = useProfile();
     const { appSettings, setAppSettings } = useAppSettings();
     
     // Navigation State
@@ -60,7 +63,7 @@ const App: React.FC = () => {
 
     // Data Hooks
     const { projects, createProject, updateProject, deleteProject, setProjects } = useProjects();
-    const { galleries, createNewGallery, deleteGallery, updateActiveGallery, addArtworkToGallery, removeArtworkFromActiveGallery, reorderArtworksInActiveGallery, addCommentToArtwork, setGalleries } = useGallery(currentGalleryId);
+    const { galleries, createNewGallery, deleteGallery, updateActiveGallery, addArtworkToGallery, removeArtworkFromActiveGallery, reorderArtworksInActiveGallery, addCommentToArtwork, setGalleries, duplicateGallery } = useGallery(currentGalleryId);
     const { journalEntries, createNewJournalEntry, deleteJournalEntry, updateJournalEntry, setJournalEntries, unlinkGallery } = useJournal();
     
     // UI State
@@ -73,6 +76,7 @@ const App: React.FC = () => {
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
     const [publicGalleryData, setPublicGalleryData] = useState<ShareableGalleryData | null>(null);
+    const importInputRef = useRef<HTMLInputElement>(null);
 
     // Effect to fetch featured artworks on initial load
     useEffect(() => {
@@ -111,6 +115,39 @@ const App: React.FC = () => {
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
+
+    // Effect to apply compact mode
+    useEffect(() => {
+        if (appSettings.compactMode) {
+            document.documentElement.setAttribute('data-compact', 'true');
+        } else {
+            document.documentElement.removeAttribute('data-compact');
+        }
+    }, [appSettings.compactMode]);
+
+    // Keyboard Shortcuts
+    const toggleLanguage = useCallback(() => {
+        setLanguage(prev => prev === 'de' ? 'en' : 'de');
+    }, [setLanguage]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                setCommandPaletteOpen(isOpen => !isOpen);
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+                e.preventDefault();
+                toggleTheme();
+            }
+             if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+                e.preventDefault();
+                toggleLanguage();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [toggleTheme, toggleLanguage]);
 
     // Derived State
     const activeProject = useMemo(() => projects.find(p => p.id === currentProjectId), [projects, currentProjectId]);
@@ -210,7 +247,7 @@ const App: React.FC = () => {
         if (!galleryToDelete) return;
 
         showModal(
-            t('gallery.manager.delete.confirm', { title: galleryToDelete.title }),
+            t('gallery.manager.delete.confirmTitle'),
             <>
                 <p>{t('gallery.manager.delete.confirm', { title: galleryToDelete.title })}</p>
                 <div className="flex justify-end gap-2 mt-4">
@@ -225,11 +262,27 @@ const App: React.FC = () => {
             </>
         );
     }, [galleries, deleteGallery, unlinkGallery, t, showToast, showModal, hideModal]);
+    
+    const handleNewGallery = useCallback(() => {
+        // Creates a gallery in the current context (either standalone or in a project)
+        const newId = createNewGallery({ 
+            projectId: currentProjectId || undefined, 
+            title: t('gallery.newUntitled') 
+        });
+        navigateTo({ galleryId: newId });
+    }, [currentProjectId, createNewGallery, t, navigateTo]);
 
+    const resolveAiLanguage = (): 'de' | 'en' => {
+        if (appSettings.aiContentLanguage === 'ui') {
+            return language;
+        }
+        return appSettings.aiContentLanguage;
+    };
+    
     // Modal Handlers
     const handleStartChat = useCallback((artwork: Artwork) => {
-        showModal(t('chat.modal.title', { title: artwork.title }), <ChatModal artwork={artwork} language={language} />);
-    }, [showModal, t, language]);
+        showModal(t('chat.modal.title', { title: artwork.title }), <ChatModal artwork={artwork} language={resolveAiLanguage()} />);
+    }, [showModal, t, appSettings.aiContentLanguage, language]);
     
     const handleShowCamera = useCallback(() => {
         showModal(t('camera.modal.title'), <CameraAnalysisModal onCapture={handleAnalyzeImage} onClose={hideModal} />);
@@ -248,10 +301,10 @@ const App: React.FC = () => {
                 onThematicSearch={(tags) => { handleSearch(tags.join(', ')); navigateTo({ view: 'discover' }); }}
                 onStartChat={handleStartChat}
                 onClose={hideModal}
-                language={language}
+                language={resolveAiLanguage()}
             />
         );
-    }, [activeGallery, handleFindSimilar, initiateAddToGallery, removeArtworkFromActiveGallery, addCommentToArtwork, handleSearch, navigateTo, handleStartChat, hideModal, language, showModal]);
+    }, [activeGallery, handleFindSimilar, initiateAddToGallery, removeArtworkFromActiveGallery, addCommentToArtwork, handleSearch, navigateTo, handleStartChat, hideModal, appSettings.aiContentLanguage, language, showModal]);
 
     const handleNewProject = useCallback(() => {
         showModal(t('workspace.newProject'), <GalleryCreator onSave={({ title, description }) => {
@@ -263,7 +316,7 @@ const App: React.FC = () => {
     
     const handleDeleteProject = useCallback((id: string, title: string) => {
          showModal(
-            t('workspace.delete.confirm', { title }),
+            t('workspace.delete.confirmTitle'),
             <>
                 <p>{t('workspace.delete.confirm', { title })}</p>
                  <div className="flex justify-end gap-2 mt-4">
@@ -280,12 +333,6 @@ const App: React.FC = () => {
         );
     }, [showModal, t, deleteProject, galleries, journalEntries, showToast, hideModal, setGalleries, setJournalEntries]);
     
-    const handleNewGalleryForProject = useCallback(() => {
-        if (!currentProjectId) return;
-        const newId = createNewGallery({ projectId: currentProjectId, title: t('gallery.newUntitled') });
-        navigateTo({ galleryId: newId });
-    }, [currentProjectId, createNewGallery, t, navigateTo]);
-    
     const handleNewJournalEntryForProject = useCallback((): string => {
         if (!currentProjectId) return '';
         return createNewJournalEntry({ projectId: currentProjectId, title: t('journal.newUntitled') });
@@ -300,15 +347,118 @@ const App: React.FC = () => {
         setShowWelcome(false);
     }, []);
 
+    const handleExportData = useCallback(() => {
+        const allData = {
+            projects: JSON.parse(localStorage.getItem(PROJECTS_LOCAL_STORAGE_KEY) || '[]'),
+            galleries: JSON.parse(localStorage.getItem(GALLERY_LOCAL_STORAGE_KEY) || '[]'),
+            journal: JSON.parse(localStorage.getItem(JOURNAL_LOCAL_STORAGE_KEY) || '[]'),
+            profile: JSON.parse(localStorage.getItem(PROFILE_LOCAL_STORAGE_KEY) || '{}'),
+            settings: JSON.parse(localStorage.getItem(APP_SETTINGS_LOCAL_STORAGE_KEY) || '{}'),
+        };
+        const jsonString = JSON.stringify(allData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `art-i-fact_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }, []);
+
+    const handleImportData = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const text = e.target?.result;
+                if (typeof text !== 'string') throw new Error("Invalid file content");
+                const data = JSON.parse(text);
+                
+                if (data.projects) localStorage.setItem(PROJECTS_LOCAL_STORAGE_KEY, JSON.stringify(data.projects));
+                if (data.galleries) localStorage.setItem(GALLERY_LOCAL_STORAGE_KEY, JSON.stringify(data.galleries));
+                if (data.journal) localStorage.setItem(JOURNAL_LOCAL_STORAGE_KEY, JSON.stringify(data.journal));
+                if (data.profile) localStorage.setItem(PROFILE_LOCAL_STORAGE_KEY, JSON.stringify(data.profile));
+                if (data.settings) localStorage.setItem(APP_SETTINGS_LOCAL_STORAGE_KEY, JSON.stringify(data.settings));
+
+                showToast(t('toast.data.importSuccess'), 'success');
+                setTimeout(() => window.location.reload(), 1500);
+
+            } catch (error) {
+                console.error("Import failed:", error);
+                showToast(t('toast.data.importError'), 'error');
+            }
+        };
+        reader.readAsText(file);
+    }, [showToast, t]);
+
+    const handleResetApp = useCallback(() => {
+        try {
+            localStorage.removeItem(PROJECTS_LOCAL_STORAGE_KEY);
+            localStorage.removeItem(GALLERY_LOCAL_STORAGE_KEY);
+            localStorage.removeItem(JOURNAL_LOCAL_STORAGE_KEY);
+            localStorage.removeItem(PROFILE_LOCAL_STORAGE_KEY);
+            localStorage.removeItem(APP_SETTINGS_LOCAL_STORAGE_KEY);
+            localStorage.removeItem(WELCOME_PORTAL_SEEN_KEY);
+
+            showToast(t('toast.data.appResetSuccess'), 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (error) {
+            console.error("Failed to reset app:", error);
+            showToast(t('toast.error.appReset'), 'error');
+        } finally {
+            hideModal();
+        }
+    }, [showToast, t, hideModal]);
+
+    const handleCritiqueForActiveGallery = useCallback(async () => {
+        if (!activeGallery) return;
+        const result = await handleAiTask('critique', () => gemini.generateCritique(activeGallery, appSettings, resolveAiLanguage())) as GalleryCritique | undefined;
+        if (result) {
+            showModal(t('gallery.critique.modal.critique'), <CritiqueModalContent critiqueResult={result} />);
+        }
+    }, [activeGallery, appSettings, resolveAiLanguage, handleAiTask, showModal, t]);
+    
+    const handleAudioGuideForActiveGallery = useCallback(async () => {
+        if (!activeGallery) return;
+        const result = await handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(activeGallery, profile, appSettings, resolveAiLanguage())) as AudioGuide | undefined;
+        if (result) {
+            showModal("Audio Guide Ready", <div>Audio guide generated and ready for exhibition mode.</div>)
+        }
+    }, [activeGallery, profile, appSettings, resolveAiLanguage, handleAiTask, showModal]);
+
     const commands: Command[] = useMemo(() => [
+        // Navigation
         { id: 'view_workspace', title: t('nav.workspace'), category: t('nav.category'), icon: <HomeIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'workspace', projectId: null, galleryId: null }) },
         { id: 'view_discover', title: t('nav.discover'), category: t('nav.category'), icon: <SearchIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'discover' }) },
         { id: 'view_studio', title: t('nav.studio'), category: t('nav.category'), icon: <PaintBrushIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'studio' }) },
+        { id: 'view_gallery', title: t('nav.gallery'), category: t('nav.category'), icon: <GalleryIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'gallery', projectId: null, galleryId: null }) },
         { id: 'view_journal', title: t('nav.journal'), category: t('nav.category'), icon: <JournalIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'journal', projectId: null, galleryId: null }) },
         { id: 'view_profile', title: t('nav.profile'), category: t('nav.category'), icon: <UserCircleIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'profile' }) },
         { id: 'view_settings', title: t('nav.settings'), category: t('nav.category'), icon: <Cog6ToothIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'setup' }) },
         { id: 'view_help', title: t('nav.help'), category: t('nav.category'), icon: <QuestionMarkCircleIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'help' }) },
-        { id: 'toggle_theme', title: t('command.toggleTheme'), category: t('command.category.general'), icon: <CommandLineIcon className="w-5 h-5"/>, action: toggleTheme },
+        
+        // General Actions
+        { id: 'toggle_theme', title: t('command.toggleTheme'), category: t('command.category.general'), icon: <CommandLineIcon className="w-5 h-5"/>, action: toggleTheme, shortcut: 'Ctrl+T' },
+        { id: 'change_language', title: t('command.changeLanguage'), category: t('command.category.general'), icon: <ChatBubbleLeftEllipsisIcon className="w-5 h-5"/>, action: toggleLanguage, shortcut: 'Ctrl+L' },
+        
+        // Creation Actions
+        { id: 'new_project', title: t('command.newProject'), category: t('command.category.creation'), icon: <PlusCircleIcon className="w-5 h-5"/>, action: handleNewProject },
+        { id: 'new_gallery', title: t('command.newGallery'), category: t('command.category.creation'), icon: <PlusCircleIcon className="w-5 h-5"/>, action: handleNewGallery },
+        { id: 'new_journal', title: t('command.newJournal'), category: t('command.category.creation'), icon: <PlusCircleIcon className="w-5 h-5"/>, action: handleNewJournalEntry },
+
+        // AI Actions (Contextual)
+        ...((activeGallery && activeGallery.artworks.length > 0) ? [
+            { id: 'ai_critique', title: t('command.requestCritique'), category: t('command.category.ai'), icon: <SparklesIcon className="w-5 h-5"/>, action: handleCritiqueForActiveGallery },
+            { id: 'ai_audio_guide', title: t('command.generateAudioGuide'), category: t('command.category.ai'), icon: <SparklesIcon className="w-5 h-5"/>, action: handleAudioGuideForActiveGallery },
+        ] : []),
+
+        // Data Management
+        { id: 'export_data', title: t('command.exportData'), category: t('command.category.data'), icon: <ArrowDownTrayIcon className="w-5 h-5"/>, action: handleExportData },
+        { id: 'import_data', title: t('command.importData'), category: t('command.category.data'), icon: <ArrowUpTrayIcon className="w-5 h-5"/>, action: () => importInputRef.current?.click() },
+        
+        // Navigation Shortcuts
         ...projects.map(p => ({ id: `proj_${p.id}`, title: t('command.openProject', { title: p.title }), category: t('command.category.projects'), icon: <HomeIcon className="w-5 h-5"/>, action: () => navigateTo({ view: 'project', projectId: p.id, galleryId: null }) })),
         ...galleries.map(g => ({
             id: `gal_${g.id}`,
@@ -317,7 +467,7 @@ const App: React.FC = () => {
             icon: <GalleryIcon className="w-5 h-5"/>,
             action: () => navigateTo({ view: g.projectId ? 'project' : 'gallery', projectId: g.projectId || null, galleryId: g.id })
         })),
-    ], [t, toggleTheme, projects, galleries, navigateTo]);
+    ], [t, toggleTheme, toggleLanguage, projects, galleries, navigateTo, activeGallery, handleNewProject, handleNewGallery, handleNewJournalEntry, handleCritiqueForActiveGallery, handleAudioGuideForActiveGallery, handleExportData]);
 
 
     const renderActiveView = () => {
@@ -331,7 +481,7 @@ const App: React.FC = () => {
                 onViewDetails={handleViewDetails}
                 onInitiateAdd={initiateAddToGallery}
                 onFindSimilar={handleFindSimilar}
-                language={language}
+                language={resolveAiLanguage()}
             />
         }
 
@@ -341,13 +491,13 @@ const App: React.FC = () => {
                 onUpdateProject={updateProject}
                 galleries={projectGalleries}
                 journalEntries={projectJournalEntries}
-                onNewGallery={handleNewGalleryForProject}
+                onNewGallery={handleNewGallery}
                 onSelectGallery={(id) => navigateTo({ galleryId: id })}
                 onDeleteGallery={handleDeleteGallery}
                 onUpdateJournalEntry={updateJournalEntry}
                 onDeleteJournalEntry={deleteJournalEntry}
                 onNewJournalEntry={handleNewJournalEntryForProject}
-                language={language}
+                language={resolveAiLanguage()}
             />
         }
 
@@ -377,6 +527,15 @@ const App: React.FC = () => {
                 return <Studio 
                     onInitiateAdd={initiateAddToGallery}
                 />
+            case 'gallery':
+                return <GalleryManager
+                    galleries={galleries}
+                    projects={projects}
+                    onCreateNew={handleNewGallery}
+                    onSelectGallery={(id) => navigateTo({ galleryId: id })}
+                    onDeleteGallery={handleDeleteGallery}
+                    onDuplicateGallery={duplicateGallery}
+                />;
             case 'journal':
                  return <Journal
                     entries={journalEntries.filter(j => !j.projectId)} // Only show non-project entries here
@@ -384,7 +543,7 @@ const App: React.FC = () => {
                     galleries={galleries}
                     onUpdateEntry={updateJournalEntry}
                     onDeleteEntry={deleteJournalEntry}
-                    language={language}
+                    language={resolveAiLanguage()}
                 />;
             case 'profile':
                 return <ProfileView 
@@ -399,11 +558,14 @@ const App: React.FC = () => {
                 return <Setup 
                     theme={theme} onToggleTheme={toggleTheme} 
                     language={language} onSetLanguage={setLanguage}
+                    onImportClick={() => importInputRef.current?.click()}
+                    onExport={handleExportData}
+                    onResetApp={handleResetApp}
                 />;
             case 'help':
                 return <Help />;
             default:
-                return <div>{t('error.viewNotFound')}</div>;
+                return <div className="flex items-center justify-center h-full text-center text-gray-500">{t('error.viewNotFound')}</div>;
         }
     };
     
@@ -436,14 +598,14 @@ const App: React.FC = () => {
 
     return (
         <div className="flex h-screen w-screen bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-200">
-            <SideNavBar activeView={activeViewForNav} setActiveView={(v) => navigateTo({ view: v, projectId: null, galleryId: null })} galleryItemCount={galleries.filter(g => !g.projectId).length} />
+            <SideNavBar activeView={activeViewForNav} setActiveView={(v) => navigateTo({ view: v, projectId: null, galleryId: null })} galleryItemCount={galleries.length} />
             <main className="flex-1 flex flex-col h-screen">
                 <Header 
                     activeView={activeViewForNav}
                     isProjectView={!!currentProjectId}
                     isGalleryView={!!currentGalleryId}
                     pageTitle={getPageTitle()}
-                    onNewGallery={handleNewGalleryForProject}
+                    onNewGallery={handleNewGallery}
                     onNewJournalEntry={handleNewJournalEntry}
                     onNewProject={handleNewProject}
                     onOpenCommandPalette={() => setCommandPaletteOpen(true)}
@@ -452,6 +614,7 @@ const App: React.FC = () => {
                     onNavigateToHelp={() => navigateTo({ view: 'help' })}
                 />
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+                    <input type="file" ref={importInputRef} onChange={handleImportData} accept=".json" className="hidden" />
                     {renderActiveView()}
                 </div>
                 <BottomNavBar activeView={activeViewForNav} setActiveView={(v) => navigateTo({ view: v, projectId: null, galleryId: null })} />
