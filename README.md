@@ -1,4 +1,4 @@
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qnbs/Internet-Archive-Explorer)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qnbs/Art-i-Fact)
 
 # Art-i-Fact: Your Personal AI Art Curator
 
