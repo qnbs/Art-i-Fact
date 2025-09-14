@@ -1,5 +1,6 @@
 import React from 'react';
-import { useTranslation } from '../contexts/TranslationContext';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
 
 interface ColorPaletteProps {
   colors: string[];

@@ -1,7 +1,8 @@
 import React from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
-import { Button } from './Button';
-import { ArrowPathIcon } from '../IconComponents';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../../contexts/TranslationContext.tsx';
+import { Button } from './Button.tsx';
+import { ArrowPathIcon } from '../IconComponents.tsx';
 
 interface RetryPromptProps {
     message: string;

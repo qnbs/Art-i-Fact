@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GalleryIcon } from '../IconComponents';
+import { GalleryIcon } from '../IconComponents.tsx';
 
 interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     fallbackText: string;

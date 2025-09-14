@@ -1,11 +1,15 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import type { Chat } from '@google/genai';
-import { useTranslation } from '../contexts/TranslationContext';
-import { useAppSettings } from '../contexts/AppSettingsContext';
-import { startArtChat } from '../services/geminiService';
-import type { Artwork } from '../types';
-import { SparklesIcon } from './IconComponents';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
+import { startArtChat } from '../services/geminiService.ts';
+// FIX: Added .ts extension to fix module resolution error.
+import type { Artwork } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { SparklesIcon } from './IconComponents.tsx';
 
 interface ChatMessage {
     sender: 'user' | 'ai';

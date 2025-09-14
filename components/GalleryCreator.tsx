@@ -1,8 +1,11 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from '../contexts/TranslationContext';
-import { Button } from './ui/Button';
-import type { Gallery } from '../types';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { Button } from './ui/Button.tsx';
+// FIX: Added .ts extension to fix module resolution error.
+import type { Gallery } from '../types.ts';
 
 interface GalleryCreatorProps {
   onSave: (details: { title: string; description: string }) => void;

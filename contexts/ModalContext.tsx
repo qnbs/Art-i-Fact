@@ -1,9 +1,9 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
-import { Modal } from '../components/Modal';
-import { ToastContainer } from '../components/ui/Toast';
+import { Modal } from '../components/Modal.tsx';
+import { ToastContainer } from '../components/ui/Toast.tsx';
 
 interface ModalContextType {
-  showModal: (title: string, content: React.ReactNode) => void;
+  showModal: (title: string, content: React.ReactNode, onCloseCallback?: () => void) => void;
   hideModal: () => void;
 }
 
@@ -12,15 +12,23 @@ const ModalContext = createContext<ModalContextType | undefined>(undefined);
 export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [modalContent, setModalContent] = useState<{ title: string; content: React.ReactNode }>({ title: '', content: null });
+  const [onCloseAction, setOnCloseAction] = useState<(() => void) | null>(null);
 
-  const showModal = useCallback((title: string, content: React.ReactNode) => {
+  const showModal = useCallback((title: string, content: React.ReactNode, onCloseCallback?: () => void) => {
     setModalContent({ title, content });
+    if (onCloseCallback) {
+      setOnCloseAction(() => onCloseCallback);
+    }
     setIsOpen(true);
   }, []);
 
   const hideModal = useCallback(() => {
+    if (onCloseAction) {
+      onCloseAction();
+    }
+    setOnCloseAction(null);
     setIsOpen(false);
-  }, []);
+  }, [onCloseAction]);
 
   return (
     <ModalContext.Provider value={{ showModal, hideModal }}>

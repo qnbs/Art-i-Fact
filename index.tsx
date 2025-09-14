@@ -1,14 +1,10 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import { TranslationProvider } from './contexts/TranslationContext';
-import { ModalProvider } from './contexts/ModalContext';
-import { ToastProvider } from './contexts/ToastContext';
-import { AIStatusProvider } from './contexts/AIStatusContext';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { AppSettingsProvider } from './contexts/AppSettingsContext';
-import { ProfileProvider } from './contexts/ProfileContext';
+// FIX: Corrected import path for App component.
+// FIX: Added .tsx extension to fix module resolution error.
+import App from './App.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import { AppProviders } from './contexts/AppProviders.tsx';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -19,19 +15,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <TranslationProvider>
-        <ToastProvider>
-          <AIStatusProvider>
-            <AppSettingsProvider>
-              <ProfileProvider>
-                <ModalProvider>
-                  <App />
-                </ModalProvider>
-              </ProfileProvider>
-            </AppSettingsProvider>
-          </AIStatusProvider>
-        </ToastProvider>
-      </TranslationProvider>
+      <AppProviders>
+        <App />
+      </AppProviders>
     </ErrorBoundary>
   </React.StrictMode>
 );

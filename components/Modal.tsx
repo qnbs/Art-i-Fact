@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { CloseIcon } from './IconComponents';
-import { useTranslation } from '../contexts/TranslationContext';
+// FIX: Added .tsx extension to fix module resolution error.
+import { CloseIcon } from './IconComponents.tsx';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
 
 interface ModalProps {
   isOpen: boolean;

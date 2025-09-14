@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react';
-import type { Artwork, Gallery, DeepDive } from '../types';
-import { useTranslation } from '../contexts/TranslationContext';
-import { useAI } from '../contexts/AIStatusContext';
-import { useAppSettings } from '../contexts/AppSettingsContext';
-import { generateDeepDive } from '../services/geminiService';
-import { getWikimediaImageUrl } from '../services/wikimediaService';
-import { ColorPalette } from './ColorPalette';
-import { AccordionItem } from './ui/AccordionItem';
-import { Button } from './ui/Button';
-import { JournalIcon, ChatBubbleLeftEllipsisIcon, SpinnerIcon } from './IconComponents';
-import { ImageWithFallback } from './ui/ImageWithFallback';
+import type { Artwork, Gallery, DeepDive } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useAI } from '../contexts/AIStatusContext.tsx';
+import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
+import { generateDeepDive } from '../services/geminiService.ts';
+import { ColorPalette } from './ColorPalette.tsx';
+import { AccordionItem } from './ui/AccordionItem.tsx';
+import { Button } from './ui/Button.tsx';
+import { JournalIcon, ChatBubbleLeftEllipsisIcon, SpinnerIcon } from './IconComponents.tsx';
+import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 
 interface ArtworkDetailsProps {
     artwork: Artwork;
@@ -75,16 +75,16 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
             "Public domain": "https://en.wikipedia.org/wiki/Public_domain"
         };
         const licenseUrl = licenseUrlMap[artwork.license] || '#';
-        const artistHtml = `<strong>${artwork.artist}</strong>`;
+        const artistHtml = artwork.sourceUrl ? `<a href="${artwork.sourceUrl}" target="_blank" rel="noopener noreferrer" class="hover:underline text-amber-600 dark:text-amber-500"><strong>${artwork.artist}</strong></a>` : `<strong>${artwork.artist}</strong>`;
         const licenseHtml = `<a href="${licenseUrl}" target="_blank" rel="noopener noreferrer" class="hover:underline text-amber-600 dark:text-amber-500">${artwork.license}</a>`;
-        return {__html: `${t('modal.details.attribution')}: ${artistHtml} / ${licenseHtml}`};
+        return {__html: `${t('modal.details.attribution')}: ${artistHtml} / ${licenseHtml} / Wikimedia Commons`};
     };
 
     return (
         <div className="flex flex-col md:flex-row gap-8">
             <div className="w-full md:w-1/3 flex-shrink-0">
                 <ImageWithFallback 
-                    src={getWikimediaImageUrl(artwork.imageUrl, 800)} 
+                    src={artwork.imageUrl} 
                     alt={artwork.title} 
                     fallbackText={artwork.title}
                     className="w-full rounded-lg object-contain shadow-lg" 
@@ -123,7 +123,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                 <p className="text-xl text-gray-500 dark:text-gray-400 mt-1">{artwork.artist}</p>
                 
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-4 my-6 p-4 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                    <Fact label={t('modal.details.year')} value={artwork.year} />
+                    <Fact label="Year" value={artwork.year} />
                     <Fact label={t('modal.details.medium')} value={artwork.medium} />
                     <Fact label={t('modal.details.dimensions')} value={artwork.dimensions} />
                     <Fact label={t('modal.details.location')} value={artwork.location} />
@@ -215,7 +215,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-2 border-t border-gray-200 dark:border-gray-700/50 pt-4">
-                    <Button onClick={() => { onFindSimilar(artwork); onClose(); }}>{t('modal.details.findSimilar')}</Button>
+                    <Button onClick={() => onFindSimilar(artwork)}>{t('modal.details.findSimilar')}</Button>
                     {isInGallery 
                         ? <Button variant="danger" onClick={() => onRemoveFromGallery(artwork.id)}>{t('modal.details.removeFromGallery')}</Button>
                         : <Button variant="secondary" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => { onInitiateAddToGallery(artwork); onClose(); }}>{t('modal.details.addToGallery')}</Button>

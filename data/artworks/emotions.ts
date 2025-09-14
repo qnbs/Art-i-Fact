@@ -1,4 +1,2 @@
-
-import type { Artwork } from '../../types';
-
-export const emotionArtworks: Artwork[] = [];
+// This file is reserved for future use, potentially for categorizing artworks by emotion.
+export const emotions = [];

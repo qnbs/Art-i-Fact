@@ -1,13 +1,16 @@
 
+
 import React from 'react';
-import { useTranslation } from '../contexts/TranslationContext';
-import { useModal } from '../contexts/ModalContext';
-import { AccordionItem } from './ui/AccordionItem';
-import { PageHeader } from './ui/PageHeader';
-import { QuestionMarkCircleIcon, SparklesIcon, BookOpenIcon } from './IconComponents';
-import { TutorialSteps } from './TutorialSteps';
-import { Glossary } from './Glossary';
-import { Button } from './ui/Button';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useModal } from '../contexts/ModalContext.tsx';
+import { AccordionItem } from './ui/AccordionItem.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
+// FIX: Added .tsx extension to fix module resolution error.
+import { QuestionMarkCircleIcon, SparklesIcon, BookOpenIcon } from './IconComponents.tsx';
+import { TutorialSteps } from './TutorialSteps.tsx';
+import { Glossary } from './Glossary.tsx';
+import { Button } from './ui/Button.tsx';
 
 const HelpSection: React.FC<{title: string, icon: React.ReactNode, children: React.ReactNode}> = ({ title, icon, children }) => (
     <div className="mb-8">

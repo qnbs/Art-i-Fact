@@ -1,39 +1,37 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { PROFILE_LOCAL_STORAGE_KEY } from '../constants';
-import type { Profile } from '../types';
+// FIX: Added .ts extension to fix module resolution error.
+import type { Profile } from '../types.ts';
+import { db } from '../services/dbService.ts';
 
 const defaultProfile: Profile = {
-    username: 'Art Enthusiast',
-    bio: 'Exploring the world of art, one masterpiece at a time.',
-    avatar: 'avatar-1',
+    username: 'Art Curator',
+    bio: 'Discovering and sharing the world of art.',
+    avatar: 'avatar-1'
 };
 
-export const useProfile = (): { profile: Profile; setProfile: (profile: Partial<Profile>) => void; resetProfile: () => void; } => {
-    const [profile, setProfileState] = useState<Profile>(() => {
-        try {
-            const savedProfile = localStorage.getItem(PROFILE_LOCAL_STORAGE_KEY);
-            return savedProfile ? { ...defaultProfile, ...JSON.parse(savedProfile) } : defaultProfile;
-        } catch {
-            return defaultProfile;
-        }
-    });
+export const useProfile = () => {
+    const [profile, setProfileState] = useState<Profile>(defaultProfile);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        try {
-            localStorage.setItem(PROFILE_LOCAL_STORAGE_KEY, JSON.stringify(profile));
-        } catch (error) {
-            console.warn("Could not save profile:", error);
-        }
+        const loadProfile = async () => {
+            const storedProfile = await db.getProfile(defaultProfile);
+            setProfileState(storedProfile);
+            setIsLoading(false);
+        };
+        loadProfile();
+    }, []);
+
+    const setProfile = useCallback(async (newProfileData: Partial<Profile>) => {
+        const newProfile = { ...profile, ...newProfileData };
+        setProfileState(newProfile);
+        await db.saveProfile(newProfile);
     }, [profile]);
 
-    const setProfile = useCallback((newProfile: Partial<Profile>) => {
-        setProfileState(prev => ({ ...prev, ...newProfile }));
-    }, []);
-
-    const resetProfile = useCallback(() => {
+    const resetProfile = useCallback(async () => {
         setProfileState(defaultProfile);
+        await db.saveProfile(defaultProfile);
     }, []);
 
-    return { profile, setProfile, resetProfile };
+    return { profile, isLoading, setProfile, resetProfile };
 };

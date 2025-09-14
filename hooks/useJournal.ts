@@ -1,56 +1,67 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { JOURNAL_LOCAL_STORAGE_KEY } from '../constants';
-import type { JournalEntry } from '../types';
+// FIX: Added .ts extension to fix module resolution error.
+import type { JournalEntry } from '../types.ts';
+import { db } from '../services/dbService.ts';
 
-export const useJournal = () => {
-    const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => {
-        try {
-            const savedEntries = localStorage.getItem(JOURNAL_LOCAL_STORAGE_KEY);
-            return savedEntries ? JSON.parse(savedEntries) : [];
-        } catch {
-            return [];
-        }
-    });
+export const useJournal = (defaultTitle: string) => {
+    const [entries, setEntries] = useState<JournalEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        try {
-            localStorage.setItem(JOURNAL_LOCAL_STORAGE_KEY, JSON.stringify(journalEntries));
-        } catch (error) {
-            console.warn("Could not save journal entries:", error);
-        }
-    }, [journalEntries]);
+        const loadEntries = async () => {
+            const storedEntries = await db.getJournalEntries();
+            setEntries(storedEntries);
+            setIsLoading(false);
+        };
+        loadEntries();
+    }, []);
 
-    const createNewJournalEntry = useCallback((initialData: Partial<JournalEntry> = {}): string => {
+    const updateAndSave = useCallback(async (newEntries: JournalEntry[] | ((prev: JournalEntry[]) => JournalEntry[])) => {
+        const updatedEntries = typeof newEntries === 'function' ? newEntries(entries) : newEntries;
+        setEntries(updatedEntries);
+        await db.saveJournalEntries(updatedEntries);
+    }, [entries]);
+
+    const createJournalEntry = useCallback((projectId: string | null = null): string => {
         const newEntry: JournalEntry = {
-            id: uuidv4(),
-            title: 'New Entry',
+            id: `jnl_${Date.now()}`,
+            title: defaultTitle,
             content: '',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            linkedGalleryId: null,
-            ...initialData,
+            projectId: projectId || undefined,
         };
-        setJournalEntries(prev => [newEntry, ...prev]);
+        updateAndSave(prev => [newEntry, ...prev]);
         return newEntry.id;
-    }, []);
+    }, [defaultTitle, updateAndSave]);
+
+    const updateJournalEntry = useCallback((id: string, updatedDetails: Partial<Omit<JournalEntry, 'id' | 'createdAt'>>) => {
+        updateAndSave(prev => 
+            prev.map(e => 
+                e.id === id ? { ...e, ...updatedDetails, updatedAt: new Date().toISOString() } : e
+            ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        );
+    }, [updateAndSave]);
 
     const deleteJournalEntry = useCallback((id: string) => {
-        setJournalEntries(prev => prev.filter(e => e.id !== id));
-    }, []);
-
-    const updateJournalEntry = useCallback((id: string, updatedEntry: Partial<Omit<JournalEntry, 'id' | 'createdAt'>>) => {
-        setJournalEntries(prev => prev.map(e => e.id === id ? { ...e, ...updatedEntry, updatedAt: new Date().toISOString() } : e));
-    }, []);
+        updateAndSave(prev => prev.filter(e => e.id !== id));
+    }, [updateAndSave]);
     
-    const unlinkGallery = useCallback((galleryId: string) => {
-        setJournalEntries(prev => prev.map(e => e.linkedGalleryId === galleryId ? { ...e, linkedGalleryId: null, updatedAt: new Date().toISOString() } : e));
-    }, []);
+    const deleteAllJournals = useCallback(() => {
+        updateAndSave([]);
+    }, [updateAndSave]);
 
-    const clearAllJournalEntries = useCallback(() => {
-        setJournalEntries([]);
-    }, []);
+    const deleteJournalsByProjectId = useCallback((projectId: string) => {
+        updateAndSave(prev => prev.filter(j => j.projectId !== projectId));
+    }, [updateAndSave]);
 
-    return { journalEntries, setJournalEntries, createNewJournalEntry, deleteJournalEntry, updateJournalEntry, unlinkGallery, clearAllJournalEntries };
+    return {
+        entries,
+        isLoading,
+        createJournalEntry,
+        updateJournalEntry,
+        deleteJournalEntry,
+        deleteAllJournals,
+        deleteJournalsByProjectId,
+    };
 };

@@ -1,12 +1,13 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { Artwork, AudioGuide, Profile } from '../types';
-import { CloseIcon, ArrowLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, SpeakerWaveIcon, SpeakerXMarkIcon, DocumentTextIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from './IconComponents';
-import { useTranslation } from '../contexts/TranslationContext';
-import { useAppSettings } from '../contexts/AppSettingsContext';
-import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
-import { ImageWithFallback } from './ui/ImageWithFallback';
-import { getWikimediaImageUrl } from '../services/wikimediaService';
+// FIX: Added .ts extension to fix module resolution error.
+import type { Artwork, AudioGuide, Profile } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { CloseIcon, ArrowLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, SpeakerWaveIcon, SpeakerXMarkIcon, DocumentTextIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from './IconComponents.tsx';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
+import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis.ts';
+import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 
 interface ExhibitionModeProps {
   artworks: Artwork[];
@@ -31,12 +32,14 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [areControlsVisible, setAreControlsVisible] = useState(true);
   const [slideDirection, setSlideDirection] = useState<'in' | 'out'>('in');
+  const [transformStyle, setTransformStyle] = useState({});
   const exhibitionRef = useRef<HTMLDivElement>(null);
   const inactivityTimerRef = useRef<number | null>(null);
 
   const currentArtwork = artworks[currentIndex];
 
   const resetInactivityTimer = useCallback(() => {
+    if (!appSettings.showControlsOnHover) return;
     setAreControlsVisible(true);
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
@@ -44,19 +47,44 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
     inactivityTimerRef.current = window.setTimeout(() => {
       setAreControlsVisible(false);
     }, 3000);
-  }, []);
+  }, [appSettings.showControlsOnHover]);
 
   useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!exhibitionRef.current) return;
+        const { clientX, clientY } = e;
+        const { innerWidth, innerHeight } = window;
+        const x = (clientX - innerWidth / 2) / (innerWidth / 2);
+        const y = (clientY - innerHeight / 2) / (innerHeight / 2);
+        const maxRotate = 5; // Max rotation in degrees
+        setTransformStyle({
+            transform: `perspective(1000px) rotateY(${x * maxRotate}deg) rotateX(${-y * maxRotate}deg) scale3d(1.05, 1.05, 1.05)`,
+        });
+    };
+
+    const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
+      if (!e.gamma || !e.beta) return; // gamma is left-to-right, beta is front-to-back
+      const gamma = e.gamma; // -90 to 90
+      const beta = e.beta; // -180 to 180
+      const maxRotate = 8;
+      const clampedGamma = Math.max(-90, Math.min(90, gamma));
+      const clampedBeta = Math.max(-90, Math.min(90, beta));
+      
+      setTransformStyle({
+        transform: `perspective(1000px) rotateY(${clampedGamma / 90 * maxRotate}deg) rotateX(${clampedBeta / 90 * maxRotate}deg) scale3d(1.05, 1.05, 1.05)`
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('deviceorientation', handleDeviceOrientation);
     resetInactivityTimer();
-    window.addEventListener('mousemove', resetInactivityTimer);
     window.addEventListener('keydown', resetInactivityTimer);
 
     return () => {
-      if (inactivityTimerRef.current) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-      window.removeEventListener('mousemove', resetInactivityTimer);
-      window.removeEventListener('keydown', resetInactivityTimer);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('deviceorientation', handleDeviceOrientation);
+        if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+        window.removeEventListener('keydown', resetInactivityTimer);
     };
   }, [resetInactivityTimer]);
 
@@ -187,10 +215,22 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   const animationClass = appSettings.slideshowTransition === 'slide' 
     ? (slideDirection === 'in' ? 'animate-slide-in' : 'animate-slide-out') 
     : 'animate-fade-in';
+    
+  const controlsVisibleClass = areControlsVisible || !appSettings.showControlsOnHover ? 'opacity-100' : 'opacity-0';
 
   return (
-    <div ref={exhibitionRef} className="fixed inset-0 bg-gray-950/95 backdrop-blur-xl z-50 flex flex-col p-4 md:p-8 text-white animate-fade-in" onMouseMove={resetInactivityTimer}>
-      <div className={`flex-shrink-0 flex justify-between items-center mb-4 transition-opacity duration-300 ${areControlsVisible ? 'opacity-100' : 'opacity-0'}`}>
+    <div ref={exhibitionRef} className="fixed inset-0 bg-gray-950/95 backdrop-blur-xl z-50 flex flex-col p-4 md:p-8 text-white animate-fade-in overflow-hidden" onMouseMove={resetInactivityTimer}>
+      <div 
+        className="absolute inset-0 -z-10 transition-opacity duration-1000"
+        style={{ 
+            backgroundImage: `url(${currentArtwork.imageUrl})`, 
+            filter: 'blur(20px) brightness(0.4)', 
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            transform: 'scale(1.1)'
+        }} 
+      />
+      <div className={`flex-shrink-0 flex justify-between items-center mb-4 transition-opacity duration-300 ${controlsVisibleClass}`}>
         <div className="flex items-center space-x-2">
             {artworks.map((_, index) => (
               <button 
@@ -218,15 +258,18 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
 
       <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-8 overflow-hidden">
         <div className="relative w-full md:w-1/2 h-2/3 md:h-full flex items-center justify-center">
-            <ImageWithFallback 
-              key={currentArtwork.id}
-              src={getWikimediaImageUrl(currentArtwork.imageUrl, 1280)} 
-              alt={currentArtwork.title} 
-              fallbackText={currentArtwork.title}
-              className={`max-w-full max-h-full object-contain rounded-lg shadow-2xl ${animationClass}`}
-            />
+            <div style={transformStyle} className="transition-transform duration-100 ease-out">
+                <ImageWithFallback 
+                  key={currentArtwork.id}
+                  src={currentArtwork.imageUrl} 
+                  alt={currentArtwork.title} 
+                  fallbackText={currentArtwork.title}
+                  className={`max-w-full max-h-full object-contain rounded-lg shadow-2xl ${animationClass}`}
+                  style={{ willChange: 'transform' }}
+                />
+            </div>
              {appSettings.showArtworkInfoInSlideshow && (
-                <div className={`absolute bottom-4 left-4 right-4 bg-black/50 p-2 rounded-lg text-center transition-opacity duration-300 ${areControlsVisible ? 'opacity-100' : 'opacity-0'}`}>
+                <div className={`absolute bottom-4 left-4 right-4 bg-black/50 p-2 rounded-lg text-center transition-opacity duration-300 ${controlsVisibleClass}`}>
                     <h3 className="font-bold text-white truncate">{currentArtwork.title}</h3>
                     <p className="text-sm text-gray-300 truncate">{currentArtwork.artist}</p>
                 </div>
@@ -255,7 +298,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
         </div>
       </div>
       
-      <div className={`flex-shrink-0 flex justify-center items-center gap-8 mt-4 transition-opacity duration-300 ${areControlsVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`flex-shrink-0 flex justify-center items-center gap-8 mt-4 transition-opacity duration-300 ${controlsVisibleClass}`}>
           <button onClick={handlePreviousClick} className="text-gray-400 hover:text-white transition-colors p-2 rounded-full bg-white/10 hover:bg-white/20" aria-label="Previous Artwork">
               <ArrowLeftIcon className="w-6 h-6" />
           </button>

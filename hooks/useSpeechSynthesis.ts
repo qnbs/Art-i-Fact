@@ -1,7 +1,9 @@
 
+
 import { useState, useCallback, useEffect } from 'react';
-import type { AppSettings } from '../types';
-import { useTranslation } from '../contexts/TranslationContext';
+import type { AppSettings } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
 
 export const useSpeechSynthesis = (onEnd: () => void, settings: Pick<AppSettings, 'audioGuideVoiceURI' | 'audioGuideSpeed'>) => {
     const { language } = useTranslation();

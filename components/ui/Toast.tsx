@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { useToast } from '../../contexts/ToastContext';
-import { CheckCircleIcon, CloseIcon, InfoIcon } from '../IconComponents';
+import { useToast } from '../../contexts/ToastContext.tsx';
+import { CheckCircleIcon, CloseIcon, InfoIcon } from '../IconComponents.tsx';
 
 const icons = {
   success: <CheckCircleIcon className="w-6 h-6 text-green-500" />,

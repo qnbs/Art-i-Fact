@@ -1,7 +1,9 @@
 
+
 import React from 'react';
-import { useTranslation } from '../contexts/TranslationContext';
-import type { GalleryCritique } from '../types';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import type { GalleryCritique } from '../types.ts';
 
 export const CritiqueModalContent: React.FC<{ critiqueResult: GalleryCritique }> = ({ critiqueResult }) => {
     const { t } = useTranslation();

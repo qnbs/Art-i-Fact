@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { ArrowUpIcon, ArrowDownIcon } from '../IconComponents';
 
-export const AccordionItem: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => {
+
+import React, { useState } from 'react';
+import { ArrowUpIcon, ArrowDownIcon } from '../IconComponents.tsx';
+
+const AccordionItemComponent: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <div className="border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
@@ -21,3 +23,5 @@ export const AccordionItem: React.FC<{ title: string, children: React.ReactNode 
         </div>
     );
 };
+
+export const AccordionItem = React.memo(AccordionItemComponent);

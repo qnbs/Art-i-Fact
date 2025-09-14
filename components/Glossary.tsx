@@ -1,11 +1,12 @@
 import React from 'react';
-import { useTranslation } from '../contexts/TranslationContext';
-import { PageHeader } from './ui/PageHeader';
-import { BookOpenIcon } from './IconComponents';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
+import { BookOpenIcon } from './IconComponents.tsx';
 
 const GlossaryTerm: React.FC<{ term: string, definition: string }> = ({ term, definition }) => (
     <div className="mb-4 break-inside-avoid">
-        <dt className="font-bold text-lg text-amber-600 dark:text-amber-400">{term}</dt>
+        <dt className="font-bold text-lg text-amber-700 dark:text-amber-400">{term}</dt>
         <dd className="ml-4 text-gray-700 dark:text-gray-300">{definition}</dd>
     </div>
 );

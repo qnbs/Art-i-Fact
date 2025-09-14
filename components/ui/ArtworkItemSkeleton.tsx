@@ -1,5 +1,5 @@
 import React from 'react';
-import { Skeleton } from './Skeleton';
+import { Skeleton } from './Skeleton.tsx';
 
 export const ArtworkItemSkeleton: React.FC = () => (
     <div className="w-full h-auto object-cover aspect-[3/4]">

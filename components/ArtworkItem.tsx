@@ -1,9 +1,12 @@
 
 import React from 'react';
-import type { Artwork } from '../types';
-import { InfoIcon } from './IconComponents';
-import { useTranslation } from '../contexts/TranslationContext';
-import { ImageWithFallback } from './ui/ImageWithFallback';
+// FIX: Added .ts extension to fix module resolution error.
+import type { Artwork } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { InfoIcon } from './IconComponents.tsx';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 
 interface ArtworkItemProps {
   artwork: Artwork;

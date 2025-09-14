@@ -1,22 +1,22 @@
 
-import React, { useState, DragEvent, memo } from 'react';
-import type { Gallery, Artwork, AudioGuide, GalleryCritique } from '../types';
-import { useTranslation } from '../contexts/TranslationContext';
-import { useModal } from '../contexts/ModalContext';
-import { useAI } from '../contexts/AIStatusContext';
-import { useProfile } from '../contexts/ProfileContext';
-import { useAppSettings } from '../contexts/AppSettingsContext';
-import { SparklesIcon, PresentationChartBarIcon, ShareIcon, TrashIcon, CheckCircleIcon, PencilIcon, SpinnerIcon, InfoIcon, HomeIcon, ArrowDownIcon } from './IconComponents';
-import { Button } from './ui/Button';
-import { ExhibitionMode } from './ExhibitionMode';
-import { CritiqueModalContent } from './CritiqueModalContent';
-import { ShareModal } from './ShareModal';
-import { Tooltip } from './ui/Tooltip';
-import * as gemini from '../services/geminiService';
-import { ImageWithFallback } from './ui/ImageWithFallback';
-import { PageHeader } from './ui/PageHeader';
-import { Modal } from './Modal';
-import { LoadingOverlay } from './ui/LoadingOverlay';
+
+
+import React, { useState, DragEvent, memo, useRef } from 'react';
+import type { Gallery, Artwork, AudioGuide, GalleryCritique } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useModal } from '../contexts/ModalContext.tsx';
+import { useAI } from '../contexts/AIStatusContext.tsx';
+import { useProfile } from '../contexts/ProfileContext.tsx';
+import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
+import { SparklesIcon, PresentationChartBarIcon, ShareIcon, TrashIcon, CheckCircleIcon, PencilIcon, SpinnerIcon, InfoIcon, HomeIcon, ArrowDownIcon, GalleryIcon, ArrowUpIcon } from './IconComponents.tsx';
+import { Button } from './ui/Button.tsx';
+import { ExhibitionMode } from './ExhibitionMode.tsx';
+import { CritiqueModalContent } from './CritiqueModalContent.tsx';
+import { ShareModal } from './ShareModal.tsx';
+import * as gemini from '../services/geminiService.ts';
+import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
 
 interface GalleryViewProps {
     gallery: Gallery;
@@ -30,18 +30,17 @@ interface GalleryViewProps {
     onFindSimilar: (artwork: Artwork) => void;
 }
 
-const DraggableArtworkItem = memo<{
-    art: Artwork;
+const DraggableArtworkItem: React.FC<{
+    artwork: Artwork;
     index: number;
-    draggedIndex: number | null;
-    dropTargetIndex: number | null;
+    artworkCount: number;
     onDragStart: (e: DragEvent<HTMLDivElement>, index: number) => void;
     onDragEnter: (e: DragEvent<HTMLDivElement>, index: number) => void;
-    onDragEnd: () => void;
-    onDrop: (e: DragEvent<HTMLDivElement>, dropIndex: number) => void;
-    onViewDetails: (art: Artwork) => void;
-    onRemoveArtwork: (id: string) => void;
-}>(({ art, index, draggedIndex, dropTargetIndex, onDragStart, onDragEnter, onDragEnd, onDrop, onViewDetails, onRemoveArtwork }) => {
+    onDragEnd: (e: DragEvent<HTMLDivElement>) => void;
+    onViewDetails: (artwork: Artwork) => void;
+    onRemove: (artworkId: string) => void;
+    onMove: (index: number, direction: 'up' | 'down') => void;
+}> = memo(({ artwork, index, artworkCount, onDragStart, onDragEnter, onDragEnd, onViewDetails, onRemove, onMove }) => {
     const { t } = useTranslation();
     return (
         <div
@@ -50,247 +49,219 @@ const DraggableArtworkItem = memo<{
             onDragEnter={(e) => onDragEnter(e, index)}
             onDragEnd={onDragEnd}
             onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => onDrop(e, index)}
-            className={`group relative cursor-grab overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 transition-all duration-300 hover:scale-105 hover:shadow-amber-500/20 focus-within:ring-2 focus-within:ring-amber-400 hover:z-20 
-                ${draggedIndex === index ? 'opacity-30' : ''} 
-                ${dropTargetIndex === index ? 'ring-2 ring-amber-500 ring-offset-2 dark:ring-offset-gray-950' : ''}`}
-            aria-roledescription="Draggable artwork"
-            aria-describedby="drag-instructions"
+            tabIndex={0}
+            className="group relative cursor-grab overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            aria-label={`${artwork.title} by ${artwork.artist}`}
+            aria-roledescription="Reorderable artwork"
         >
-           <ImageWithFallback src={art.thumbnailUrl || art.imageUrl} alt={art.title} fallbackText={art.title} className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-75"/>
-           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-end">
-               <h3 className="font-bold text-base text-white truncate">{art.title}</h3>
-               <p className="text-sm text-gray-300 truncate">{art.artist}</p>
-           </div>
-           <button
-                onClick={(e) => { e.stopPropagation(); onViewDetails(art); }}
-                className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm rounded-full p-2.5 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-all hover:bg-amber-600/70 focus-visible:ring-2 focus-visible:ring-amber-400"
-                aria-label={t('artwork.detailsLabel', { title: art.title })}
-            >
-                <InfoIcon className="w-5 h-5" />
-            </button>
-            <Tooltip text={t('remove')}>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onRemoveArtwork(art.id); }}
-                    className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2.5 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-all hover:bg-red-600/70 focus-visible:ring-2 focus-visible:ring-red-500"
-                    aria-label={t('remove')}
-                >
-                    <TrashIcon className="w-5 h-5" />
-                </button>
-            </Tooltip>
+            <ImageWithFallback 
+                src={artwork.thumbnailUrl || artwork.imageUrl} 
+                alt={artwork.title} 
+                fallbackText={artwork.title}
+                className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-50 group-focus-within:brightness-50"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-end">
+                <h3 className="font-bold text-base text-white truncate">{artwork.title}</h3>
+                <p className="text-sm text-gray-300 truncate">{artwork.artist}</p>
+            </div>
+             {/* Accessible Controls Overlay */}
+            <div className="absolute inset-0 bg-black/75 flex-col items-center justify-center gap-2 p-2 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex">
+                <Button variant="secondary" size="sm" className="w-full" disabled={index === 0} onClick={() => onMove(index, 'up')} aria-label={t('artwork.moveUp', { title: artwork.title })}>
+                    <ArrowUpIcon className="w-5 h-5 mr-2" /> Move Up
+                </Button>
+                <Button variant="secondary" size="sm" className="w-full" onClick={() => onViewDetails(artwork)}>
+                    <InfoIcon className="w-5 h-5 mr-2" /> Details
+                </Button>
+                <Button variant="secondary" size="sm" className="w-full" disabled={index === artworkCount - 1} onClick={() => onMove(index, 'down')} aria-label={t('artwork.moveDown', { title: artwork.title })}>
+                    <ArrowDownIcon className="w-5 h-5 mr-2" /> Move Down
+                </Button>
+                <Button variant="danger" size="sm" className="w-full mt-2" onClick={() => onRemove(artwork.id)}>
+                    <TrashIcon className="w-5 h-5 mr-2" /> Remove
+                </Button>
+            </div>
         </div>
     );
 });
+DraggableArtworkItem.displayName = 'DraggableArtworkItem';
 
-
-export const GalleryView: React.FC<GalleryViewProps> = ({
-    gallery, language, onClose, onUpdate, onRemoveArtwork, onReorderArtworks,
-    onViewDetails, onInitiateAdd, onFindSimilar
-}) => {
+export const GalleryView: React.FC<GalleryViewProps> = (props) => {
+    const { gallery, language, onClose, onUpdate, onRemoveArtwork, onReorderArtworks, onViewDetails } = props;
     const { t } = useTranslation();
     const { showModal, hideModal } = useModal();
-    const { handleAiTask, activeAiTask, loadingMessage } = useAI();
+    const { handleAiTask, activeAiTask } = useAI();
     const { profile } = useProfile();
     const { appSettings } = useAppSettings();
-    
+    const aiAssistantMenuRef = useRef<HTMLDetailsElement>(null);
+
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(gallery.title);
     const [editedDescription, setEditedDescription] = useState(gallery.description);
     const [showExhibition, setShowExhibition] = useState(false);
-    const [exhibitionAudioGuide, setExhibitionAudioGuide] = useState<AudioGuide | undefined>(undefined);
-    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
-    const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
-    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-
+    const dragItem = useRef<number | null>(null);
+    const dragOverItem = useRef<number | null>(null);
 
     const handleSave = () => {
         onUpdate(g => ({ ...g, title: editedTitle, description: editedDescription }));
         setIsEditing(false);
     };
-
-    const handleCritique = () => {
-        setIsAiMenuOpen(false);
-        setIsAiModalOpen(true);
-        handleAiTask('critique', () => gemini.generateCritique(gallery, appSettings, language))
-            .then(critiqueResult => {
-                setIsAiModalOpen(false);
-                if (critiqueResult) {
-                    showModal(t('gallery.critique.modal.critique'), <CritiqueModalContent critiqueResult={critiqueResult as GalleryCritique} />);
-                }
-            });
-    };
-
-    const handleAudioGuide = () => {
-        setIsAiMenuOpen(false);
-        setIsAiModalOpen(true);
-        handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile, appSettings, language))
-            .then(audioGuideResult => {
-                setIsAiModalOpen(false);
-                if (audioGuideResult) {
-                    setExhibitionAudioGuide(audioGuideResult as AudioGuide);
-                    setShowExhibition(true);
-                }
-            });
+    
+    // AI handlers
+    const handleCritique = async () => {
+        aiAssistantMenuRef.current?.removeAttribute('open');
+        const result = await handleAiTask('critique', () => gemini.generateCritique(gallery, appSettings, language)) as GalleryCritique | undefined;
+        if (result) {
+            showModal(t('gallery.suite.title'), <CritiqueModalContent critiqueResult={result} />);
+        }
     };
     
-    const handleTrailer = () => {
-        setIsAiMenuOpen(false);
-        if (gallery.trailerVideoStatus === 'pending' || activeAiTask === 'trailer') return;
-        handleAiTask('trailer', () => gemini.generateTrailerVideo(gallery), {
-            onStart: () => onUpdate(g => ({ ...g, trailerVideoStatus: 'pending' })),
-            onEnd: (result) => {
-                if (result) {
-                    onUpdate(g => ({ ...g, trailerVideoStatus: 'ready', trailerVideoUrl: result as string }));
-                } else {
-                    onUpdate(g => ({ ...g, trailerVideoStatus: 'failed' }));
-                }
-            }
-        });
-    };
-
-    const handleShare = () => {
-        showModal(
-            t('share.modal.title'), 
-            <ShareModal gallery={gallery} profile={profile} onClose={hideModal} />
-        );
-    };
-
-    const handleDragStart = (e: DragEvent<HTMLDivElement>, index: number) => {
-        setDraggedIndex(index);
-        e.dataTransfer.effectAllowed = 'move';
-    };
-    
-    const handleDragEnter = (e: DragEvent<HTMLDivElement>, index: number) => {
-        e.preventDefault();
-        if (index !== draggedIndex) {
-            setDropTargetIndex(index);
+    const handleAudioGuide = async () => {
+        aiAssistantMenuRef.current?.removeAttribute('open');
+        const script = await handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile, appSettings, language)) as AudioGuide | undefined;
+        if (script) {
+            onUpdate(g => ({ ...g, audioGuide: script }));
+            showModal("Audio Guide Ready", <div>The audio guide script has been generated and saved with this gallery. You can access it in Exhibition Mode.</div>);
         }
     };
 
-    const handleDragEnd = () => {
-        setDraggedIndex(null);
-        setDropTargetIndex(null);
+    const handleTrailer = async () => {
+        aiAssistantMenuRef.current?.removeAttribute('open');
+        onUpdate(g => ({ ...g, trailerVideoStatus: 'pending' }));
+        // FIX: Added 'as string | undefined' to fix type error.
+        const downloadLink = await handleAiTask('trailer', () => gemini.generateTrailerVideo(gallery)) as string | undefined;
+        if (downloadLink) {
+            onUpdate(g => ({ ...g, trailerVideoUrl: downloadLink, trailerVideoStatus: 'ready' }));
+        } else {
+            onUpdate(g => ({ ...g, trailerVideoStatus: 'failed' }));
+        }
+    };
+    
+    const handleShare = () => {
+        showModal(t('share.modal.title'), <ShareModal gallery={gallery} profile={profile} onClose={hideModal} />);
     };
 
-    const handleDrop = (e: DragEvent<HTMLDivElement>, dropIndex: number) => {
-        e.preventDefault();
-        if (draggedIndex === null) return;
-        
-        const draggedItem = gallery.artworks[draggedIndex];
+    // Drag and drop handlers
+    const handleDragStart = (e: DragEvent<HTMLDivElement>, position: number) => {
+        dragItem.current = position;
+    };
+    
+    const handleDragEnter = (e: DragEvent<HTMLDivElement>, position: number) => {
+        dragOverItem.current = position;
+    };
+
+    const handleDragEnd = () => {
+        if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
+            return;
+        }
+        const newArtworkList = [...gallery.artworks];
+        const dragItemContent = newArtworkList.splice(dragItem.current, 1)[0];
+        newArtworkList.splice(dragOverItem.current, 0, dragItemContent);
+        dragItem.current = null;
+        dragOverItem.current = null;
+        onReorderArtworks(newArtworkList);
+    };
+
+    const handleMoveArtwork = (index: number, direction: 'up' | 'down') => {
+        if ((direction === 'up' && index === 0) || (direction === 'down' && index === gallery.artworks.length - 1)) {
+            return;
+        }
         const newArtworks = [...gallery.artworks];
-        newArtworks.splice(draggedIndex, 1);
-        newArtworks.splice(dropIndex, 0, draggedItem);
-        
+        const item = newArtworks.splice(index, 1)[0];
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        newArtworks.splice(newIndex, 0, item);
         onReorderArtworks(newArtworks);
-        handleDragEnd();
     };
 
     return (
         <div className="flex flex-col h-full">
-             <span id="drag-instructions" className="sr-only">Drag to reorder artworks in the gallery.</span>
-            <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} title={t('gallery.suggestions.analyzing')}>
-                <LoadingOverlay message={loadingMessage} />
-            </Modal>
-            {showExhibition && (
-                <ExhibitionMode
-                    artworks={gallery.artworks}
-                    onClose={() => setShowExhibition(false)}
-                    audioGuide={exhibitionAudioGuide}
-                />
-            )}
-            {/* Header */}
+            {showExhibition && <ExhibitionMode artworks={gallery.artworks} onClose={() => setShowExhibition(false)} audioGuide={gallery.audioGuide} galleryTitle={gallery.title} curatorProfile={profile} />}
+            
             {isEditing ? (
                  <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
-                    <div className="space-y-2">
-                        <input
-                            type="text"
-                            value={editedTitle}
-                            onChange={(e) => setEditedTitle(e.target.value)}
-                            className="text-3xl font-bold bg-gray-100 dark:bg-gray-800 focus:outline-none w-full p-1 rounded"
-                        />
-                        <textarea
-                            value={editedDescription}
-                            onChange={(e) => setEditedDescription(e.target.value)}
-                            className="text-gray-600 dark:text-gray-400 mt-1 bg-gray-100 dark:bg-gray-800 focus:outline-none w-full p-1 rounded resize-none"
-                            rows={2}
-                        />
-                        <div className="flex gap-2">
-                            <Button size="sm" onClick={handleSave}><CheckCircleIcon className="w-4 h-4 mr-1" /> {t('save')}</Button>
-                            <Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>{t('cancel')}</Button>
-                        </div>
+                    <input
+                        type="text"
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        className="text-3xl font-bold bg-gray-100 dark:bg-gray-800 focus:outline-none w-full p-1 rounded"
+                    />
+                    <textarea
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        className="text-gray-600 dark:text-gray-400 mt-1 bg-gray-100 dark:bg-gray-800 focus:outline-none w-full p-1 rounded resize-none"
+                        rows={2}
+                    />
+                    <div className="flex gap-2 mt-2">
+                        <Button size="sm" onClick={handleSave}><CheckCircleIcon className="w-4 h-4 mr-1" /> {t('save')}</Button>
+                        <Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>{t('cancel')}</Button>
                     </div>
                 </div>
             ) : (
                 <PageHeader 
+                    onBack={onClose}
                     title={gallery.title} 
                     subtitle={gallery.description}
-                    icon={<HomeIcon className="w-8 h-8" />}
+                    icon={<GalleryIcon className="w-8 h-8" />}
                 >
-                    <Tooltip text={t('workspace.editProject')}>
-                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
-                            <PencilIcon className="w-5 h-5" />
-                        </Button>
-                    </Tooltip>
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} aria-label={t('workspace.editProject')}>
+                        <PencilIcon className="w-5 h-5" />
+                    </Button>
                 </PageHeader>
             )}
 
-            {/* Actions */}
-             <div className="flex-shrink-0 flex flex-wrap items-center gap-2 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700/50">
+            <div className="flex flex-wrap items-center gap-2 mb-4 flex-shrink-0">
                 <Button onClick={() => setShowExhibition(true)} disabled={gallery.artworks.length === 0}>
-                    <PresentationChartBarIcon className="w-5 h-5 mr-2" />
+                    <PresentationChartBarIcon className="w-5 h-5 mr-2"/>
                     {t('gallery.exhibit.button')}
                 </Button>
                 <Button variant="secondary" onClick={handleShare}>
-                    <ShareIcon className="w-5 h-5 mr-2" />
-                    {t('gallery.share')}
+                    <ShareIcon className="w-5 h-5 mr-2"/>
+                    {t('share')}
                 </Button>
-                <details className="relative" onToggle={(e) => setIsAiMenuOpen(e.currentTarget.open)}>
+                <details ref={aiAssistantMenuRef} className="relative">
                     <summary className="list-none">
-                        <Button variant="secondary" as="div" className="flex items-center">
-                            <SparklesIcon className="w-5 h-5 mr-2" />
-                            AI Assistant
-                            <ArrowDownIcon className="w-4 h-4 ml-2" />
+                        <Button variant="secondary" as="div">
+                             <SparklesIcon className="w-5 h-5 mr-2"/>
+                             AI Assistant
+                             <ArrowDownIcon className="w-4 h-4 ml-2"/>
                         </Button>
                     </summary>
-                     {isAiMenuOpen && (
-                        <div className="absolute z-10 top-full mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 animate-fade-in">
-                            <div className="py-1" role="menu" aria-orientation="vertical">
-                                <button onClick={handleCritique} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.critique')}</button>
-                                <button onClick={handleAudioGuide} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.audioGuide')}</button>
-                                <button onClick={handleTrailer} className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('gallery.ai.trailer')}</button>
-                            </div>
-                        </div>
-                    )}
-                </details>
-                {gallery.trailerVideoUrl && gallery.trailerVideoStatus === 'ready' && <a href={`${gallery.trailerVideoUrl}&key=${process.env.API_KEY!}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-green-600 dark:text-green-400 hover:underline">{t('gallery.ai.trailer.ready')}</a>}
-                {(gallery.trailerVideoStatus === 'pending' || activeAiTask === 'trailer') && <p className="text-sm text-amber-600 flex items-center gap-2"><SpinnerIcon className="w-4 h-4" /> {loadingMessage || t('gallery.ai.trailer.pending')}</p>}
-                {gallery.trailerVideoStatus === 'failed' && <p className="text-sm text-red-600">{t('gallery.ai.trailer.failed')}</p>}
-            </div>
-
-            {/* Artwork Grid */}
-            <div className="flex-grow overflow-y-auto">
-                {gallery.artworks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-                        <p className="mb-4">{t('gallery.empty.prompt')}</p>
+                    <div className="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                        <button onClick={handleCritique} disabled={activeAiTask === 'critique'} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                            {activeAiTask === 'critique' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
+                            {t('gallery.ai.critique')}
+                        </button>
+                        <button onClick={handleAudioGuide} disabled={activeAiTask === 'audioGuide'} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                           {activeAiTask === 'audioGuide' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
+                           {t('gallery.ai.audioGuide')}
+                        </button>
+                        <button onClick={handleTrailer} disabled={activeAiTask === 'trailer' || gallery.trailerVideoStatus === 'pending'} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                           {activeAiTask === 'trailer' || gallery.trailerVideoStatus === 'pending' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
+                           {t('gallery.ai.trailer')}
+                        </button>
                     </div>
-                ) : (
+                </details>
+            </div>
+            
+            <div className="flex-grow overflow-y-auto">
+                {gallery.artworks.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {gallery.artworks.map((art, index) => (
-                           <DraggableArtworkItem
+                            <DraggableArtworkItem 
                                 key={art.id}
-                                art={art}
+                                artwork={art} 
                                 index={index}
-                                draggedIndex={draggedIndex}
-                                dropTargetIndex={dropTargetIndex}
+                                artworkCount={gallery.artworks.length}
                                 onDragStart={handleDragStart}
                                 onDragEnter={handleDragEnter}
                                 onDragEnd={handleDragEnd}
-                                onDrop={handleDrop}
                                 onViewDetails={onViewDetails}
-                                onRemoveArtwork={onRemoveArtwork}
-                           />
+                                onRemove={onRemoveArtwork}
+                                onMove={handleMoveArtwork}
+                            />
                         ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16">
+                        <p className="text-gray-500">This gallery is empty. Add some art from the Discover tab!</p>
                     </div>
                 )}
             </div>

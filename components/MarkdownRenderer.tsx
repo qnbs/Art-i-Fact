@@ -1,33 +1,55 @@
 import React from 'react';
-import { sanitizeInput } from '../services/geminiService';
+import { sanitizeInput } from '../services/geminiService.ts';
 
 interface MarkdownRendererProps {
     markdown: string;
 }
 
 // A simple and safe Markdown to HTML renderer.
-// It only supports a limited subset of Markdown to prevent XSS.
+// It supports H1-H3, lists, bold, and italic.
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdown }) => {
     
     const toHtml = (text: string) => {
-        let html = sanitizeInput(text) // Start by sanitizing the whole block
-            // Bold (**text** or __text__)
-            .replace(/\*\*(.*?)\*\*|__(.*?)__/g, '<strong>$1$2</strong>')
-            // Italic (*text* or _text_)
-            .replace(/\*(.*?)\*|_(.*?)_/g, '<em>$1$2</em>')
-            // Unordered list items (* or -)
-            .replace(/^\s*[\*-]\s+(.*)/gm, '<li>$1</li>')
-            // Ordered list items (1.)
-            .replace(/^\s*\d+\.\s+(.*)/gm, '<li>$1</li>');
+        if (!text) return '';
 
-        // Wrap list items in <ul> or <ol>
-        // This is a simplified approach and might not handle complex nested lists perfectly
-        html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
-            if (match.includes('<ol>') || match.includes('<ul>')) return match; // Already wrapped
-            return `<ul>${match}</ul>`; // Default to <ul>
-        });
+        const lines = text.split('\n');
+        let html = '';
+        let inList = false;
 
-        return html.replace(/\n/g, '<br />');
+        for (const line of lines) {
+            let processedLine = sanitizeInput(line);
+
+            // Inline styles
+            processedLine = processedLine
+                .replace(/\*\*(.*?)\*\*|__(.*?)__/g, '<strong>$1$2</strong>')
+                .replace(/\*(.*?)\*|_(.*?)_/g, '<em>$1$2</em>');
+
+            // Block elements
+            if (processedLine.startsWith('### ')) {
+                if (inList) { html += '</ul>'; inList = false; }
+                html += `<h3>${processedLine.substring(4)}</h3>`;
+            } else if (processedLine.startsWith('## ')) {
+                if (inList) { html += '</ul>'; inList = false; }
+                html += `<h2>${processedLine.substring(3)}</h2>`;
+            } else if (processedLine.startsWith('# ')) {
+                if (inList) { html += '</ul>'; inList = false; }
+                html += `<h1>${processedLine.substring(2)}</h1>`;
+            } else if (processedLine.startsWith('* ') || processedLine.startsWith('- ')) {
+                if (!inList) { html += '<ul>'; inList = true; }
+                html += `<li>${processedLine.substring(2)}</li>`;
+            } else {
+                if (inList) { html += '</ul>'; inList = false; }
+                if (processedLine.trim() !== '') {
+                   html += `<p>${processedLine}</p>`;
+                }
+            }
+        }
+
+        if (inList) {
+            html += '</ul>';
+        }
+
+        return html;
     };
 
     return (

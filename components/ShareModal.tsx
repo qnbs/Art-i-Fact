@@ -1,11 +1,12 @@
 
+
 import React from 'react';
-import type { Gallery, Profile, ShareableGalleryData } from '../types';
-import { useTranslation } from '../contexts/TranslationContext';
-import { useToast } from '../contexts/ToastContext';
-import { Modal } from './Modal';
-import { Button } from './ui/Button';
-import { ArrowDownTrayIcon, ArrowUpTrayIcon } from './IconComponents';
+import type { Gallery, Profile, ShareableGalleryData } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useToast } from '../contexts/ToastContext.tsx';
+import { Button } from './ui/Button.tsx';
+import { ArrowDownTrayIcon, ArrowUpTrayIcon } from './IconComponents.tsx';
 
 interface ShareModalProps {
     gallery: Gallery;
@@ -46,19 +47,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({ gallery, profile, onClos
     };
 
     return (
-        <Modal isOpen={true} onClose={onClose} title={t('share.modal.title')}>
-            <div className="space-y-4">
-                <div className="p-4 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                    <h3 className="font-semibold text-lg flex items-center"><ArrowUpTrayIcon className="w-5 h-5 mr-2 text-amber-500"/>{t('share.modal.link.title')}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 my-2">{t('share.modal.link.description')}</p>
-                    <Button onClick={handleCopyLink} className="w-full">{t('share.modal.link.copy')}</Button>
-                </div>
-                 <div className="p-4 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-                    <h3 className="font-semibold text-lg flex items-center"><ArrowDownTrayIcon className="w-5 h-5 mr-2 text-amber-500"/>{t('share.modal.export.title')}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 my-2">{t('share.modal.export.description')}</p>
-                    <Button variant="secondary" onClick={handleExport} className="w-full">{t('share.modal.export.button')}</Button>
-                </div>
+        <div className="space-y-4">
+            <div className="p-4 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                <h3 className="font-semibold text-lg flex items-center"><ArrowUpTrayIcon className="w-5 h-5 mr-2 text-amber-500"/>{t('share.modal.link.title')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 my-2">{t('share.modal.link.description')}</p>
+                <Button onClick={handleCopyLink} className="w-full">{t('share.modal.link.copy')}</Button>
             </div>
-        </Modal>
+             <div className="p-4 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                <h3 className="font-semibold text-lg flex items-center"><ArrowDownTrayIcon className="w-5 h-5 mr-2 text-amber-500"/>{t('share.modal.export.title')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 my-2">{t('share.modal.export.description')}</p>
+                <Button variant="secondary" onClick={handleExport} className="w-full">{t('share.modal.export.button')}</Button>
+            </div>
+        </div>
     );
 };

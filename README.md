@@ -1,5 +1,3 @@
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qnbs/Art-i-Fact)
-
 # Art-i-Fact: Your Personal AI Art Curator
 
 **Art-i-Fact** is an innovative web application that empowers you to discover, create, organize, and share virtual art galleries using state-of-the-art AI curation tools. It acts as your intelligent assistant, blending your unique curatorial vision with the vast knowledge of AI to craft beautiful and insightful art experiences.
@@ -36,6 +34,7 @@ The workflow is designed to be intuitive and creative:
 ## 🛠️ Technology Stack
 
 -   **Frontend:** React, TypeScript, Tailwind CSS
+-   **Data Storage:** **IndexedDB** for robust, client-side data persistence.
 -   **AI (Google Gemini API):**
     -   **Text & Analysis:** `gemini-2.5-flash`
     -   **Image Generation:** `imagen-4.0-generate-001`
@@ -94,6 +93,7 @@ Der Arbeitsablauf ist intuitiv und kreativ gestaltet:
 ## 🛠️ Technologie-Stack
 
 -   **Frontend:** React, TypeScript, Tailwind CSS
+-   **Datenspeicherung:** **IndexedDB** für robuste, clientseitige Datenpersistenz.
 -   **KI (Google Gemini API):**
     -   **Text & Analyse:** `gemini-2.5-flash`
     -   **Bilderzeugung:** `imagen-4.0-generate-001`

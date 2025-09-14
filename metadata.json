@@ -3,7 +3,6 @@
   "description": "An AI-powered web application that allows users to discover, organize, and share virtual art galleries using AI-powered curation tools.",
   "version": "1.0.0",
   "requestFramePermissions": [
-    "camera",
-    "microphone"
+    "camera"
   ]
 }

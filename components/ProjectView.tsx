@@ -1,16 +1,18 @@
 
+
 import React, { useState } from 'react';
-import type { Project, Gallery, JournalEntry } from '../types';
-import { useTranslation } from '../contexts/TranslationContext';
-import { GalleryManager } from './GalleryManager';
-import { Journal } from './Journal';
-import { Button } from './ui/Button';
-import { PlusCircleIcon, GalleryIcon, JournalIcon, PencilIcon, CheckCircleIcon, HomeIcon } from './IconComponents';
-import { Tooltip } from './ui/Tooltip';
-import { PageHeader } from './ui/PageHeader';
+import type { Project, Gallery, JournalEntry } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { GalleryManager } from './GalleryManager.tsx';
+import { Journal } from './Journal.tsx';
+import { Button } from './ui/Button.tsx';
+import { PlusCircleIcon, GalleryIcon, JournalIcon, PencilIcon, CheckCircleIcon, HomeIcon } from './IconComponents.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
 
 interface ProjectViewProps {
     project: Project;
+    onClose: () => void;
     onUpdateProject: (id: string, updatedProject: Partial<Omit<Project, 'id' | 'createdAt'>>) => void;
     galleries: Gallery[];
     journalEntries: JournalEntry[];
@@ -73,15 +75,14 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                 </div>
             ) : (
                 <PageHeader 
+                    onBack={props.onClose}
                     title={props.project.title} 
                     subtitle={props.project.description}
                     icon={<HomeIcon className="w-8 h-8" />}
                 >
-                    <Tooltip text={t('workspace.editProject')}>
-                        <Button variant="ghost" size="sm" onClick={() => setIsEditingProject(true)}>
-                            <PencilIcon className="w-5 h-5" />
-                        </Button>
-                    </Tooltip>
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditingProject(true)} aria-label={t('workspace.editProject')}>
+                        <PencilIcon className="w-5 h-5" />
+                    </Button>
                 </PageHeader>
             )}
            
@@ -91,14 +92,14 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                  <div className="flex">
                     <button 
                         onClick={() => setActiveTab('galleries')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 transition-colors ${activeTab === 'galleries' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 transition-colors ${activeTab === 'galleries' ? 'border-amber-500 text-amber-700 dark:text-amber-500' : 'border-transparent text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'}`}
                     >
                         <GalleryIcon className="w-5 h-5"/>
                         <span className="font-semibold">{t('workspace.project.galleries', { count: String(props.galleries.length)})}</span>
                     </button>
                     <button 
                         onClick={() => setActiveTab('journal')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 transition-colors ${activeTab === 'journal' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 transition-colors ${activeTab === 'journal' ? 'border-amber-500 text-amber-700 dark:text-amber-500' : 'border-transparent text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'}`}
                     >
                         <JournalIcon className="w-5 h-5"/>
                         <span className="font-semibold">{t('workspace.project.journals', { count: String(props.journalEntries.length)})}</span>
@@ -106,18 +107,18 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                  </div>
                  {activeTab === 'galleries' && (
                      <Button size="sm" onClick={props.onNewGallery}>
-                         <PlusCircleIcon className="w-5 h-5 mr-2" />
-                         {t('gallery.manager.create')}
-                     </Button>
+                        <PlusCircleIcon className="w-4 h-4 mr-1" />
+                        {t('gallery.new')}
+                    </Button>
                  )}
                  {activeTab === 'journal' && (
-                      <Button size="sm" onClick={handleNewJournal}>
-                         <PlusCircleIcon className="w-5 h-5 mr-2" />
-                         {t('journal.new')}
-                     </Button>
+                     <Button size="sm" onClick={handleNewJournal}>
+                        <PlusCircleIcon className="w-4 h-4 mr-1" />
+                        {t('journal.new')}
+                    </Button>
                  )}
             </div>
-           
+
             {/* Content */}
             <div className="flex-grow overflow-y-auto">
                 {activeTab === 'galleries' && (
@@ -130,14 +131,14 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                     />
                 )}
                 {activeTab === 'journal' && (
-                    <Journal
+                    <Journal 
                         entries={props.journalEntries}
-                        galleries={props.galleries}
+                        galleries={[]} // Galleries not needed for project-specific journal view
                         language={props.language}
                         activeEntryId={activeJournalId}
                         onSelectEntry={setActiveJournalId}
                         onUpdateEntry={props.onUpdateJournalEntry}
-                        onDeleteEntry={(id) => { props.onDeleteJournalEntry(id); setActiveJournalId(null); }}
+                        onDeleteEntry={props.onDeleteJournalEntry}
                         onNewEntry={props.onNewJournalEntry}
                     />
                 )}

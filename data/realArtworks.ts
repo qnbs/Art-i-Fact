@@ -1,5 +1,2 @@
-
-import type { Artwork } from '../types';
-
-// This file is now deprecated. Artworks are fetched dynamically from the Wikimedia API.
-export const realArtworks: Artwork[] = [];
+// This file is reserved for future use, potentially for a static list of artworks.
+export const realArtworks = [];

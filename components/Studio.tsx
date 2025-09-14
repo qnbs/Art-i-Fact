@@ -1,16 +1,17 @@
-
 import React, { useState } from 'react';
-import { useTranslation } from '../contexts/TranslationContext';
-import { useAI } from '../contexts/AIStatusContext';
-import { useAppSettings } from '../contexts/AppSettingsContext';
-import { useToast } from '../contexts/ToastContext';
-import { PaintBrushIcon, SparklesIcon, SpinnerIcon, PlusCircleIcon, GalleryIcon, MagicWandIcon, CloseIcon } from './IconComponents';
-import type { Artwork, ImageAspectRatio } from '../types';
-import { Button } from './ui/Button';
-import { Skeleton } from './ui/Skeleton';
-import { ImageWithFallback } from './ui/ImageWithFallback';
-import { PageHeader } from './ui/PageHeader';
-import * as gemini from '../services/geminiService';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useAI } from '../contexts/AIStatusContext.tsx';
+import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
+import { useToast } from '../contexts/ToastContext.tsx';
+import { PaintBrushIcon, SparklesIcon, SpinnerIcon, PlusCircleIcon, GalleryIcon, MagicWandIcon, CloseIcon } from './IconComponents.tsx';
+import type { Artwork, ImageAspectRatio } from '../types.ts';
+import { Button } from './ui/Button.tsx';
+import { Skeleton } from './ui/Skeleton.tsx';
+import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
+import * as gemini from '../services/geminiService.ts';
+import { studioInspirationPrompts } from '../data/inspiration.ts';
 
 interface StudioProps {
     onInitiateAdd: (artwork: Artwork) => void;
@@ -59,7 +60,9 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
 
             const newOriginalPrompt = isRemixMode ? `${originalPrompt}, remixed with: "${prompt}"` : prompt;
             setOriginalPrompt(newOriginalPrompt);
-            if (isRemixMode) { setPrompt(''); }
+            if (isRemixMode || appSettings.clearPromptOnGenerate) {
+                setPrompt('');
+            }
             
             if (appSettings.studioAutoSave) {
                  const newArtwork: Artwork = {
@@ -78,7 +81,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
     
     const handleEnterRemixMode = () => {
         setIsRemixMode(true);
-        setPrompt('');
+        setPrompt(appSettings.defaultRemixPrompt || '');
     };
     
     const handleExitRemixMode = () => {
@@ -129,10 +132,22 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder={isRemixMode ? t('studio.remix.placeholder') : t('studio.prompt.placeholder')}
-                        className="w-full flex-grow bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none min-h-[150px]"
+                        className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none h-32"
                         disabled={isLoading || isEnhancing}
                         aria-label={t('studio.prompt.placeholder')}
                     />
+                     {/* Inspiration Section */}
+                    <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400">{t('studio.inspiration')}</h3>
+                        <div className="flex flex-wrap gap-2">
+                        {studioInspirationPrompts.flatMap(cat => cat.prompts.slice(0,2)).map((p, i) => (
+                             <button key={i} onClick={() => setPrompt(p)} className="px-2 py-1 bg-gray-200 dark:bg-gray-800 text-xs rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors">
+                                {p.split(' ').slice(0, 4).join(' ')}...
+                            </button>
+                        ))}
+                        </div>
+                    </div>
+
                     <div>
                         <label id="aspect-ratio-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('studio.aspectRatio')}</label>
                         <div role="radiogroup" aria-labelledby="aspect-ratio-label" className={`grid grid-cols-5 gap-2 ${isRemixMode ? 'opacity-50' : ''}`}>

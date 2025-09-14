@@ -1,6 +1,7 @@
 import React from 'react';
-import { useTranslation } from '../contexts/TranslationContext';
-import { SearchIcon, HomeIcon, GalleryIcon, PaintBrushIcon, JournalIcon, PresentationChartBarIcon } from './IconComponents';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { SearchIcon, HomeIcon, GalleryIcon, PaintBrushIcon, JournalIcon, PresentationChartBarIcon } from './IconComponents.tsx';
 
 const TutorialStep: React.FC<{ icon: React.ReactNode; title: string; content: string; delay: number }> = ({ icon, title, content, delay }) => (
     <div 

@@ -1,51 +1,61 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { PROJECTS_LOCAL_STORAGE_KEY } from '../constants';
-import type { Project, Gallery, JournalEntry } from '../types';
+// FIX: Added .ts extension to fix module resolution error.
+import type { Project } from '../types.ts';
+import { db } from '../services/dbService.ts';
 
 export const useProjects = () => {
-    const [projects, setProjects] = useState<Project[]>(() => {
-        try {
-            const savedProjects = localStorage.getItem(PROJECTS_LOCAL_STORAGE_KEY);
-            return savedProjects ? JSON.parse(savedProjects) : [];
-        } catch {
-            return [];
-        }
-    });
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        try {
-            localStorage.setItem(PROJECTS_LOCAL_STORAGE_KEY, JSON.stringify(projects));
-        } catch (error) {
-            console.warn("Could not save projects:", error);
-        }
+        const loadProjects = async () => {
+            const storedProjects = await db.getProjects();
+            setProjects(storedProjects);
+            setIsLoading(false);
+        };
+        loadProjects();
+    }, []);
+
+    const updateAndSave = useCallback(async (newProjects: Project[] | ((prev: Project[]) => Project[])) => {
+        const updatedProjects = typeof newProjects === 'function' ? newProjects(projects) : newProjects;
+        setProjects(updatedProjects);
+        await db.saveProjects(updatedProjects);
     }, [projects]);
 
-    const createProject = useCallback((title: string, description: string): string => {
+    const addProject = useCallback((title: string, description: string): string => {
         const newProject: Project = {
-            id: uuidv4(),
+            id: `proj_${Date.now()}`,
             title,
             description,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
-        setProjects(prev => [...prev, newProject]);
+        updateAndSave(prev => [newProject, ...prev]);
         return newProject.id;
-    }, []);
+    }, [updateAndSave]);
 
-    const updateProject = useCallback((id: string, updatedProject: Partial<Omit<Project, 'id' | 'createdAt'>>) => {
-        setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updatedProject, updatedAt: new Date().toISOString() } : p));
-    }, []);
+    const updateProject = useCallback((id: string, updatedDetails: Partial<Omit<Project, 'id' | 'createdAt'>>) => {
+        updateAndSave(prev => 
+            prev.map(p => 
+                p.id === id ? { ...p, ...updatedDetails, updatedAt: new Date().toISOString() } : p
+            )
+        );
+    }, [updateAndSave]);
 
-    const deleteProject = useCallback((id: string, allGalleries: Gallery[], allJournalEntries: JournalEntry[]) => {
-        setProjects(prev => prev.filter(p => p.id !== id));
-        // Note: The App component is responsible for filtering out associated galleries and journals from their respective states.
-    }, []);
+    const deleteProject = useCallback((id: string) => {
+        updateAndSave(prev => prev.filter(p => p.id !== id));
+    }, [updateAndSave]);
+    
+    const deleteAllProjects = useCallback(() => {
+        updateAndSave([]);
+    }, [updateAndSave]);
 
-    const clearAllProjects = useCallback(() => {
-        setProjects([]);
-    }, []);
-
-    return { projects, createProject, updateProject, deleteProject, setProjects, clearAllProjects };
+    return {
+        projects,
+        isLoading,
+        addProject,
+        updateProject,
+        deleteProject,
+        deleteAllProjects,
+    };
 };

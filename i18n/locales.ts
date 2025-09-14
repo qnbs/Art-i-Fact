@@ -1,830 +1,876 @@
-export type Translations = {
-  [key: string]: string;
+
+export type Language = 'en' | 'de';
+
+export interface Locale {
+  [key: string]: string | Locale;
+}
+
+const en: Locale = {
+  // General
+  back: 'Back',
+  save: 'Save',
+  cancel: 'Cancel',
+  create: 'Create',
+  remove: 'Remove',
+  close: 'Close',
+  retry: 'Retry',
+  generate: 'Generate',
+  
+  // Views
+  view: {
+    workspace: 'Workspace',
+    discover: 'Discover',
+    studio: 'AI Studio',
+    journal: 'Journal',
+    profile: 'Profile',
+    setup: 'Settings',
+    help: 'Help & About',
+    project: 'Project',
+    gallery: 'Gallery',
+    community: 'Community',
+  },
+
+  // Profile
+  profile: {
+      title: "Curator's Profile",
+      stats: {
+          galleries: 'Galleries Curated',
+          discovered: 'Artworks Discovered',
+          created: 'AI Artworks Created',
+      }
+  },
+
+  // Errors
+  error: {
+    api: {
+      title: 'AI Assistant Error',
+      message: 'The AI assistant encountered an issue. Please check your connection and try again.'
+    }
+  },
+  
+  // Toasts
+  toast: {
+      settings: {
+          reset: 'Settings have been reset to default.',
+          exported: 'Your data has been successfully exported.',
+          imported: 'Data imported successfully! The app will now reload.',
+          importError: 'Error importing data. The file might be corrupt.'
+      },
+      artwork: {
+          added: 'Artwork added to "{{gallery}}".'
+      },
+      journal: {
+          deleted: 'Journal entry deleted.'
+      },
+      share: {
+          linkCopied: 'Shareable link copied to clipboard.'
+      },
+      studio: {
+        promptEnhanced: 'Prompt enhanced successfully!'
+      },
+      gallery: {
+        imported: 'Gallery "{{title}}" imported successfully!'
+      },
+      error: {
+        gemini: "Gemini API request failed."
+      }
+  },
+  
+  artwork: {
+    detailsLabel: 'View details for {{title}}',
+    moveUp: 'Move {{title}} up in order',
+    moveDown: 'Move {{title}} down in order',
+  },
+  modal: {
+    details: {
+      palette: 'Dominant Colors',
+      notes: "Curator's Notes",
+      'notes.placeholder': "Add your personal notes and interpretation here...",
+      attribution: 'Attribution',
+      imageFile: 'Image file',
+      infoPage: 'Information page',
+      source: 'Source',
+      about: 'About this Piece',
+      context: 'Historical Context',
+      tags: 'Tags',
+      deepDive: 'AI Deep Dive',
+      'deepDive.symbolism': 'Symbolism & Iconography',
+      'deepDive.artistContext': "Artist's Context",
+      'deepDive.technique': 'Technique & Style',
+      findSimilar: 'Find Similar Art',
+      removeFromGallery: 'Remove from Gallery',
+      addToGallery: 'Add to Gallery',
+      medium: 'Medium',
+      dimensions: 'Dimensions',
+      location: 'Location',
+    },
+    addToGallery: {
+      title: 'Add to Gallery',
+      create: 'Create New Gallery & Add',
+      select: '...or add to an existing one:',
+    }
+  },
+  chat: {
+    title: 'Chat about {{title}}',
+    error: {
+        start: 'Sorry, I had trouble starting this conversation. Please try again later.',
+        response: 'I seem to be having trouble responding right now. Please try again.'
+    },
+    placeholder: 'Ask something about the artwork...',
+    button: 'Discuss with AI'
+  },
+  gallery: {
+    new: 'New Gallery',
+    status: {
+        draft: 'Draft',
+        published: 'Published',
+    },
+    manager: {
+        artworkCount: '{{count}} artworks',
+        empty: {
+            title: 'No Galleries Here Yet',
+            prompt: 'Create your first gallery to start curating.',
+        },
+        create: 'New Gallery'
+    },
+    suite: {
+        title: 'Gallery Suite'
+    },
+    exhibit: {
+        button: 'Exhibit'
+    },
+    ai: {
+        critique: 'Critique Gallery',
+        audioGuide: 'Generate Audio Guide',
+        trailer: 'Generate Video Trailer'
+    },
+    critique: {
+        modal: {
+            critique: "Curator's Critique",
+            suggestions: 'Suggestions'
+        }
+    },
+    actions: {
+        duplicate: 'Duplicate'
+    },
+    creator: {
+        title: 'Gallery Title',
+        description: 'Description',
+        'title.placeholder': 'e.g., "Impressionist Landscapes"',
+        'description.placeholder': 'e.g., "A collection of works exploring light and nature."',
+    }
+  },
+  journal: {
+    title: 'Journal',
+    new: 'New Entry',
+    delete: {
+        confirm: 'Are you sure you want to delete the entry "{{title}}"?',
+    },
+    research: {
+        heading: 'AI Research: {{topic}}',
+        placeholder: 'Research a topic with AI...',
+    },
+    preview: 'Live Preview',
+    editor: {
+        placeholder: 'Start writing your thoughts...'
+    },
+    empty: {
+        title: 'Your Journal is Empty',
+        prompt: 'Create your first entry to start recording your thoughts and research.'
+    },
+    select: {
+        title: 'Select an Entry',
+        prompt: 'Choose an entry from the list to view or edit it.'
+    }
+  },
+  workspace: {
+      title: 'Workspace',
+      newProject: 'New Project',
+      editProject: 'Edit Project Details',
+      project: {
+          galleries: '{{count}} Galleries',
+          journals: '{{count}} Journals',
+      },
+      delete: {
+          projectLabel: 'Delete project {{title}}'
+      },
+      empty: {
+          title: 'Welcome to your Workspace!',
+          prompt: 'Projects are containers for your galleries and research. Create a project to get started.',
+          button: 'Create First Project'
+      }
+  },
+  settings: {
+    title: "Settings",
+    about: {
+      version: "Version 1.0.0",
+      license: "All rights reserved."
+    },
+    general: {
+      title: "General",
+      language: {
+        label: "Display Language"
+      },
+      theme: {
+        label: "Appearance",
+        dark: "Dark",
+        light: "Light"
+      },
+      confirmDelete: {
+        label: "Confirm Deletions",
+        desc: "Show a confirmation dialog before deleting items."
+      }
+    },
+    ai: {
+        title: "AI Assistant",
+        creativity: {
+            label: "Creativity Level",
+            desc: "Controls the randomness of AI responses. 'Creative' may be less factual.",
+            focused: "Focused",
+            balanced: "Balanced",
+            creative: "Creative"
+        },
+        results: {
+            label: "Search Results Count",
+            desc: "Number of artworks to fetch in 'Discover' searches."
+        }
+    },
+    studio: {
+        title: "AI Studio",
+        enhancement: {
+            label: "Prompt Enhancement Style",
+            desc: "Determines how the AI enhances your prompts.",
+            subtle: "Subtle",
+            descriptive: "Descriptive",
+            artistic: "Artistic"
+        },
+        clearPrompt: {
+            label: "Clear Prompt After Generating",
+            desc: "Automatically clears the text box after creating an image."
+        }
+    },
+    data: {
+        title: "Data Management",
+        export: {
+            label: "Export Data",
+            desc: "Save all your projects, galleries, and settings to a file.",
+            button: "Export All Data"
+        },
+        import: {
+            label: "Import Data",
+            desc: "Load data from a backup file. This will overwrite current data.",
+            button: "Import from File"
+        },
+        reset: {
+            label: "Reset Application",
+            desc: "Delete all your data and restore default settings. This cannot be undone.",
+            button: "Reset App Data"
+        }
+    }
+  },
+  help: {
+    title: "Help & About",
+    glossary: {
+      button: "Browse the Art History Glossary"
+    },
+    tutorial: {
+      title: "Getting Started Tutorial",
+      step1: {
+        title: "1. Create a Project",
+        content: "Start in the <b>Workspace</b>. Projects are like folders to organize your research and galleries."
+      },
+      step2: {
+        title: "2. Discover Art",
+        content: "Use the <b>Discover</b> tab to search for famous artworks from open-source collections."
+      },
+      step3: {
+        title: "3. Curate a Gallery",
+        content: "Add artworks you find to a new or existing <b>Gallery</b> within your project."
+      },
+      step4: {
+        title: "4. Create with AI",
+        content: "Visit the <b>AI Studio</b> to generate unique images from your own text prompts."
+      },
+      step5: {
+        title: "5. Record Your Thoughts",
+        content: "Use the <b>Journal</b> to write notes, conduct AI-powered research, and develop your ideas."
+      },
+      step6: {
+        title: "6. Present Your Work",
+        content: "Enter <b>Exhibition Mode</b> from any gallery to view your collection in a full-screen, immersive slideshow."
+      }
+    },
+    tips: {
+      title: "Pro Tips",
+      tip1: {
+        title: "Use the AI Assistant in your Gallery",
+        content: "Get a professional critique of your curation, or generate an entire audio guide script for your exhibition."
+      },
+      tip2: {
+        title: "Drag and Drop to Reorder",
+        content: "Inside a gallery, you can drag artworks to change their order for the perfect narrative flow."
+      },
+      tip3: {
+        title: "Enhance Your AI Prompts",
+        content: "In the AI Studio, use the 'Enhance Prompt' button to let the AI add rich, artistic detail to your ideas before generating an image."
+      },
+      tip4: {
+        title: "Chat with an Artwork",
+        content: "In an artwork's detail view, click 'Discuss with AI' to start a conversation and learn more about its history and meaning."
+      }
+    },
+    faq: {
+      title: "Frequently Asked Questions",
+      q1: { q: "Where does the artwork data come from?", a: "Most of the discoverable artwork is sourced from Wikimedia Commons and other open-access museum collections. We rely on the metadata provided by these institutions." },
+      q2: { q: "Is my data private?", a: "Yes. All your data—projects, galleries, journal entries, and settings—is stored locally in your browser. Nothing is uploaded to a server unless you choose to share a gallery." },
+      q3: { q: "How does the AI work?", a: "This application uses Google's Gemini family of models for all AI-powered features, from image generation to text analysis and chat." },
+      q4: { q: "Can I share my galleries?", a: "Yes! In any gallery, click the 'Share' button. You can generate a shareable link that encodes your gallery data for others to view, or export a file they can import into their own app." }
+    },
+    philosophy: {
+      title: "Our Philosophy",
+      content: "Art-i-Fact is designed to be a personal digital studio and curatorial assistant. It empowers you to explore, understand, create, and share art in new ways. We believe that combining human creativity with powerful AI tools can unlock new avenues for learning and expression."
+    }
+  },
+  glossary: {
+    title: "Art History Glossary",
+    category: {
+      techniques: "Techniques & Media",
+      eras: "Movements & Eras",
+      concepts: "Concepts & Terms",
+    },
+    chiaroscuro: { term: "Chiaroscuro", def: "The use of strong contrasts between light and dark, usually bold contrasts affecting a whole composition." },
+    impasto: { term: "Impasto", def: "A technique used in painting, where paint is laid on an area of the surface in very thick layers, usually thick enough that the brush or painting-knife strokes are visible." },
+    sfumato: { term: "Sfumato", def: "A painting technique for softening the transition between colours, mimicking an area beyond what the human eye is focusing on, or the out-of-focus plane. Leonardo da Vinci was the most prominent practitioner." },
+    tenebrism: { term: "Tenebrism", def: "A style of painting using profoundly pronounced chiaroscuro, where there are violent contrasts of light and dark, and where darkness becomes a dominating feature of the image. Caravaggio is a key practitioner." },
+    pointillism: { term: "Pointillism", def: "A technique of painting in which small, distinct dots of color are applied in patterns to form an image. Georges Seurat and Paul Signac developed the technique in 1886." },
+    fresco: { term: "Fresco", def: "A technique of mural painting executed upon freshly laid ('wet') lime plaster. Water is used as the vehicle for the dry-powder pigment to merge with the plaster, and with the setting of the plaster, the painting becomes an integral part of the wall." },
+    renaissance: { term: "Renaissance", def: "A period in European history, from the 14th to the 17th century, regarded as the cultural bridge between the Middle Ages and modern history. It started as a cultural movement in Italy in the Late Medieval period and later spread to the rest of Europe." },
+    baroque: { term: "Baroque", def: "A style of architecture, music, dance, painting, sculpture and other arts that flourished in Europe from the early 17th century until the 1740s. It was encouraged by the Catholic Church as a means to counter the simplicity and austerity of Protestant architecture, art and music." },
+    rococo: { term: "Rococo", def: "An exceptionally ornamental and theatrical style of architecture, art and decoration which combines asymmetry, scrolling curves, gilding, white and pastel colors, sculpted molding, and trompe-l'œil frescoes to create surprise and the illusion of motion and drama." },
+    impressionism: { term: "Impressionism", def: "A 19th-century art movement characterized by relatively small, thin, yet visible brush strokes, open composition, emphasis on accurate depiction of light in its changing qualities, ordinary subject matter, and inclusion of movement as a crucial element of human perception and experience." },
+    cubism: { term: "Cubism", def: "An early-20th-century avant-garde art movement that revolutionized European painting and sculpture. In Cubist artwork, objects are analyzed, broken up and reassembled in an abstracted form—instead of depicting objects from a single viewpoint, the artist depicts the subject from a multitude of viewpoints to represent the subject in a greater context." },
+    surrealism: { term: "Surrealism", def: "A cultural movement which developed in Europe in the aftermath of World War I and was largely influenced by Dada. The movement is best known for its visual artworks and writings, which feature element of surprise, unexpected juxtapositions and non sequitur." },
+    popart: { term: "Pop Art", def: "An art movement that emerged in the United Kingdom and the United States during the mid- to late-1950s. The movement presented a challenge to traditions of fine art by including imagery from popular and mass culture, such as advertising, comic books and mundane cultural objects." },
+    minimalism: { term: "Minimalism", def: "An art movement that began in post–World War II Western art, most strongly with American visual arts in the 1960s and early 1970s. The term is used to describe a trend in design and architecture wherein the subject is reduced to its necessary elements." },
+    composition: { term: "Composition", def: "The placement or arrangement of visual elements or 'ingredients' in a work of art, as distinct from the subject. It can also be thought of as the organization of the elements of art according to the principles of art." },
+    palette: { term: "Palette", def: "The range of colors used by a particular artist or in a particular picture. It can also refer to the board on which an artist mixes paints." },
+    perspective: { term: "Perspective", def: "The art of drawing solid objects on a two-dimensional surface so as to give the right impression of their height, width, depth, and position in relation to each other when viewed from a particular point." },
+    iconography: { term: "Iconography", def: "The branch of art history which studies the identification, description, and the interpretation of the content of images: the subjects depicted, the particular compositions and details used to do so, and other elements that are distinct from artistic style." }
+  },
+  welcome: {
+      title: "Welcome to Art-i-Fact",
+      subtitle: "Your personal space to discover, create, and curate art with the power of AI.",
+      cta: "Let's Get Started"
+  },
+  exhibition: {
+    goToArtwork: 'Go to artwork {{number}}',
+    transcript: 'View Transcript',
+    toggleFullscreen: 'Enter Fullscreen',
+    exitFullscreen: 'Exit Fullscreen',
+    audioPlaying: 'Audio Guide Playing',
+    audioMuted: 'Audio Guide Muted',
+    curatedBy: 'Curated by {{username}}'
+  },
+  camera: {
+    error: {
+        access: 'Could not access the camera. Please check permissions.'
+    }
+  },
+  community: {
+      title: 'Community Galleries',
+      subtitle: 'Explore and import galleries curated by others.',
+      curatedBy: 'Curated by',
+      preview: 'Preview',
+      import: 'Import',
+      empty: {
+          title: 'Could Not Load Galleries',
+          prompt: 'There was an issue fetching galleries from the community. Please check your connection and try again.'
+      }
+  },
+  share: {
+      modal: {
+          title: 'Share or Export Gallery',
+          link: {
+              title: 'Share a Link',
+              description: "Copy a unique link to share this gallery. Others can view it in their browser or import it into their own Art-i-Fact app.",
+              copy: 'Copy Shareable Link'
+          },
+          export: {
+              title: 'Export as File',
+              description: 'Download the gallery data as a JSON file. This is useful for backups or for sharing directly with others.',
+              button: 'Export .json File'
+          }
+      }
+  },
+  studio: {
+    title: "AI Studio",
+    subtitle: "Create unique artworks from text prompts.",
+    prompt: {
+        placeholder: "e.g., A cubist portrait of a person reading a book...",
+    },
+    inspiration: "Need inspiration? Try one of these:",
+    aspectRatio: "Aspect Ratio",
+    enhancePrompt: "Enhance Prompt",
+    generate: "Generate",
+    generating: "Generating...",
+    addToGallery: "Save to a Gallery",
+    remix: {
+        placeholder: "e.g., Add a surreal element, make it more vibrant...",
+        button: "Remix",
+        mode: "Remix Mode",
+        exit: "Cancel Remix",
+    }
+  },
+  discover: {
+    title: "Discover Art",
+    subtitle: "Search for artworks from public collections.",
+    search: {
+        placeholder: "Search by artist, title, or theme...",
+        button: "Search",
+    },
+    results: {
+        title: "Search Results for \"{{query}}\"",
+        none: "No results found. Try a different search term.",
+    },
+    featured: "Featured Artworks",
+    error: "Could not fetch artworks. Please try again later.",
+  }
 };
 
-const de: Translations = {
-  // App-wide
-  'app.title': 'Art-i-Fact: KI-Kunstkuration',
-  'close': 'Schließen',
-  'cancel': 'Abbrechen',
-  'create': 'Erstellen',
-  'save': 'Speichern',
-  'remove': 'Entfernen',
-  'generate': 'Generieren',
-  'retry': 'Erneut versuchen',
-  'discover': 'Entdecken',
-  'workspace': 'Arbeitsbereich',
-  'gallery': 'Galerie',
-  'profile': 'Profil',
-  'confirm': 'Bestätigen',
+const de: Locale = {
+  // General
+  back: 'Zurück',
+  save: 'Speichern',
+  cancel: 'Abbrechen',
+  create: 'Erstellen',
+  remove: 'Entfernen',
+  close: 'Schließen',
+  retry: 'Erneut versuchen',
+  generate: 'Generieren',
 
-  // Navigation & Header
-  'nav.workspace': 'Arbeitsbereich',
-  'nav.discover': 'Entdecken',
-  'nav.studio': 'Studio',
-  'nav.gallery': 'Galerie',
-  'nav.journal': 'Journal',
-  'nav.profile': 'Profil',
-  'nav.settings': 'Einstellungen',
-  'nav.help': 'Hilfe',
-  'nav.category': 'Navigation',
-  'navigateBack': 'Zurück navigieren',
+  // Views
+  view: {
+    workspace: 'Arbeitsbereich',
+    discover: 'Entdecken',
+    studio: 'KI-Studio',
+    journal: 'Journal',
+    profile: 'Profil',
+    setup: 'Einstellungen',
+    help: 'Hilfe & Info',
+    project: 'Projekt',
+    gallery: 'Galerie',
+    community: 'Community',
+  },
 
-  // Welcome Portal
-  'welcome.portal.subtitle': 'Ihre persönliche, KI-gestützte Leinwand, um Kunst zu entdecken, zu erschaffen und zu kuratieren.',
-  'welcome.portal.enter': 'App betreten',
-  
-  // Welcome Themes (Discover Page)
-  'welcome.subtitle': 'Beginnen Sie Ihre Reise, indem Sie nach einem Künstler, einer Epoche oder einem Thema suchen, oder lassen Sie sich von unseren kuratierten Vorschlägen inspirieren. <br /> Was weckt heute Ihr Interesse?',
-  'welcome.category.eras': 'Epochen & Stile',
-  'welcome.theme.renaissance_portraits': 'Renaissance-Porträts',
-  'welcome.theme.baroque_chiaroscuro': 'Barockes Chiaroscuro',
-  'welcome.theme.dutch_golden_age': 'Goldenes Zeitalter der Niederlande',
-  'welcome.theme.romanticism_landscapes': 'Romantische Landschaften',
-  'welcome.theme.impressionist_light': 'Impressionistisches Licht',
-  'welcome.theme.post_impressionism_emotion': 'Post-Impressionistische Emotion',
-  'welcome.theme.cubist_perspectives': 'Kubistische Perspektiven',
-  'welcome.theme.surreal_dreams': 'Surreale Träume',
-  'welcome.theme.abstract_expressionism': 'Abstrakter Expressionismus',
-  'welcome.theme.pop_art_critique': 'Pop-Art-Kritik',
-  'welcome.category.techniques': 'Künstlerische Techniken',
-  'welcome.theme.impasto_texture': 'Impasto-Textur',
-  'welcome.theme.sfumato_haze': 'Sfumato-Dunst',
-  'welcome.theme.tenebrism_drama': 'Tenebrismus-Drama',
-  'welcome.theme.pointillism_dots': 'Pointillismus-Punkte',
-  'welcome.theme.fresco_murals': 'Fresken-Wandmalereien',
-  'welcome.category.subjects': 'Motive & Sujets',
-  'welcome.theme.mythological_heroes': 'Mythologische Helden',
-  'welcome.theme.biblical_scenes': 'Biblische Szenen',
-  'welcome.theme.historical_events': 'Historische Ereignisse',
-  'welcome.theme.vanitas_mortality': 'Vanitas & Vergänglichkeit',
-  'welcome.theme.unconventional_portraits': 'Unkonventionelle Porträts',
-  'welcome.theme.dramatic_seascapes': 'Dramatische Seestücke',
-  'welcome.theme.tranquil_gardens': 'Stille Gärten',
-  'welcome.theme.urban_alienation': 'Urbane Entfremdung',
-  'welcome.category.concepts': 'Abstrakte Konzepte',
-  'welcome.theme.order_and_chaos': 'Ordnung & Chaos',
-  'welcome.theme.love_and_loss': 'Liebe & Verlust',
-  'welcome.theme.power_and_conflict': 'Macht & Konflikt',
-  'welcome.theme.joy_and_celebration': 'Freude & Feier',
-  'welcome.theme.melancholy_and_solitude': 'Melancholie & Einsamkeit',
-  'welcome.theme.geometric_abstraction': 'Geometrische Abstraktion',
+  // Profile
+  profile: {
+      title: "Kuratorprofil",
+      stats: {
+          galleries: 'Kuratierte Galerien',
+          discovered: 'Entdeckte Kunstwerke',
+          created: 'Erstellte KI-Kunstwerke',
+      }
+  },
 
-  // Discover / Art Library
-  'artLibrary.title': 'Entdecken',
-  'artLibrary.backToDiscover': 'Zurück zum Entdecken',
-  'artLibrary.search.placeholder': 'Nach Themen, Künstlern, Stilen suchen...',
-  'artLibrary.search.resultsFor': 'Ergebnisse für "{term}"',
-  'artLibrary.search.similarTo': 'Ähnlich wie "{title}"',
-  'artLibrary.search.noResults': 'Keine Kunstwerke gefunden',
-  'artLibrary.search.noResults.prompt': 'Versuchen Sie einen anderen Suchbegriff oder erkunden Sie unsere kuratierten Themen.',
-  'artLibrary.upload.button': 'Bild hochladen',
-  'artLibrary.camera.button': 'Kamera',
-  'artwork.detailsLabel': 'Details für {title} anzeigen',
-
-  // Studio
-  'studio.title': 'Studio',
-  'studio.subtitle': 'Erschaffen Sie einzigartige Kunstwerke mit KI',
-  'studio.prompt.placeholder': 'Beschreiben Sie das Bild, das Sie erschaffen möchten...',
-  'studio.remix.placeholder': 'Beschreiben Sie, wie Sie das Bild ändern möchten...',
-  'studio.aspectRatio': 'Seitenverhältnis',
-  'studio.enhancePrompt': 'Prompt verbessern',
-  'studio.generating': 'Generiere...',
-  'studio.generate': 'Generieren',
-  'studio.remix.button': 'Remix',
-  'studio.remix.exit': 'Remix verlassen',
-  'studio.remix.mode': 'Remix-Modus',
-  'studio.addToGallery': 'Zur Galerie hinzufügen',
-
-  // Workspace & Projects
-  'workspace.title': 'Arbeitsbereich',
-  'workspace.newProject': 'Neues Projekt',
-  'workspace.editProject': 'Projekt bearbeiten',
-  'workspace.empty.title': 'Ihr Arbeitsbereich ist leer',
-  'workspace.empty.prompt': 'Projekte helfen Ihnen, Ihre Galerien und Notizen zu organisieren. Erstellen Sie Ihr erstes Projekt, um zu beginnen.',
-  'workspace.empty.button': 'Erstes Projekt erstellen',
-  'workspace.delete.confirmTitle': 'Projekt löschen',
-  'workspace.delete.confirm': 'Sind Sie sicher, dass Sie das Projekt "{title}" und alle zugehörigen Galerien und Journaleinträge dauerhaft löschen möchten?',
-  'workspace.project.galleries': '{count} Galerien',
-  'workspace.project.journals': '{count} Einträge',
-
-  // Gallery
-  'gallery.suite.title': 'Galerie-Verwaltung',
-  'gallery.manager.create': 'Neue Galerie',
-  'gallery.manager.artworkCount': '{count} Kunstwerke',
-  'gallery.manager.empty.title': 'Keine Galerien gefunden',
-  'gallery.manager.empty.prompt': 'Erstellen Sie Ihre erste Galerie, um mit dem Kuratieren Ihrer Kunstsammlung zu beginnen.',
-  'gallery.manager.delete.confirmTitle': 'Galerie löschen',
-  'gallery.manager.delete.confirm': 'Möchten Sie die Galerie "{title}" wirklich löschen?',
-  'gallery.manager.project': 'Projekt',
-  'gallery.manager.lastUpdated': 'Zuletzt aktualisiert',
-  'gallery.new': 'Neue Galerie',
-  'gallery.newUntitled': 'Unbenannte Galerie',
-  'gallery.creator.title': 'Galerie-Titel',
-  'gallery.creator.title.placeholder': 'z.B. "Meisterwerke des Lichts"',
-  'gallery.creator.description': 'Beschreibung',
-  'gallery.creator.description.placeholder': 'Geben Sie eine kurze Beschreibung des Themas Ihrer Galerie an.',
-  'gallery.exhibit.button': 'Ausstellen',
-  'gallery.share': 'Teilen',
-  'gallery.empty.prompt': 'Diese Galerie ist leer. Fügen Sie Kunstwerke über die "Entdecken"-Seite hinzu.',
-  'gallery.ai.critique': 'Kritik anfordern',
-  'gallery.ai.audioGuide': 'Audioguide erstellen',
-  'gallery.ai.trailer': 'Video-Trailer erstellen',
-  'gallery.ai.trailer.ready': 'Trailer ansehen',
-  'gallery.ai.trailer.pending': 'Trailer wird generiert...',
-  'gallery.ai.trailer.failed': 'Trailer-Erstellung fehlgeschlagen',
-  'gallery.critique.modal.critique': 'Kritik',
-  'gallery.critique.modal.suggestions': 'Vorschläge',
-  'gallery.suggestions.analyzing': 'Analysiere...',
-  'gallery.actions.title': 'Aktionen',
-  'gallery.actions.generateIntro': 'KI-Einleitung generieren',
-  'gallery.artworks.tab': 'Kunstwerke',
-  'gallery.details.tab': 'Kuratorische Details',
-  'gallery.introduction': 'Einleitung',
-  'gallery.status': 'Status',
-  'gallery.status.draft': 'Entwurf',
-  'gallery.status.published': 'Veröffentlicht',
-  'gallery.tags': 'Tags',
-  'gallery.tags.placeholder': 'Tag hinzufügen und Enter drücken',
-  'gallery.curatorNotes': 'Notizen des Kurators (privat)',
-  'gallery.curatorNotes.placeholder': 'Ihre privaten Gedanken, Recherchen oder Pläne für diese Galerie...',
-  'gallery.actions.duplicate': 'Duplizieren',
-
-  // Journal
-  'journal.title': 'Journal',
-  'journal.new': 'Neuer Eintrag',
-  'journal.newUntitled': 'Unbenannter Eintrag',
-  'journal.empty.title': 'Ihr Journal ist leer',
-  'journal.empty.prompt': 'Beginnen Sie, Ihre Gedanken, Ideen und Forschungen zu Ihrer Kunstsammlung festzuhalten.',
-  'journal.editor.placeholder': 'Schreiben Sie hier Ihre Gedanken...',
-  'journal.research.placeholder': 'Ein Thema mit KI recherchieren...',
-  'journal.research.heading': 'KI-Recherche: {topic}',
-  'journal.preview': 'Vorschau',
-  'journal.select.title': 'Eintrag auswählen',
-  'journal.select.prompt': 'Wählen Sie einen Eintrag aus der Liste aus, um ihn anzuzeigen oder zu bearbeiten.',
-  'journal.delete.confirm': 'Möchten Sie den Eintrag "{title}" wirklich löschen?',
-
-  // Modals
-  'modal.addToGallery.title': 'Zu einer Galerie hinzufügen',
-  'modal.addToGallery.create': 'Neue Galerie erstellen & hinzufügen',
-  'modal.addToGallery.select': 'Oder zu einer bestehenden hinzufügen:',
-  'modal.details.about': 'Über das Kunstwerk',
-  'modal.details.context': 'Historischer Kontext',
-  'modal.details.year': 'Jahr',
-  'modal.details.medium': 'Medium',
-  'modal.details.dimensions': 'Abmessungen',
-  'modal.details.location': 'Standort',
-  'modal.details.tags': 'Schlagwörter',
-  'modal.details.palette': 'Farbpalette',
-  'modal.details.notes': 'Ihre Notizen',
-  'modal.details.notes.placeholder': 'Fügen Sie Ihre persönlichen Notizen zu diesem Kunstwerk hinzu...',
-  'modal.details.findSimilar': 'Ähnliche finden',
-  'modal.details.addToGallery': 'Zur Galerie hinzufügen',
-  'modal.details.removeFromGallery': 'Aus Galerie entfernen',
-  'modal.details.deepDive': 'KI-Tiefenanalyse',
-  'modal.details.deepDive.symbolism': 'Symbolik & Ikonographie',
-  'modal.details.deepDive.artistContext': 'Kontext des Künstlers',
-  'modal.details.deepDive.technique': 'Künstlerische Technik',
-  'modal.details.source': 'Quelle',
-  'modal.details.imageFile': 'Bilddatei',
-  'modal.details.infoPage': 'Informationsseite',
-  'modal.details.attribution': 'Urheberschaft',
-
-  // Share Modal
-  'share.modal.title': 'Galerie teilen oder exportieren',
-  'share.modal.link.title': 'Per Link teilen',
-  'share.modal.link.description': 'Erstellen Sie einen Link, um eine schreibgeschützte Version Ihrer Galerie zu teilen. Die Daten werden sicher im Link selbst gespeichert.',
-  'share.modal.link.copy': 'Link kopieren',
-  'share.modal.export.title': 'Als Datei exportieren',
-  'share.modal.export.description': 'Laden Sie die Daten dieser Galerie als JSON-Datei herunter, um sie zu sichern oder woanders zu importieren.',
-  'share.modal.export.button': 'Galerie-JSON exportieren',
-
-  // Chat
-  'chat.button': 'Mit KI chatten',
-  'chat.modal.title': 'Chat über {title}',
-  'chat.placeholder': 'Stellen Sie eine Frage...',
-  'chat.error.start': 'Entschuldigung, ich konnte die Konversation nicht starten. Bitte versuchen Sie es später erneut.',
-  'chat.error.response': 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.',
-
-  // Camera
-  'camera.modal.title': 'Kunstwerk analysieren',
-  'camera.error.access': 'Kamerazugriff verweigert. Bitte erlauben Sie den Zugriff in Ihren Browsereinstellungen.',
-
-  // Exhibition Mode
-  'exhibition.goToArtwork': 'Gehe zu Kunstwerk {number}',
-  'exhibition.transcript': 'Transkript anzeigen/verbergen',
-  'exhibition.toggleFullscreen': 'Vollbildmodus aktivieren',
-  'exhibition.exitFullscreen': 'Vollbildmodus verlassen',
-  'exhibition.audioPlaying': 'Audioguide aktiv',
-  'exhibition.audioMuted': 'Audioguide stummgeschaltet',
-  'exhibition.curatedBy': 'Kuratiert von {username}',
-
-  // Settings
-  'settings.title': 'Einstellungen',
-  'settings.profile.title': 'Kuratorprofil',
-  'settings.profile.username': 'Benutzername',
-  'settings.profile.bio': 'Biografie',
-  'settings.profile.avatar': 'Avatar',
-  'settings.general.title': 'Allgemein',
-  'settings.general.language': 'Sprache',
-  'settings.general.theme': 'Thema',
-  'settings.general.compactMode': 'Kompakter Modus',
-  'settings.general.compactMode.desc': 'Reduziert Abstände für eine informationsdichtere Ansicht.',
-  'settings.ai.title': 'KI-Einstellungen',
-  'settings.ai.language': 'Sprache für KI-Inhalte',
-  'settings.ai.language.desc': 'Wählen Sie die Sprache für von der KI generierte Inhalte wie Kritiken oder Audioguides.',
-  'settings.ai.language.ui': 'Wie UI-Sprache',
-  'settings.ai.creativity': 'Kreativität',
-  'settings.ai.creativity.desc': 'Steuert die "Temperatur" der KI. Kreativer kann zu unerwarteteren Ergebnissen führen.',
-  'settings.ai.creativity.focused': 'Fokussiert',
-  'settings.ai.creativity.balanced': 'Ausgewogen',
-  'settings.ai.creativity.creative': 'Kreativ',
-  'settings.ai.resultsCount': 'Anzahl der Suchergebnisse',
-  'settings.ai.resultsCount.desc': 'Wie viele Bilder bei einer Suche in der Kunstbibliothek abgerufen werden.',
-  'settings.studio.title': 'Studio-Einstellungen',
-  'settings.studio.enhancementStyle': 'Stil der Prompt-Verbesserung',
-  'settings.studio.enhancementStyle.desc': 'Wählen Sie, wie die KI Ihre Prompts im Studio verbessern soll.',
-  'settings.studio.enhancementStyle.descriptive': 'Beschreibend',
-  'settings.studio.enhancementStyle.subtle': 'Dezent',
-  'settings.studio.enhancementStyle.artistic': 'Künstlerisch',
-  'settings.exhibit.title': 'Ausstellungsmodus',
-  'settings.exhibit.autoplay': 'Autoplay',
-  'settings.exhibit.autoplay.desc': 'Startet die Diashow automatisch beim Betreten des Ausstellungsmodus.',
-  'settings.exhibit.speed': 'Diashow-Geschwindigkeit',
-  'settings.exhibit.speed.desc': 'Dauer in Sekunden, die jedes Kunstwerk angezeigt wird.',
-  'settings.exhibit.transition': 'Übergangseffekt',
-  'settings.exhibit.transition.desc': 'Visueller Effekt beim Wechsel zwischen Kunstwerken.',
-  'settings.exhibit.transition.fade': 'Überblenden',
-  'settings.exhibit.transition.slide': 'Gleiten',
-  'settings.exhibit.showInfo': 'Infos einblenden',
-  'settings.exhibit.showInfo.desc': 'Zeigt Titel und Künstlerinformationen während der Diashow an.',
-  'settings.data.title': 'Datenverwaltung',
-  'settings.data.import.label': 'App-Daten importieren',
-  'settings.data.import.desc': 'Importieren Sie eine zuvor exportierte JSON-Datei, um Ihren Arbeitsbereich wiederherzustellen.',
-  'settings.data.import.button': 'Importieren',
-  'settings.data.export.label': 'App-Daten exportieren',
-  'settings.data.export.desc': 'Exportieren Sie alle Ihre Projekte, Galerien und Einstellungen in eine einzige JSON-Datei als Backup.',
-  'settings.data.export.button': 'Exportieren',
-  'settings.danger.title': 'Gefahrenzone',
-  'settings.danger.reset.label': 'App zurücksetzen',
-  'settings.danger.reset.desc': 'Löscht alle Ihre Daten (Projekte, Galerien, Journale, Einstellungen) endgültig und setzt die App auf den Werkszustand zurück.',
-  'settings.danger.reset.button': 'App zurücksetzen...',
-  'settings.danger.reset.confirm.title': 'App wirklich zurücksetzen?',
-  'settings.danger.reset.confirm.desc': 'Diese Aktion ist unwiderruflich. Alle Ihre Daten werden dauerhaft gelöscht. Um fortzufahren, geben Sie bitte "{appName}" in das Feld unten ein.',
-  'settings.danger.reset.final.title': 'Letzte Warnung',
-  'settings.danger.reset.final.desc': 'Sind Sie absolut sicher? Alle Daten werden jetzt gelöscht.',
-  'settings.about.version': 'Version 1.0.0',
-  'settings.about.license': 'Lizenziert unter der MIT-Lizenz.',
-  'profile.stats.galleries': 'Kuratierte Galerien',
-  'profile.stats.discovered': 'Entdeckte Kunstwerke',
-  'profile.stats.created': 'KI-Kunstwerke',
-
-  // Help & FAQ
-  'help.title': 'Hilfe & Info',
-  'help.glossary.button': 'Kunsthistorisches Glossar öffnen',
-  'help.philosophy.title': 'Unsere Philosophie',
-  'help.philosophy.content': 'Art-i-Fact ist als Ihr persönlicher Begleiter in der Welt der Kunst konzipiert. Es ist kein soziales Netzwerk, sondern ein Werkzeug zur Vertiefung, zum kreativen Ausdruck und zur Organisation. Wir glauben an die Kraft der Kuration als eine Form des Geschichtenerzählens und an KI als einen Partner, der diesen Prozess bereichert, anstatt ihn zu ersetzen.',
-  'help.tips.title': 'Tipps & Tricks',
-  'help.tips.tip1.title': 'Die Befehlspalette',
-  'help.tips.tip1.content': 'Drücken Sie <b>Strg+K</b> (oder Cmd+K auf Mac), um die Befehlspalette zu öffnen. Von hier aus können Sie sofort zu jeder Seite, jedem Projekt oder jeder Galerie navigieren.',
-  'help.tips.tip2.title': 'KI-Prompt-Verbesserung',
-  'help.tips.tip2.content': 'Nicht sicher, wie Sie Ihre Idee im <b>Studio</b> formulieren sollen? Schreiben Sie einen einfachen Gedanken und klicken Sie auf den Zauberstab-Button, um die KI Ihren Prompt in eine reichhaltige, detaillierte Beschreibung verwandeln zu lassen.',
-  'help.tips.tip3.title': 'Iteratives Remixen',
-  'help.tips.tip3.content': 'Nachdem Sie ein Bild generiert haben, verwenden Sie die <b>Remix</b>-Funktion, um es schrittweise zu verändern. Fügen Sie Elemente hinzu, ändern Sie Stile oder passen Sie Farben an, indem Sie einfache Anweisungen geben.',
-  'help.tips.tip4.title': 'Sichern Sie Ihre Arbeit',
-  'help.tips.tip4.content': 'Da alle Daten lokal gespeichert werden, ist es eine gute Praxis, Ihre Arbeit regelmäßig über die <b>Datenexport</b>-Funktion in den Einstellungen zu sichern. So können Sie Ihren Arbeitsbereich jederzeit wiederherstellen.',
-  'help.tutorial.title': 'Schnellstart-Anleitung',
-  'help.tutorial.step1.title': '1. Projekte erstellen',
-  'help.tutorial.step1.content': 'Beginnen Sie im <b>Arbeitsbereich</b>, indem Sie ein Projekt für Ihre Ausstellungsidee erstellen. Projekte sind Ordner für Ihre Galerien und Notizen.',
-  'help.tutorial.step2.title': '2. Kunst entdecken',
-  'help.tutorial.step2.content': 'Nutzen Sie die <b>Entdecken</b>-Ansicht, um nach Kunst zu suchen. Sie können auch ein Bild hochladen oder Ihre Kamera benutzen, um Kunst zu identifizieren.',
-  'help.tutorial.step3.title': '3. Galerien kuratieren',
-  'help.tutorial.step3.content': 'Fügen Sie gefundene Kunstwerke zu einer Galerie in Ihrem Projekt hinzu. Ordnen Sie sie per Drag-and-Drop an, um Ihre Geschichte zu erzählen.',
-  'help.tutorial.step4.title': '4. Im Studio kreativ werden',
-  'help.tutorial.step4.content': 'Besuchen Sie das <b>Studio</b>, um eigene Bilder mit KI zu generieren. Verbessern und remixen Sie Ihre Kreationen.',
-  'help.tutorial.step5.title': '5. Gedanken festhalten',
-  'help.tutorial.step5.content': 'Nutzen Sie das <b>Journal</b> in einem Projekt, um Ihre kuratorischen Entscheidungen und Recherchen zu dokumentieren. Die KI kann Ihnen bei der Recherche helfen.',
-  'help.tutorial.step6.title': '6. Ausstellen und teilen',
-  'help.tutorial.step6.content': 'Präsentieren Sie Ihre fertige Galerie im <b>Ausstellungsmodus</b> oder teilen Sie sie über einen einzigartigen Link mit anderen.',
-  'help.faq.title': 'Häufig gestellte Fragen (FAQ)',
-  'help.faq.q1.q': 'Wo werden meine Daten gespeichert?',
-  'help.faq.q1.a': 'Alle Ihre Daten – Galerien, Journaleinträge, Einstellungen – werden <b>ausschließlich lokal in Ihrem Browser</b> gespeichert. Nichts wird auf einen Server hochgeladen oder von uns eingesehen. Ihre Privatsphäre hat oberste Priorität.',
-  'help.faq.q2.q': 'Kann ich meine Arbeit sichern oder übertragen?',
-  'help.faq.q2.a': 'Ja. In den Einstellungen können Sie jederzeit alle Ihre Anwendungsdaten als einzelne JSON-Datei <b>exportieren</b>. Diese Datei kann in einer anderen Instanz der App wieder <b>importiert</b> werden, um Ihren Arbeitsbereich wiederherzustellen.',
-  'help.faq.q3.q': 'Was passiert mit meinen hochgeladenen Bildern?',
-  'help.faq.q3.a': 'Wenn Sie ein Bild zur Analyse hochladen, wird es zur Verarbeitung an die Google Gemini API gesendet. Es wird nicht dauerhaft gespeichert. Bilder, die Sie in Galerien verwenden, werden als Verweise auf ihre ursprüngliche Quelle (z.B. Wikimedia) gespeichert, nicht als Kopien.',
-  'help.faq.q4.q': 'Gibt es Kosten für die Nutzung der KI-Funktionen?',
-  'help.faq.q4.a': 'Die Anwendung verwendet eine von Ihnen bereitgestellte Google Gemini API-Schlüssel. Die Nutzung der KI-Funktionen unterliegt den Preisen und Kontingenten Ihres eigenen Google AI-Kontos. Die App selbst ist kostenlos.',
-
-  // Glossary
-  'glossary.title': 'Glossar der Kunstbegriffe',
-  'glossary.category.techniques': 'Maltechniken & Stile',
-  'glossary.category.eras': 'Kunsthistorische Epochen',
-  'glossary.category.concepts': 'Künstlerische Konzepte',
-  'glossary.chiaroscuro.term': 'Chiaroscuro',
-  'glossary.chiaroscuro.def': 'Eine Technik in der Malerei, die starke Kontraste zwischen Licht und Dunkelheit verwendet, um dramatische Effekte zu erzielen und Tiefe zu modellieren.',
-  'glossary.impasto.term': 'Impasto',
-  'glossary.impasto.def': 'Eine Maltechnik, bei der Farbe dick auf eine Oberfläche aufgetragen wird, sodass die Pinsel- oder Spachtelstriche sichtbar bleiben und Textur erzeugen.',
-  'glossary.sfumato.term': 'Sfumato',
-  'glossary.sfumato.def': 'Eine Maltechnik für weiche, dunstige Übergänge zwischen Farben und Tönen, die besonders von Leonardo da Vinci verwendet wurde, um eine atmosphärische Wirkung zu erzielen.',
-  'glossary.tenebrism.term': 'Tenebrismus',
-  'glossary.tenebrism.def': 'Eine extreme Form des Chiaroscuro, bei der die Dunkelheit die Szene dominiert und das Licht wenige, stark beleuchtete Bereiche hervorhebt, um extreme Dramatik zu erzeugen.',
-  'glossary.pointillism.term': 'Pointillismus',
-  'glossary.pointillism.def': 'Eine Technik, bei der kleine, distinkte Farbpunkte in Mustern aufgetragen werden, um ein Bild zu formen, das sich im Auge des Betrachters mischt.',
-  'glossary.fresco.term': 'Fresko',
-  'glossary.fresco.def': 'Eine Wandmaltechnik, bei der Pigmente auf frisch aufgetragenen, nassen Kalkputz aufgetragen werden. Die Farbe trocknet mit dem Putz und wird zu einem integralen Bestandteil der Wand.',
-  'glossary.renaissance.term': 'Renaissance',
-  'glossary.renaissance.def': 'Eine Kulturepoche in Europa (14.-16. Jh.), die durch eine Wiederbelebung des Interesses an der Kunst und den Ideen der klassischen Antike gekennzeichnet ist und den Humanismus betont.',
-  'glossary.baroque.term': 'Barock',
-  'glossary.baroque.def': 'Ein Kunststil (ca. 1600-1750), der durch Dramatik, Bewegung, Üppigkeit und emotionale Intensität gekennzeichnet ist, oft in großen Formaten.',
-  'glossary.rococo.term': 'Rokoko',
-  'glossary.rococo.def': 'Ein verspielter, eleganter Stil (ca. 1730-1760), der sich aus dem Barock entwickelte und durch helle Farben, asymmetrische Designs und leichtere Themen gekennzeichnet ist.',
-  'glossary.impressionism.term': 'Impressionismus',
-  'glossary.impressionism.def': 'Eine Kunstbewegung des 19. Jahrhunderts, die sich auf die Darstellung des flüchtigen Eindrucks (Impression) von Licht und Atmosphäre konzentrierte, oft mit sichtbaren Pinselstrichen.',
-  'glossary.cubism.term': 'Kubismus',
-  'glossary.cubism.def': 'Eine Kunstbewegung des frühen 20. Jahrhunderts, die Objekte analysierte, zerlegte und in einer abstrakten Form wieder zusammensetzte und sie aus mehreren Blickwinkeln gleichzeitig darstellte.',
-  'glossary.surrealism.term': 'Surrealismus',
-  'glossary.surrealism.def': 'Eine Kulturbewegung, die in den 1920er Jahren begann und darauf abzielte, die kreativen Potenziale des Unbewussten durch traumhafte, oft unlogische Szenen freizusetzen.',
-  'glossary.popart.term': 'Pop Art',
-  'glossary.popart.def': 'Eine Kunstbewegung, die in den 1950er Jahren entstand und Bilder aus der Populär- und Massenkultur, wie Werbung und Comics, verwendete.',
-  'glossary.minimalism.term': 'Minimalismus',
-  'glossary.minimalism.def': 'Eine Kunstbewegung aus den 1960er Jahren, die sich durch extreme Einfachheit der Form und eine absichtliche Reduktion auf die wesentlichen Elemente auszeichnet.',
-  'glossary.composition.term': 'Komposition',
-  'glossary.composition.def': 'Die Anordnung oder Platzierung visueller Elemente in einem Kunstwerk. Sie ist entscheidend für die Struktur und die Vermittlung der Bildaussage.',
-  'glossary.palette.term': 'Farbpalette',
-  'glossary.palette.def': 'Die spezifische Auswahl von Farben, die ein Künstler in einem Kunstwerk verwendet. Sie kann warm, kalt, monochromatisch oder komplementär sein und beeinflusst die Stimmung maßgeblich.',
-  'glossary.perspective.term': 'Perspektive',
-  'glossary.perspective.def': 'Die Technik, die Illusion von Tiefe und Raum auf einer zweidimensionalen Oberfläche zu erzeugen.',
-  'glossary.iconography.term': 'Ikonographie',
-  'glossary.iconography.def': 'Die Identifizierung, Beschreibung und Interpretation des Inhalts von Bildern: die dargestellten Motive, besondere Kompositionen und Details, die von anderen Elementen verschieden sind.',
-  
-  // Command Palette
-  'commandPalette.placeholder': 'Befehl suchen oder zu einer Seite springen...',
-  'commandPalette.noResults': 'Keine Ergebnisse gefunden.',
-  'command.toggleTheme': 'Thema umschalten',
-  'command.changeLanguage': 'Sprache wechseln',
-  'command.newProject': 'Neues Projekt erstellen',
-  'command.newGallery': 'Neue Galerie erstellen',
-  'command.newJournal': 'Neuen Journaleintrag erstellen',
-  'command.requestCritique': 'KI-Kritik für aktuelle Galerie anfordern',
-  'command.generateAudioGuide': 'KI-Audioguide für aktuelle Galerie erstellen',
-  'command.exportData': 'Alle App-Daten exportieren',
-  'command.importData': 'App-Daten importieren',
-  'command.category.general': 'Allgemein',
-  'command.category.creation': 'Erstellen',
-  'command.category.ai': 'KI-Aktionen',
-  'command.category.data': 'Datenverwaltung',
-  'command.openProject': 'Projekt öffnen: {title}',
-  'command.category.projects': 'Projekte',
-  'command.openGallery': 'Galerie öffnen: {title}',
-  'command.category.galleries': 'Galerien',
+  // Errors
+  error: {
+    api: {
+      title: 'Fehler des KI-Assistenten',
+      message: 'Der KI-Assistent hat ein Problem festgestellt. Bitte überprüfe deine Verbindung und versuche es erneut.'
+    }
+  },
 
   // Toasts
-  'toast.error.gemini': 'Ein Fehler bei der KI-Anfrage ist aufgetreten.',
-  'toast.error.search': 'Die Kunstsuche ist fehlgeschlagen.',
-  'toast.error.similar': 'Die Suche nach ähnlicher Kunst ist fehlgeschlagen.',
-  'toast.error.analyze': 'Die Bildanalyse ist fehlgeschlagen.',
-  'toast.error.deepDive': 'Die Tiefenanalyse konnte nicht generiert werden.',
-  'toast.error.critique': 'Die Kritik konnte nicht generiert werden.',
-  'toast.error.audioGuide': 'Der Audioguide konnte nicht erstellt werden.',
-  'toast.error.trailer': 'Der Video-Trailer konnte nicht erstellt werden.',
-  'toast.error.journal': 'Die Recherche für das Journal ist fehlgeschlagen.',
-  'toast.error.enhance': 'Der Prompt konnte nicht verbessert werden.',
-  'toast.error.studioGenerate': 'Die Bilderzeugung ist fehlgeschlagen.',
-  'toast.error.remix': 'Der Bild-Remix ist fehlgeschlagen.',
-  'toast.error.imageRecognition': 'Bilderkennung fehlgeschlagen.',
-  'toast.error.appReset': 'App konnte nicht zurückgesetzt werden.',
-  'toast.gallery.artworkAdded': 'Kunstwerk zur Galerie hinzugefügt.',
-  'toast.gallery.artworkExists': 'Kunstwerk ist bereits in dieser Galerie.',
-  'toast.gallery.createdWithArt': 'Galerie mit Kunstwerk erstellt.',
-  'toast.gallery.deleted': 'Galerie gelöscht.',
-  'toast.gallery.duplicated': 'Galerie erfolgreich dupliziert.',
-  'toast.project.deleted': 'Projekt gelöscht.',
-  'toast.journal.deleted': 'Journaleintrag gelöscht.',
-  'toast.studio.promptEnhanced': 'Prompt erfolgreich verbessert!',
-  'toast.share.linkCopied': 'Link in die Zwischenablage kopiert!',
-  'toast.data.appResetSuccess': 'App erfolgreich zurückgesetzt. Wird neu geladen...',
-  'toast.data.importSuccess': 'Daten erfolgreich importiert. App wird neu geladen...',
-  'toast.data.importError': 'Import fehlgeschlagen. Bitte überprüfen Sie die Datei.',
+  toast: {
+      settings: {
+          reset: 'Die Einstellungen wurden auf die Standardwerte zurückgesetzt.',
+          exported: 'Deine Daten wurden erfolgreich exportiert.',
+          imported: 'Daten erfolgreich importiert! Die App wird jetzt neu geladen.',
+          importError: 'Fehler beim Importieren der Daten. Die Datei könnte beschädigt sein.'
+      },
+      artwork: {
+          added: 'Kunstwerk zu "{{gallery}}" hinzugefügt.'
+      },
+      journal: {
+          deleted: 'Journaleintrag gelöscht.'
+      },
+      share: {
+          linkCopied: 'Link zum Teilen in die Zwischenablage kopiert.'
+      },
+      studio: {
+        promptEnhanced: 'Prompt erfolgreich verbessert!'
+      },
+      gallery: {
+        imported: 'Galerie "{{title}}" erfolgreich importiert!'
+      },
+      error: {
+        gemini: "Anfrage an die Gemini API fehlgeschlagen."
+      }
+  },
   
-  // Errors
-  'error.viewNotFound': 'Ansicht nicht gefunden.',
-  'error.api.title': 'Etwas ist schiefgelaufen',
-  'error.api.message': 'Die KI-Anfrage konnte nicht abgeschlossen werden. Bitte überprüfen Sie Ihre Netzwerkverbindung und versuchen Sie es erneut.',
+  artwork: {
+    detailsLabel: 'Details für {{title}} anzeigen',
+    moveUp: '{{title}} nach oben verschieben',
+    moveDown: '{{title}} nach unten verschieben',
+  },
+  modal: {
+    details: {
+      palette: 'Dominante Farben',
+      notes: "Notizen des Kurators",
+      'notes.placeholder': "Füge hier deine persönlichen Notizen und Interpretationen hinzu...",
+      attribution: 'Urheberschaft',
+      imageFile: 'Bilddatei',
+      infoPage: 'Informationsseite',
+      source: 'Quelle',
+      about: 'Über dieses Werk',
+      context: 'Historischer Kontext',
+      tags: 'Schlagwörter',
+      deepDive: 'KI-Tiefenanalyse',
+      'deepDive.symbolism': 'Symbolik & Ikonografie',
+      'deepDive.artistContext': "Kontext des Künstlers",
+      'deepDive.technique': 'Technik & Stil',
+      findSimilar: 'Ähnliche Kunst finden',
+      removeFromGallery: 'Aus Galerie entfernen',
+      addToGallery: 'Zur Galerie hinzufügen',
+      medium: 'Medium',
+      dimensions: 'Abmessungen',
+      location: 'Standort',
+    },
+    addToGallery: {
+      title: 'Zur Galerie hinzufügen',
+      create: 'Neue Galerie erstellen & hinzufügen',
+      select: '...oder zu einer bestehenden hinzufügen:',
+    }
+  },
+  chat: {
+    title: 'Chat über {{title}}',
+    error: {
+        start: 'Entschuldigung, ich hatte Probleme, dieses Gespräch zu beginnen. Bitte versuche es später erneut.',
+        response: 'Ich habe im Moment Schwierigkeiten zu antworten. Bitte versuche es erneut.'
+    },
+    placeholder: 'Frage etwas über das Kunstwerk...',
+    button: 'Mit KI diskutieren'
+  },
+  gallery: {
+    new: 'Neue Galerie',
+    status: {
+        draft: 'Entwurf',
+        published: 'Veröffentlicht',
+    },
+    manager: {
+        artworkCount: '{{count}} Kunstwerke',
+        empty: {
+            title: 'Noch keine Galerien hier',
+            prompt: 'Erstelle deine erste Galerie, um mit dem Kuratieren zu beginnen.',
+        },
+        create: 'Neue Galerie'
+    },
+    suite: {
+        title: 'Galerie-Übersicht'
+    },
+    exhibit: {
+        button: 'Ausstellen'
+    },
+    ai: {
+        critique: 'Galerie kritisieren',
+        audioGuide: 'Audioguide erstellen',
+        trailer: 'Videotrailer erstellen'
+    },
+    critique: {
+        modal: {
+            critique: "Kritik des Kurators",
+            suggestions: 'Vorschläge'
+        }
+    },
+    actions: {
+        duplicate: 'Duplizieren'
+    },
+    creator: {
+        title: 'Titel der Galerie',
+        description: 'Beschreibung',
+        'title.placeholder': 'z.B. "Impressionistische Landschaften"',
+        'description.placeholder': 'z.B. "Eine Sammlung von Werken, die Licht und Natur erforschen."',
+    }
+  },
+  journal: {
+    title: 'Journal',
+    new: 'Neuer Eintrag',
+    delete: {
+        confirm: 'Bist du sicher, dass du den Eintrag "{{title}}" löschen möchtest?',
+    },
+    research: {
+        heading: 'KI-Recherche: {{topic}}',
+        placeholder: 'Recherchiere ein Thema mit KI...',
+    },
+    preview: 'Live-Vorschau',
+    editor: {
+        placeholder: 'Beginne, deine Gedanken niederzuschreiben...'
+    },
+    empty: {
+        title: 'Dein Journal ist leer',
+        prompt: 'Erstelle deinen ersten Eintrag, um deine Gedanken und Recherchen festzuhalten.'
+    },
+    select: {
+        title: 'Wähle einen Eintrag',
+        prompt: 'Wähle einen Eintrag aus der Liste, um ihn anzuzeigen oder zu bearbeiten.'
+    }
+  },
+  workspace: {
+      title: 'Arbeitsbereich',
+      newProject: 'Neues Projekt',
+      editProject: 'Projektdetails bearbeiten',
+      project: {
+          galleries: '{{count}} Galerien',
+          journals: '{{count}} Journaleinträge',
+      },
+      delete: {
+          projectLabel: 'Projekt {{title}} löschen'
+      },
+      empty: {
+          title: 'Willkommen in deinem Arbeitsbereich!',
+          prompt: 'Projekte sind Ordner für deine Galerien und Recherchen. Erstelle ein Projekt, um loszulegen.',
+          button: 'Erstes Projekt erstellen'
+      }
+  },
+  settings: {
+    title: "Einstellungen",
+    about: {
+      version: "Version 1.0.0",
+      license: "Alle Rechte vorbehalten."
+    },
+    general: {
+      title: "Allgemein",
+      language: {
+        label: "Anzeigesprache"
+      },
+      theme: {
+        label: "Erscheinungsbild",
+        dark: "Dunkel",
+        light: "Hell"
+      },
+      confirmDelete: {
+        label: "Löschen bestätigen",
+        desc: "Ein Bestätigungsdialogfeld vor dem Löschen von Elementen anzeigen."
+      }
+    },
+    ai: {
+        title: "KI-Assistent",
+        creativity: {
+            label: "Kreativitätsstufe",
+            desc: "Steuert die Zufälligkeit der KI-Antworten. 'Kreativ' kann weniger faktenbasiert sein.",
+            focused: "Fokussiert",
+            balanced: "Ausgewogen",
+            creative: "Kreativ"
+        },
+        results: {
+            label: "Anzahl der Suchergebnisse",
+            desc: "Anzahl der Kunstwerke, die bei der Suche in 'Entdecken' abgerufen werden."
+        }
+    },
+    studio: {
+        title: "KI-Studio",
+        enhancement: {
+            label: "Stil der Prompt-Verbesserung",
+            desc: "Bestimmt, wie die KI deine Prompts verbessert.",
+            subtle: "Subtil",
+            descriptive: "Beschreibend",
+            artistic: "Künstlerisch"
+        },
+        clearPrompt: {
+            label: "Prompt nach Generierung leeren",
+            desc: "Löscht das Textfeld automatisch nach der Erstellung eines Bildes."
+        }
+    },
+    data: {
+        title: "Datenverwaltung",
+        export: {
+            label: "Daten exportieren",
+            desc: "Sichere all deine Projekte, Galerien und Einstellungen in einer Datei.",
+            button: "Alle Daten exportieren"
+        },
+        import: {
+            label: "Daten importieren",
+            desc: "Lade Daten aus einer Sicherungsdatei. Dies überschreibt aktuelle Daten.",
+            button: "Aus Datei importieren"
+        },
+        reset: {
+            label: "Anwendung zurücksetzen",
+            desc: "Lösche alle deine Daten und stelle die Standardeinstellungen wieder her. Dies kann nicht rückgängig gemacht werden.",
+            button: "App-Daten zurücksetzen"
+        }
+    }
+  },
+  help: {
+    title: "Hilfe & Info",
+    glossary: {
+      button: "Kunsthistorisches Glossar durchsuchen"
+    },
+    tutorial: {
+      title: "Einführungstutorial",
+      step1: {
+        title: "1. Erstelle ein Projekt",
+        content: "Beginne im <b>Arbeitsbereich</b>. Projekte sind wie Ordner, um deine Recherchen und Galerien zu organisieren."
+      },
+      step2: {
+        title: "2. Entdecke Kunst",
+        content: "Nutze den <b>Entdecken</b>-Tab, um nach berühmten Kunstwerken aus Open-Source-Sammlungen zu suchen."
+      },
+      step3: {
+        title: "3. Kuratiere eine Galerie",
+        content: "Füge gefundene Kunstwerke zu einer neuen oder bestehenden <b>Galerie</b> in deinem Projekt hinzu."
+      },
+      step4: {
+        title: "4. Erschaffe mit KI",
+        content: "Besuche das <b>KI-Studio</b>, um einzigartige Bilder aus deinen eigenen Text-Prompts zu generieren."
+      },
+      step5: {
+        title: "5. Halte deine Gedanken fest",
+        content: "Nutze das <b>Journal</b>, um Notizen zu schreiben, KI-gestützte Recherchen durchzuführen und deine Ideen zu entwickeln."
+      },
+      step6: {
+        title: "6. Präsentiere deine Arbeit",
+        content: "Wechsle vom Galeriemenü in den <b>Ausstellungsmodus</b>, um deine Sammlung in einer bildschirmfüllenden, immersiven Diashow zu betrachten."
+      }
+    },
+    tips: {
+      title: "Profi-Tipps",
+      tip1: {
+        title: "Nutze den KI-Assistenten in deiner Galerie",
+        content: "Erhalte eine professionelle Kritik deiner Kuration oder erstelle ein komplettes Audioguide-Skript für deine Ausstellung."
+      },
+      tip2: {
+        title: "Drag-and-Drop zum Neuanordnen",
+        content: "Innerhalb einer Galerie kannst du Kunstwerke ziehen, um ihre Reihenfolge für den perfekten narrativen Fluss zu ändern."
+      },
+      tip3: {
+        title: "Verbessere deine KI-Prompts",
+        content: "Im KI-Studio kannst du den 'Prompt verbessern'-Button nutzen, um die KI reichhaltige, künstlerische Details zu deinen Ideen hinzufügen zu lassen, bevor ein Bild generiert wird."
+      },
+      tip4: {
+        title: "Chatte mit einem Kunstwerk",
+        content: "Klicke in der Detailansicht eines Kunstwerks auf 'Mit KI diskutieren', um ein Gespräch zu beginnen und mehr über seine Geschichte und Bedeutung zu erfahren."
+      }
+    },
+    faq: {
+      title: "Häufig gestellte Fragen",
+      q1: { q: "Woher stammen die Kunstwerksdaten?", a: "Die meisten auffindbaren Kunstwerke stammen von Wikimedia Commons und anderen Open-Access-Museumssammlungen. Wir verlassen uns auf die von diesen Institutionen bereitgestellten Metadaten." },
+      q2: { q: "Sind meine Daten privat?", a: "Ja. Alle deine Daten – Projekte, Galerien, Journaleinträge und Einstellungen – werden lokal in deinem Browser gespeichert. Nichts wird auf einen Server hochgeladen, es sei denn, du entscheidest dich, eine Galerie zu teilen." },
+      q3: { q: "Wie funktioniert die KI?", a: "Diese Anwendung nutzt die Gemini-Modellfamilie von Google für alle KI-gestützten Funktionen, von der Bilderzeugung bis zur Textanalyse und zum Chat." },
+      q4: { q: "Kann ich meine Galerien teilen?", a: "Ja! Klicke in jeder Galerie auf den 'Teilen'-Button. Du kannst einen teilbaren Link generieren, der deine Galeriedaten für andere zur Ansicht kodiert, oder eine Datei exportieren, die sie in ihre eigene App importieren können." }
+    },
+    philosophy: {
+      title: "Unsere Philosophie",
+      content: "Art-i-Fact ist als persönliches digitales Studio und kuratorischer Assistent konzipiert. Es ermöglicht dir, Kunst auf neue Weisen zu erforschen, zu verstehen, zu erschaffen und zu teilen. Wir glauben, dass die Kombination von menschlicher Kreativität mit leistungsstarken KI-Werkzeugen neue Wege für Lernen und Ausdruck eröffnen kann."
+    }
+  },
+  glossary: {
+    title: "Kunsthistorisches Glossar",
+    category: {
+      techniques: "Techniken & Medien",
+      eras: "Bewegungen & Epochen",
+      concepts: "Konzepte & Begriffe",
+    },
+    chiaroscuro: { term: "Chiaroscuro (Helldunkelmalerei)", def: "Die Verwendung starker Kontraste zwischen Licht und Dunkel, die meist die gesamte Komposition beeinflussen." },
+    impasto: { term: "Impasto", def: "Eine Technik in der Malerei, bei der Farbe in sehr dicken Schichten aufgetragen wird, sodass die Pinsel- oder Spachtelstriche sichtbar bleiben." },
+    sfumato: { term: "Sfumato", def: "Eine Maltechnik zur Erweichung der Übergänge zwischen Farben, die einen Bereich nachahmt, der außerhalb des menschlichen Blickfeldes liegt oder unscharf ist. Leonardo da Vinci war der prominenteste Anwender." },
+    tenebrism: { term: "Tenebrismus", def: "Ein Malstil, der ein stark ausgeprägtes Chiaroscuro verwendet, bei dem es heftige Kontraste von Licht und Dunkel gibt und die Dunkelheit zu einem dominierenden Merkmal des Bildes wird. Caravaggio ist ein wichtiger Vertreter." },
+    pointillism: { term: "Pointillismus", def: "Eine Maltechnik, bei der kleine, getrennte Farbpunkte in Mustern aufgetragen werden, um ein Bild zu formen. Georges Seurat und Paul Signac entwickelten die Technik 1886." },
+    fresco: { term: "Fresko", def: "Eine Technik der Wandmalerei, die auf frisch aufgetragenem ('nassem') Kalkputz ausgeführt wird. Wasser dient als Träger für das Trockenpigment, um mit dem Putz zu verschmelzen, und mit dem Aushärten des Putzes wird das Gemälde ein integraler Bestandteil der Wand." },
+    renaissance: { term: "Renaissance", def: "Eine Epoche der europäischen Geschichte vom 14. bis zum 17. Jahrhundert, die als kulturelle Brücke zwischen dem Mittelalter und der Neuzeit gilt. Sie begann als Kulturbewegung in Italien im Spätmittelalter und verbreitete sich später im übrigen Europa." },
+    baroque: { term: "Barock", def: "Ein Stil in Architektur, Musik, Tanz, Malerei, Skulptur und anderen Künsten, der in Europa vom frühen 17. Jahrhundert bis in die 1740er Jahre blühte. Er wurde von der katholischen Kirche gefördert, um der Einfachheit und Strenge protestantischer Architektur, Kunst und Musik entgegenzuwirken." },
+    rococo: { term: "Rokoko", def: "Ein außergewöhnlich ornamentaler und theatralischer Stil in Architektur, Kunst und Dekoration, der Asymmetrie, geschwungene Kurven, Vergoldungen, weiße und pastellfarbene Töne, skulptierte Zierleisten und Trompe-l'œil-Fresken kombiniert, um Überraschung und die Illusion von Bewegung und Drama zu erzeugen." },
+    impressionism: { term: "Impressionismus", def: "Eine Kunstbewegung des 19. Jahrhunderts, gekennzeichnet durch relativ kleine, dünne, aber sichtbare Pinselstriche, offene Komposition, Betonung der genauen Darstellung des Lichts in seinen wechselnden Qualitäten, gewöhnliche Sujets und die Einbeziehung von Bewegung als entscheidendes Element menschlicher Wahrnehmung." },
+    cubism: { term: "Kubismus", def: "Eine Avantgarde-Kunstbewegung des frühen 20. Jahrhunderts, die die europäische Malerei und Skulptur revolutionierte. In kubistischen Kunstwerken werden Objekte analysiert, zerlegt und in einer abstrahierten Form wieder zusammengesetzt – anstatt Objekte aus einem einzigen Blickwinkel darzustellen, zeigt der Künstler das Sujet aus einer Vielzahl von Perspektiven, um es in einem größeren Kontext zu repräsentieren." },
+    surrealism: { term: "Surrealismus", def: "Eine kulturelle Bewegung, die sich nach dem Ersten Weltkrieg in Europa entwickelte und stark vom Dadaismus beeinflusst war. Die Bewegung ist am besten für ihre visuellen Kunstwerke und Schriften bekannt, die Elemente der Überraschung, unerwartete Gegenüberstellungen und das Unlogische aufweisen." },
+    popart: { term: "Pop Art", def: "Eine Kunstbewegung, die in den späten 1950er Jahren im Vereinigten Königreich und den Vereinigten Staaten entstand. Die Bewegung forderte die Traditionen der bildenden Kunst heraus, indem sie Bilder aus der Populär- und Massenkultur wie Werbung, Comics und alltägliche Kulturgegenstände einbezog." },
+    minimalism: { term: "Minimalismus", def: "Eine Kunstbewegung, die nach dem Zweiten Weltkrieg in der westlichen Kunst begann, am stärksten in der amerikanischen bildenden Kunst der 1960er und frühen 1970er Jahre. Der Begriff wird verwendet, um einen Trend in Design und Architektur zu beschreiben, bei dem das Subjekt auf seine notwendigen Elemente reduziert wird." },
+    composition: { term: "Komposition", def: "Die Platzierung oder Anordnung visueller Elemente in einem Kunstwerk, im Gegensatz zum Sujet. Es kann auch als Organisation der Kunstelemente nach den Prinzipien der Kunst verstanden werden." },
+    palette: { term: "Palette", def: "Die Bandbreite der Farben, die ein bestimmter Künstler oder in einem bestimmten Bild verwendet. Es kann sich auch auf das Brett beziehen, auf dem ein Künstler Farben mischt." },
+    perspective: { term: "Perspektive", def: "Die Kunst, feste Objekte auf einer zweidimensionalen Oberfläche so zu zeichnen, dass der richtige Eindruck von ihrer Höhe, Breite, Tiefe und Position zueinander entsteht, wenn sie von einem bestimmten Punkt aus betrachtet werden." },
+    iconography: { term: "Ikonografie", def: "Der Zweig der Kunstgeschichte, der die Identifizierung, Beschreibung und Interpretation des Inhalts von Bildern untersucht: die dargestellten Sujets, die besonderen Kompositionen und Details, die dafür verwendet werden, und andere Elemente, die sich vom künstlerischen Stil unterscheiden." }
+  },
+  welcome: {
+      title: "Willkommen bei Art-i-Fact",
+      subtitle: "Dein persönlicher Raum, um Kunst mit der Kraft der KI zu entdecken, zu erschaffen und zu kuratieren.",
+      cta: "Los geht's"
+  },
+  exhibition: {
+    goToArtwork: 'Gehe zu Kunstwerk {{number}}',
+    transcript: 'Transkript anzeigen',
+    toggleFullscreen: 'Vollbildmodus aktivieren',
+    exitFullscreen: 'Vollbildmodus beenden',
+    audioPlaying: 'Audioguide spielt',
+    audioMuted: 'Audioguide stummgeschaltet',
+    curatedBy: 'Kuratiert von {{username}}'
+  },
+  camera: {
+    error: {
+        access: 'Auf die Kamera konnte nicht zugegriffen werden. Bitte überprüfe die Berechtigungen.'
+    }
+  },
+  community: {
+      title: 'Community-Galerien',
+      subtitle: 'Entdecke und importiere von anderen kuratierte Galerien.',
+      curatedBy: 'Kuratiert von',
+      preview: 'Vorschau',
+      import: 'Importieren',
+      empty: {
+          title: 'Galerien konnten nicht geladen werden',
+          prompt: 'Beim Abrufen der Community-Galerien ist ein Fehler aufgetreten. Bitte überprüfe deine Verbindung und versuche es erneut.'
+      }
+  },
+  share: {
+      modal: {
+          title: 'Galerie teilen oder exportieren',
+          link: {
+              title: 'Link teilen',
+              description: "Kopiere einen einzigartigen Link, um diese Galerie zu teilen. Andere können sie im Browser ansehen oder in ihre eigene Art-i-Fact-App importieren.",
+              copy: 'Link zum Teilen kopieren'
+          },
+          export: {
+              title: 'Als Datei exportieren',
+              description: 'Lade die Galeriedaten als JSON-Datei herunter. Dies ist nützlich für Backups oder zum direkten Teilen mit anderen.',
+              button: '.json-Datei exportieren'
+          }
+      }
+  },
+  studio: {
+    title: "KI-Studio",
+    subtitle: "Erschaffe einzigartige Kunstwerke aus Text-Prompts.",
+    prompt: {
+        placeholder: "z.B. Ein kubistisches Porträt einer Person, die ein Buch liest...",
+    },
+    inspiration: "Brauchst du Inspiration? Versuche es mit einem dieser Vorschläge:",
+    aspectRatio: "Seitenverhältnis",
+    enhancePrompt: "Prompt verbessern",
+    generate: "Generieren",
+    generating: "Generiere...",
+    addToGallery: "In einer Galerie speichern",
+    remix: {
+        placeholder: "z.B. Füge ein surreales Element hinzu, mache es lebendiger...",
+        button: "Remix",
+        mode: "Remix-Modus",
+        exit: "Remix abbrechen",
+    }
+  },
+  discover: {
+    title: "Kunst entdecken",
+    subtitle: "Suche nach Kunstwerken aus öffentlichen Sammlungen.",
+    search: {
+        placeholder: "Suche nach Künstler, Titel oder Thema...",
+        button: "Suchen",
+    },
+    results: {
+        title: "Suchergebnisse für \"{{query}}\"",
+        none: "Keine Ergebnisse gefunden. Versuche einen anderen Suchbegriff.",
+    },
+    featured: "Vorgestellte Kunstwerke",
+    error: "Kunstwerke konnten nicht abgerufen werden. Bitte versuche es später erneut.",
+  }
 };
 
-const en: Translations = {
-  // App-wide
-  'app.title': 'Art-i-Fact: AI Art Curation',
-  'close': 'Close',
-  'cancel': 'Cancel',
-  'create': 'Create',
-  'save': 'Save',
-  'remove': 'Remove',
-  'generate': 'Generate',
-  'retry': 'Retry',
-  'discover': 'Discover',
-  'workspace': 'Workspace',
-  'gallery': 'Gallery',
-  'profile': 'Profile',
-  'confirm': 'Confirm',
-  
-  // Navigation & Header
-  'nav.workspace': 'Workspace',
-  'nav.discover': 'Discover',
-  'nav.studio': 'Studio',
-  'nav.gallery': 'Gallery',
-  'nav.journal': 'Journal',
-  'nav.profile': 'Profile',
-  'nav.settings': 'Settings',
-  'nav.help': 'Help',
-  'nav.category': 'Navigation',
-  'navigateBack': 'Navigate back',
-  
-  // Welcome Portal
-  'welcome.portal.subtitle': 'Your personal, AI-powered canvas to discover, create, and curate art.',
-  'welcome.portal.enter': 'Enter App',
 
-  // Welcome Themes (Discover Page)
-  'welcome.subtitle': 'Start your journey by searching for an artist, era, or theme, or get inspired by our curated suggestions. <br /> What piques your interest today?',
-  'welcome.category.eras': 'Eras & Styles',
-  'welcome.theme.renaissance_portraits': 'Renaissance Portraits',
-  'welcome.theme.baroque_chiaroscuro': 'Baroque Chiaroscuro',
-  'welcome.theme.dutch_golden_age': 'Dutch Golden Age',
-  'welcome.theme.romanticism_landscapes': 'Romanticism Landscapes',
-  'welcome.theme.impressionist_light': 'Impressionist Light',
-  'welcome.theme.post_impressionism_emotion': 'Post-Impressionist Emotion',
-  'welcome.theme.cubist_perspectives': 'Cubist Perspectives',
-  'welcome.theme.surreal_dreams': 'Surreal Dreams',
-  'welcome.theme.abstract_expressionism': 'Abstract Expressionism',
-  'welcome.theme.pop_art_critique': 'Pop Art Critique',
-  'welcome.category.techniques': 'Artistic Techniques',
-  'welcome.theme.impasto_texture': 'Impasto Texture',
-  'welcome.theme.sfumato_haze': 'Sfumato Haze',
-  'welcome.theme.tenebrism_drama': 'Tenebrism Drama',
-  'welcome.theme.pointillism_dots': 'Pointillism Dots',
-  'welcome.theme.fresco_murals': 'Fresco Murals',
-  'welcome.category.subjects': 'Motifs & Subjects',
-  'welcome.theme.mythological_heroes': 'Mythological Heroes',
-  'welcome.theme.biblical_scenes': 'Biblical Scenes',
-  'welcome.theme.historical_events': 'Historical Events',
-  'welcome.theme.vanitas_mortality': 'Vanitas & Mortality',
-  'welcome.theme.unconventional_portraits': 'Unconventional Portraits',
-  'welcome.theme.dramatic_seascapes': 'Dramatic Seascapes',
-  'welcome.theme.tranquil_gardens': 'Tranquil Gardens',
-  'welcome.theme.urban_alienation': 'Urban Alienation',
-  'welcome.category.concepts': 'Abstract Concepts',
-  'welcome.theme.order_and_chaos': 'Order & Chaos',
-  'welcome.theme.love_and_loss': 'Love & Loss',
-  'welcome.theme.power_and_conflict': 'Power & Conflict',
-  'welcome.theme.joy_and_celebration': 'Joy & Celebration',
-  'welcome.theme.melancholy_and_solitude': 'Melancholy & Solitude',
-  'welcome.theme.geometric_abstraction': 'Geometric Abstraction',
-  
-  // Discover / Art Library
-  'artLibrary.title': 'Discover',
-  'artLibrary.backToDiscover': 'Back to Discover',
-  'artLibrary.search.placeholder': 'Search for themes, artists, styles...',
-  'artLibrary.search.resultsFor': 'Results for "{term}"',
-  'artLibrary.search.similarTo': 'Similar to "{title}"',
-  'artLibrary.search.noResults': 'No Artworks Found',
-  'artLibrary.search.noResults.prompt': 'Try a different search term or explore one of our curated themes.',
-  'artLibrary.upload.button': 'Upload Image',
-  'artLibrary.camera.button': 'Camera',
-  'artwork.detailsLabel': 'View details for {title}',
-
-  // Studio
-  'studio.title': 'Studio',
-  'studio.subtitle': 'Create unique artworks with AI',
-  'studio.prompt.placeholder': 'Describe the image you want to create...',
-  'studio.remix.placeholder': 'Describe how you want to change the image...',
-  'studio.aspectRatio': 'Aspect Ratio',
-  'studio.enhancePrompt': 'Enhance Prompt',
-  'studio.generating': 'Generating...',
-  'studio.generate': 'Generate',
-  'studio.remix.button': 'Remix',
-  'studio.remix.exit': 'Exit Remix',
-  'studio.remix.mode': 'Remix Mode',
-  'studio.addToGallery': 'Add to Gallery',
-
-  // Workspace & Projects
-  'workspace.title': 'Workspace',
-  'workspace.newProject': 'New Project',
-  'workspace.editProject': 'Edit Project',
-  'workspace.empty.title': 'Your Workspace is Empty',
-  'workspace.empty.prompt': 'Projects help you organize your galleries and notes. Create your first project to get started.',
-  'workspace.empty.button': 'Create First Project',
-  'workspace.delete.confirmTitle': 'Delete Project',
-  'workspace.delete.confirm': 'Are you sure you want to permanently delete the project "{title}" and all of its associated galleries and journal entries?',
-  'workspace.project.galleries': '{count} galleries',
-  'workspace.project.journals': '{count} entries',
-
-  // Gallery
-  'gallery.suite.title': 'Gallery Suite',
-  'gallery.manager.create': 'New Gallery',
-  'gallery.manager.artworkCount': '{count} artworks',
-  'gallery.manager.empty.title': 'No Galleries Found',
-  'gallery.manager.empty.prompt': 'Create your first gallery to start curating your art collection.',
-  'gallery.manager.delete.confirmTitle': 'Delete Gallery',
-  'gallery.manager.delete.confirm': 'Are you sure you want to delete the gallery "{title}"?',
-  'gallery.manager.project': 'Project',
-  'gallery.manager.lastUpdated': 'Last updated',
-  'gallery.new': 'New Gallery',
-  'gallery.newUntitled': 'Untitled Gallery',
-  'gallery.creator.title': 'Gallery Title',
-  'gallery.creator.title.placeholder': 'e.g., "Masterpieces of Light"',
-  'gallery.creator.description': 'Description',
-  'gallery.creator.description.placeholder': 'Provide a brief description of your gallery\'s theme.',
-  'gallery.exhibit.button': 'Exhibit',
-  'gallery.share': 'Share',
-  'gallery.empty.prompt': 'This gallery is empty. Add artworks from the Discover page to begin.',
-  'gallery.ai.critique': 'Request Critique',
-  'gallery.ai.audioGuide': 'Create Audio Guide',
-  'gallery.ai.trailer': 'Create Video Trailer',
-  'gallery.ai.trailer.ready': 'Watch Trailer',
-  'gallery.ai.trailer.pending': 'Generating trailer...',
-  'gallery.ai.trailer.failed': 'Trailer generation failed',
-  'gallery.critique.modal.critique': 'Critique',
-  'gallery.critique.modal.suggestions': 'Suggestions',
-  'gallery.suggestions.analyzing': 'Analyzing...',
-  'gallery.actions.title': 'Actions',
-  'gallery.actions.generateIntro': 'Generate AI Introduction',
-  'gallery.artworks.tab': 'Artworks',
-  'gallery.details.tab': 'Curation Details',
-  'gallery.introduction': 'Introduction',
-  'gallery.status': 'Status',
-  'gallery.status.draft': 'Draft',
-  'gallery.status.published': 'Published',
-  'gallery.tags': 'Tags',
-  'gallery.tags.placeholder': 'Add tag and press Enter',
-  'gallery.curatorNotes': 'Curator Notes (private)',
-  'gallery.curatorNotes.placeholder': 'Your private thoughts, research, or plans for this gallery...',
-  'gallery.actions.duplicate': 'Duplicate',
-
-  // Journal
-  'journal.title': 'Journal',
-  'journal.new': 'New Entry',
-  'journal.newUntitled': 'Untitled Entry',
-  'journal.empty.title': 'Your Journal is Empty',
-  'journal.empty.prompt': 'Start chronicling your thoughts, ideas, and research about your art collection.',
-  'journal.editor.placeholder': 'Write your thoughts here...',
-  'journal.research.placeholder': 'Research a topic with AI...',
-  'journal.research.heading': 'AI Research: {topic}',
-  'journal.preview': 'Preview',
-  'journal.select.title': 'Select an Entry',
-  'journal.select.prompt': 'Choose an entry from the list to view or edit it.',
-  'journal.delete.confirm': 'Are you sure you want to delete the entry "{title}"?',
-
-  // Modals
-  'modal.addToGallery.title': 'Add to a Gallery',
-  'modal.addToGallery.create': 'Create New Gallery & Add',
-  'modal.addToGallery.select': 'Or add to an existing one:',
-  'modal.details.about': 'About the Artwork',
-  'modal.details.context': 'Historical Context',
-  'modal.details.year': 'Year',
-  'modal.details.medium': 'Medium',
-  'modal.details.dimensions': 'Dimensions',
-  'modal.details.location': 'Location',
-  'modal.details.tags': 'Tags',
-  'modal.details.palette': 'Color Palette',
-  'modal.details.notes': 'Your Notes',
-  'modal.details.notes.placeholder': 'Add your personal notes about this artwork...',
-  'modal.details.findSimilar': 'Find Similar',
-  'modal.details.addToGallery': 'Add to Gallery',
-  'modal.details.removeFromGallery': 'Remove from Gallery',
-  'modal.details.deepDive': 'AI Deep Dive',
-  'modal.details.deepDive.symbolism': 'Symbolism & Iconography',
-  'modal.details.deepDive.artistContext': 'Artist\'s Context',
-  'modal.details.deepDive.technique': 'Artistic Technique',
-  'modal.details.source': 'Source',
-  'modal.details.imageFile': 'Image file',
-  'modal.details.infoPage': 'Information page',
-  'modal.details.attribution': 'Attribution',
-
-  // Share Modal
-  'share.modal.title': 'Share or Export Gallery',
-  'share.modal.link.title': 'Share via Link',
-  'share.modal.link.description': 'Create a link to share a read-only version of your gallery. The data is stored securely within the link itself.',
-  'share.modal.link.copy': 'Copy Link',
-  'share.modal.export.title': 'Export as File',
-  'share.modal.export.description': 'Download this gallery\'s data as a JSON file to back it up or import it elsewhere.',
-  'share.modal.export.button': 'Export Gallery JSON',
-
-  // Chat
-  'chat.button': 'Chat with AI',
-  'chat.modal.title': 'Chat about {title}',
-  'chat.placeholder': 'Ask a question...',
-  'chat.error.start': 'Sorry, I couldn\'t start the conversation. Please try again later.',
-  'chat.error.response': 'An error occurred. Please try again.',
-
-  // Camera
-  'camera.modal.title': 'Analyze Artwork',
-  'camera.error.access': 'Camera access was denied. Please allow access in your browser settings.',
-
-  // Exhibition Mode
-  'exhibition.goToArtwork': 'Go to artwork {number}',
-  'exhibition.transcript': 'Toggle transcript',
-  'exhibition.toggleFullscreen': 'Enter fullscreen',
-  'exhibition.exitFullscreen': 'Exit fullscreen',
-  'exhibition.audioPlaying': 'Audio guide active',
-  'exhibition.audioMuted': 'Audio guide muted',
-  'exhibition.curatedBy': 'Curated by {username}',
-
-  // Settings
-  'settings.title': 'Settings',
-  'settings.profile.title': 'Curator Profile',
-  'settings.profile.username': 'Username',
-  'settings.profile.bio': 'Bio',
-  'settings.profile.avatar': 'Avatar',
-  'settings.general.title': 'General',
-  'settings.general.language': 'Language',
-  'settings.general.theme': 'Theme',
-  'settings.general.compactMode': 'Compact Mode',
-  'settings.general.compactMode.desc': 'Reduces spacing for a more information-dense view.',
-  'settings.ai.title': 'AI Settings',
-  'settings.ai.language': 'AI Content Language',
-  'settings.ai.language.desc': 'Choose the language for AI-generated content like critiques or audio guides.',
-  'settings.ai.language.ui': 'Same as UI',
-  'settings.ai.creativity': 'Creativity',
-  'settings.ai.creativity.desc': 'Controls the AI "temperature". More creative may yield unexpected results.',
-  'settings.ai.creativity.focused': 'Focused',
-  'settings.ai.creativity.balanced': 'Balanced',
-  'settings.ai.creativity.creative': 'Creative',
-  'settings.ai.resultsCount': 'Search Results Count',
-  'settings.ai.resultsCount.desc': 'How many images to fetch when searching in the art library.',
-  'settings.studio.title': 'Studio Settings',
-  'settings.studio.enhancementStyle': 'Prompt Enhancement Style',
-  'settings.studio.enhancementStyle.desc': 'Choose how the AI should improve your prompts in the Studio.',
-  'settings.studio.enhancementStyle.descriptive': 'Descriptive',
-  'settings.studio.enhancementStyle.subtle': 'Subtle',
-  'settings.studio.enhancementStyle.artistic': 'Artistic',
-  'settings.exhibit.title': 'Exhibition Mode',
-  'settings.exhibit.autoplay': 'Autoplay',
-  'settings.exhibit.autoplay.desc': 'Starts the slideshow automatically when entering exhibition mode.',
-  'settings.exhibit.speed': 'Slideshow Speed',
-  'settings.exhibit.speed.desc': 'Duration in seconds each artwork is displayed.',
-  'settings.exhibit.transition': 'Transition Effect',
-  'settings.exhibit.transition.desc': 'Visual effect when changing between artworks.',
-  'settings.exhibit.transition.fade': 'Fade',
-  'settings.exhibit.transition.slide': 'Slide',
-  'settings.exhibit.showInfo': 'Show Info',
-  'settings.exhibit.showInfo.desc': 'Displays title and artist information during the slideshow.',
-  'settings.data.title': 'Data Management',
-  'settings.data.import.label': 'Import App Data',
-  'settings.data.import.desc': 'Import a previously exported JSON file to restore your workspace.',
-  'settings.data.import.button': 'Import',
-  'settings.data.export.label': 'Export App Data',
-  'settings.data.export.desc': 'Export all your projects, galleries, and settings to a single JSON file for backup.',
-  'settings.data.export.button': 'Export',
-  'settings.danger.title': 'Danger Zone',
-  'settings.danger.reset.label': 'Reset App',
-  'settings.danger.reset.desc': 'Permanently delete all your data (projects, galleries, journals, settings) and reset the app to its initial state.',
-  'settings.danger.reset.button': 'Reset App...',
-  'settings.danger.reset.confirm.title': 'Really Reset App?',
-  'settings.danger.reset.confirm.desc': 'This action is irreversible. All your data will be permanently deleted. To proceed, please type "{appName}" in the box below.',
-  'settings.danger.reset.final.title': 'Final Warning',
-  'settings.danger.reset.final.desc': 'Are you absolutely sure? All data will be erased now.',
-  'settings.about.version': 'Version 1.0.0',
-  'settings.about.license': 'Licensed under the MIT License.',
-  'profile.stats.galleries': 'Galleries Curated',
-  'profile.stats.discovered': 'Artworks Discovered',
-  'profile.stats.created': 'AI Artworks Created',
-
-  // Help & FAQ
-  'help.title': 'Help & Info',
-  'help.glossary.button': 'Open Art History Glossary',
-  'help.philosophy.title': 'Our Philosophy',
-  'help.philosophy.content': 'Art-i-Fact is designed to be your personal companion in the world of art. It is not a social network, but a tool for deep engagement, creative expression, and organization. We believe in the power of curation as a form of storytelling and in AI as a partner that enriches this process, rather than replacing it.',
-  'help.tips.title': 'Tips & Tricks',
-  'help.tips.tip1.title': 'The Command Palette',
-  'help.tips.tip1.content': 'Press <b>Ctrl+K</b> (or Cmd+K on Mac) to open the command palette. From here, you can instantly navigate to any page, project, or gallery.',
-  'help.tips.tip2.title': 'AI Prompt Enhancement',
-  'help.tips.tip2.content': 'Not sure how to phrase your idea in the <b>Studio</b>? Write a simple thought and click the magic wand button to have the AI turn your prompt into a rich, detailed description.',
-  'help.tips.tip3.title': 'Iterative Remixing',
-  'help.tips.tip3.content': 'After generating an image, use the <b>Remix</b> feature to alter it incrementally. Add elements, change styles, or adjust colors by giving simple instructions.',
-  'help.tips.tip4.title': 'Back Up Your Work',
-  'help.tips.tip4.content': 'Since all data is stored locally, it\'s good practice to periodically back up your work using the <b>Export Data</b> feature in the settings. This allows you to restore your workspace anytime.',
-  'help.tutorial.title': 'Quick Start Guide',
-  'help.tutorial.step1.title': '1. Create Projects',
-  'help.tutorial.step1.content': 'Start in the <b>Workspace</b> by creating a project for your exhibition idea. Projects are folders for your galleries and notes.',
-  'help.tutorial.step2.title': '2. Discover Art',
-  'help.tutorial.step2.content': 'Use the <b>Discover</b> view to search for art. You can also upload an image or use your camera to identify art.',
-  'help.tutorial.step3.title': '3. Curate Galleries',
-  'help.tutorial.step3.content': 'Add artworks you find to a gallery within your project. Arrange them with drag-and-drop to tell your story.',
-  'help.tutorial.step4.title': '4. Get Creative in the Studio',
-  'help.tutorial.step4.content': 'Visit the <b>Studio</b> to generate your own images with AI. Enhance and remix your creations.',
-  'help.tutorial.step5.title': '5. Document Your Thoughts',
-  'help.tutorial.step5.content': 'Use the <b>Journal</b> inside a project to document your curatorial decisions and research. The AI can help with research.',
-  'help.tutorial.step6.title': '6. Exhibit and Share',
-  'help.tutorial.step6.content': 'Present your finished gallery in <b>Exhibition Mode</b> or share it with others via a unique link.',
-  'help.faq.title': 'Frequently Asked Questions (FAQ)',
-  'help.faq.q1.q': 'Where is my data stored?',
-  'help.faq.q1.a': 'All of your data—galleries, journal entries, settings—is stored <b>exclusively locally in your browser</b>. Nothing is uploaded to a server or seen by us. Your privacy is paramount.',
-  'help.faq.q2.q': 'Can I back up or transfer my work?',
-  'help.faq.q2.a': 'Yes. In the settings, you can <b>export</b> all of your application data as a single JSON file at any time. This file can be <b>imported</b> into another instance of the app to restore your workspace.',
-  'help.faq.q3.q': 'What happens to my uploaded images?',
-  'help.faq.q3.a': 'When you upload an image for analysis, it is sent to the Google Gemini API for processing. It is not stored permanently. Images you use in galleries are saved as references to their original source (e.g., Wikimedia), not as copies.',
-  'help.faq.q4.q': 'Are there costs for using the AI features?',
-  'help.faq.q4.a': 'The application uses a Google Gemini API key that you provide. Usage of the AI features is subject to the pricing and quotas of your own Google AI account. The app itself is free to use.',
-
-  // Glossary
-  'glossary.title': 'Glossary of Art Terms',
-  'glossary.category.techniques': 'Painting Techniques & Styles',
-  'glossary.category.eras': 'Art History Eras',
-  'glossary.category.concepts': 'Artistic Concepts',
-  'glossary.chiaroscuro.term': 'Chiaroscuro',
-  'glossary.chiaroscuro.def': 'A technique in painting that uses strong contrasts between light and dark to achieve dramatic effects and model depth.',
-  'glossary.impasto.term': 'Impasto',
-  'glossary.impasto.def': 'A painting technique where paint is applied thickly to a surface, so that the brush or palette knife strokes are visible and create texture.',
-  'glossary.sfumato.term': 'Sfumato',
-  'glossary.sfumato.def': 'A painting technique for soft, hazy transitions between colors and tones, used notably by Leonardo da Vinci to create an atmospheric effect.',
-  'glossary.tenebrism.term': 'Tenebrism',
-  'glossary.tenebrism.def': 'An extreme form of chiaroscuro where darkness dominates the scene and light illuminates a few, brightly lit areas to create extreme drama.',
-  'glossary.pointillism.term': 'Pointillism',
-  'glossary.pointillism.def': 'A technique of painting in which small, distinct dots of color are applied in patterns to form an image that blends in the viewer\'s eye.',
-  'glossary.fresco.term': 'Fresco',
-  'glossary.fresco.def': 'A mural painting technique where pigments are applied to freshly laid, wet lime plaster. The color dries with the plaster and becomes an integral part of the wall.',
-  'glossary.renaissance.term': 'Renaissance',
-  'glossary.renaissance.def': 'A period of European history (14th-16th centuries) marking the transition from the Middle Ages to modernity, characterized by a revival of interest in classical antiquity and humanism.',
-  'glossary.baroque.term': 'Baroque',
-  'glossary.baroque.def': 'A style of art (c. 1600-1750) characterized by drama, movement, exuberance, and emotional intensity, often on a grand scale.',
-  'glossary.rococo.term': 'Rococo',
-  'glossary.rococo.def': 'A playful, elegant style (c. 1730-1760) that evolved from the Baroque, characterized by light colors, asymmetrical designs, and lighter themes.',
-  'glossary.impressionism.term': 'Impressionism',
-  'glossary.impressionism.def': 'A 19th-century art movement focused on capturing the fleeting impression of light and atmosphere, often using visible brushstrokes.',
-  'glossary.cubism.term': 'Cubism',
-  'glossary.cubism.def': 'An early-20th-century art movement that revolutionized painting by analyzing, breaking up, and reassembling objects in an abstracted form, depicting them from multiple viewpoints simultaneously.',
-  'glossary.surrealism.term': 'Surrealism',
-  'glossary.surrealism.def': 'A cultural movement which developed in the 1920s, aimed at unlocking the creative potential of the unconscious mind through dreamlike, often illogical scenes.',
-  'glossary.popart.term': 'Pop Art',
-  'glossary.popart.def': 'An art movement that emerged in the 1950s and used imagery from popular and mass culture, such as advertising and comic books.',
-  'glossary.minimalism.term': 'Minimalism',
-  'glossary.minimalism.def': 'An art movement from the 1960s characterized by extreme simplicity of form and a deliberate lack of expressive content, focusing on the essentials.',
-  'glossary.composition.term': 'Composition',
-  'glossary.composition.def': 'The arrangement or placement of visual elements in a work of art. It is crucial for the structure and the communication of the artwork\'s message.',
-  'glossary.palette.term': 'Color Palette',
-  'glossary.palette.def': 'The specific selection of colors used by an artist in a work of art. It can be warm, cool, monochromatic, or complementary, and it significantly influences the mood.',
-  'glossary.perspective.term': 'Perspective',
-  'glossary.perspective.def': 'The technique used to represent the illusion of three-dimensional space and depth on a two-dimensional surface.',
-  'glossary.iconography.term': 'Iconography',
-  'glossary.iconography.def': 'The identification, description, and interpretation of the content of images: the subjects depicted, particular compositions and details which have meanings distinct from the work itself.',
-
-  // Command Palette
-  'commandPalette.placeholder': 'Search for a command or jump to a page...',
-  'commandPalette.noResults': 'No results found.',
-  'command.toggleTheme': 'Toggle Theme',
-  'command.changeLanguage': 'Change Language',
-  'command.newProject': 'Create New Project',
-  'command.newGallery': 'Create New Gallery',
-  'command.newJournal': 'Create New Journal Entry',
-  'command.requestCritique': 'Request AI Critique for current gallery',
-  'command.generateAudioGuide': 'Generate AI Audio Guide for current gallery',
-  'command.exportData': 'Export All App Data',
-  'command.importData': 'Import App Data',
-  'command.category.general': 'General',
-  'command.category.creation': 'Create',
-  'command.category.ai': 'AI Actions',
-  'command.category.data': 'Data Management',
-  'command.openProject': 'Open Project: {title}',
-  'command.category.projects': 'Projects',
-  'command.openGallery': 'Open Gallery: {title}',
-  'command.category.galleries': 'Galleries',
-
-  // Toasts
-  'toast.error.gemini': 'An AI request error occurred.',
-  'toast.error.search': 'Art search failed.',
-  'toast.error.similar': 'Finding similar art failed.',
-  'toast.error.analyze': 'Image analysis failed.',
-  'toast.error.deepDive': 'Failed to generate deep dive.',
-  'toast.error.critique': 'Failed to generate critique.',
-  'toast.error.audioGuide': 'Failed to create audio guide.',
-  'toast.error.trailer': 'Failed to create video trailer.',
-  'toast.error.journal': 'Journal research failed.',
-  'toast.error.enhance': 'Failed to enhance prompt.',
-  'toast.error.studioGenerate': 'Image generation failed.',
-  'toast.error.remix': 'Image remix failed.',
-  'toast.error.imageRecognition': 'Image recognition failed.',
-  'toast.error.appReset': 'Could not reset app.',
-  'toast.gallery.artworkAdded': 'Artwork added to gallery.',
-  'toast.gallery.artworkExists': 'Artwork is already in this gallery.',
-  'toast.gallery.createdWithArt': 'Gallery created with artwork.',
-  'toast.gallery.deleted': 'Gallery deleted.',
-  'toast.gallery.duplicated': 'Gallery duplicated successfully.',
-  'toast.project.deleted': 'Project deleted.',
-  'toast.journal.deleted': 'Journal entry deleted.',
-  'toast.studio.promptEnhanced': 'Prompt enhanced successfully!',
-  'toast.share.linkCopied': 'Link copied to clipboard!',
-  'toast.data.appResetSuccess': 'App reset successfully. Reloading...',
-  'toast.data.importSuccess': 'Data imported successfully. App will reload...',
-  'toast.data.importError': 'Import failed. Please check the file.',
-  
-  // Errors
-  'error.viewNotFound': 'View not found.',
-  'error.api.title': 'Something Went Wrong',
-  'error.api.message': 'The AI request could not be completed. Please check your network connection and try again.',
-};
-
-export const translations = {
-  de,
+export const locales: { [key in Language]: Locale } = {
   en,
+  de,
 };

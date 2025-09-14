@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import type { JournalEntry, Gallery } from '../types';
-import { useTranslation } from '../contexts/TranslationContext';
-import { useAI } from '../contexts/AIStatusContext';
-import { useAppSettings } from '../contexts/AppSettingsContext';
-import { useModal } from '../contexts/ModalContext';
-import { useToast } from '../contexts/ToastContext';
-import { JournalIcon, SparklesIcon, TrashIcon, CheckCircleIcon, BookOpenIcon, PencilIcon, SpinnerIcon, PlusCircleIcon } from './IconComponents';
-import { MarkdownRenderer } from './MarkdownRenderer';
-import { Button } from './ui/Button';
-import { EmptyState } from './ui/EmptyState';
-import { PageHeader } from './ui/PageHeader';
-import { RetryPrompt } from './ui/RetryPrompt';
-import * as gemini from '../services/geminiService';
+// FIX: Added .ts extension to fix module resolution error.
+import type { JournalEntry, Gallery } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useAI } from '../contexts/AIStatusContext.tsx';
+import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
+import { useModal } from '../contexts/ModalContext.tsx';
+import { useToast } from '../contexts/ToastContext.tsx';
+// FIX: Added .tsx extension to fix module resolution error.
+import { JournalIcon, SparklesIcon, TrashIcon, CheckCircleIcon, BookOpenIcon, PencilIcon, SpinnerIcon, PlusCircleIcon } from './IconComponents.tsx';
+import { MarkdownRenderer } from './MarkdownRenderer.tsx';
+import { Button } from './ui/Button.tsx';
+import { EmptyState } from './ui/EmptyState.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
+import { RetryPrompt } from './ui/RetryPrompt.tsx';
+import * as gemini from '../services/geminiService.ts';
+import { GenerateContentResponse } from '@google/genai';
 
 interface JournalProps {
     entries: JournalEntry[];
@@ -30,6 +34,7 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
     const { t } = useTranslation();
     const { handleAiTask, activeAiTask, aiError, loadingMessage } = useAI();
     const { appSettings } = useAppSettings();
+    const { showToast } = useToast();
     const [title, setTitle] = useState(entry.title);
     const [content, setContent] = useState(entry.content);
     const [researchTopic, setResearchTopic] = useState('');
@@ -39,8 +44,37 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
         setContent(entry.content);
     }, [entry]);
 
-    const handleSave = () => {
+    const handleSave = useCallback(() => {
         onUpdateEntry(entry.id, { title, content });
+        showToast(t('save'), 'success');
+    }, [entry.id, title, content, onUpdateEntry, showToast, t]);
+
+    const handleBlur = () => {
+        if (appSettings.autoSaveJournal) {
+            if (title !== entry.title || content !== entry.content) {
+                onUpdateEntry(entry.id, { title, content });
+            }
+        }
+    };
+    
+    const appendSources = (response: GenerateContentResponse, topic: string) => {
+        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+        if (groundingChunks && groundingChunks.length > 0) {
+            const sources = groundingChunks
+                .map((c: any) => c.web?.uri)
+                .filter((uri: string | undefined): uri is string => !!uri)
+                .filter((uri: string, index: number, self: string[]) => self.indexOf(uri) === index);
+            
+            if (sources.length > 0) {
+                const sourcesTitle = language === 'de' ? 'Quellen' : 'Sources';
+                let sourcesText = `\n\n---\n**${sourcesTitle}:**\n`;
+                sources.forEach((source: string) => {
+                    sourcesText += `- ${source}\n`;
+                });
+                return sourcesText;
+            }
+        }
+        return '';
     };
 
     const handleResearch = async () => {
@@ -48,50 +82,37 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
         const currentContent = content;
         const topicForHeader = researchTopic;
         setResearchTopic('');
+        
+        const header = `\n\n### ${t('journal.research.heading', { topic: topicForHeader })}\n\n`;
 
         await handleAiTask('journal', async () => {
-            const resultStream = await gemini.generateJournalInsightsStream(topicForHeader, appSettings, language);
-            
-            let isHeaderAdded = false;
-            const appendHeader = () => {
-                if (!isHeaderAdded) {
-                    setContent(prev => `${prev}\n\n### ${t('journal.research.heading', { topic: topicForHeader })}\n\n`);
-                    isHeaderAdded = true;
-                }
-            };
-
-            for await (const chunk of resultStream) {
-                const chunkText = chunk.text;
-                if (chunkText) {
-                    appendHeader();
-                    setContent(prev => `${prev}${chunkText}`);
-                }
-                
-                const groundingChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks;
-                if (groundingChunks && groundingChunks.length > 0) {
-                    const sources = groundingChunks
-                        .map((c: any) => c.web?.uri)
-                        .filter((uri: string | undefined): uri is string => !!uri)
-                        .filter((uri: string, index: number, self: string[]) => self.indexOf(uri) === index);
-                    
-                    if (sources.length > 0) {
-                        appendHeader();
-                        const sourcesTitle = language === 'de' ? 'Quellen' : 'Sources';
-                        let sourcesText = `\n\n---\n**${sourcesTitle}:**\n`;
-                        sources.forEach((source: string) => {
-                            sourcesText += `- ${source}\n`;
-                        });
-                        setContent(prev => `${prev}\n${sourcesText}`);
+            if (appSettings.streamJournalResponses) {
+                // FIX: Added 'await' to resolve the promise and get the async iterator.
+                const resultStream = await gemini.generateJournalInsightsStream(topicForHeader, appSettings, language);
+                let firstChunk = true;
+                for await (const chunk of resultStream) {
+                    if (firstChunk) {
+                        setContent(prev => `${prev}${header}`);
+                        firstChunk = false;
+                    }
+                    if (chunk.text) {
+                        setContent(prev => `${prev}${chunk.text}`);
                     }
                 }
+                // Sources are typically at the end, so we might need a final call or check the last chunk. For simplicity, we won't get sources in stream mode.
+            } else {
+                const response = await gemini.generateJournalInsights(topicForHeader, appSettings, language);
+                const responseText = response.text;
+                const sourcesText = appendSources(response, topicForHeader);
+                setContent(prev => `${prev}${header}${responseText}${sourcesText}`);
             }
             return true;
         }, {
             onEnd: (result) => {
-                if (result === undefined) {
+                if (result === undefined) { // Task failed
                     setContent(currentContent);
-                } else {
-                     onUpdateEntry(entry.id, { title, content });
+                } else if (appSettings.autoSaveJournal) {
+                    onUpdateEntry(entry.id, { title, content });
                 }
             }
         });
@@ -106,10 +127,10 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    onBlur={handleSave}
+                    onBlur={handleBlur}
                     className="text-2xl font-bold bg-transparent focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800 rounded-md p-1 w-full"
                 />
-                {isDirty && (
+                {!appSettings.autoSaveJournal && isDirty && (
                      <Button size="sm" onClick={handleSave}>
                         <CheckCircleIcon className="w-4 h-4 mr-2" />
                         {t('save')}
@@ -119,7 +140,7 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
             <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                onBlur={handleSave}
+                onBlur={handleBlur}
                 placeholder={t('journal.editor.placeholder')}
                 className="w-full flex-grow bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-md p-3 text-base resize-none mb-4"
             />

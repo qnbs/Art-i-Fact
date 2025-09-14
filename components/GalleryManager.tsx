@@ -1,12 +1,16 @@
 
+
 import React from 'react';
-import type { Gallery, Project } from '../types';
-import { useTranslation } from '../contexts/TranslationContext';
-import { GalleryIcon, PlusCircleIcon, TrashIcon, DocumentDuplicateIcon, EllipsisVerticalIcon, HomeIcon } from './IconComponents';
-import { ImageWithFallback } from './ui/ImageWithFallback';
-import { EmptyState } from './ui/EmptyState';
-import { Button } from './ui/Button';
-import { PageHeader } from './ui/PageHeader';
+// FIX: Added .ts extension to fix module resolution error.
+import type { Gallery, Project } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution error.
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+// FIX: Added .tsx extension to fix module resolution error.
+import { GalleryIcon, PlusCircleIcon, TrashIcon, DocumentDuplicateIcon, EllipsisVerticalIcon, HomeIcon } from './IconComponents.tsx';
+import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
+import { EmptyState } from './ui/EmptyState.tsx';
+import { Button } from './ui/Button.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
 
 interface GalleryManagerProps {
     galleries: Gallery[];
@@ -16,6 +20,7 @@ interface GalleryManagerProps {
     onDeleteGallery: (id: string) => void;
     onDuplicateGallery?: (id: string) => void;
     hideHeader?: boolean;
+    newlyCreatedId?: string | null;
 }
 
 const StatusBadge: React.FC<{status: 'draft' | 'published'}> = ({ status }) => {
@@ -31,17 +36,18 @@ const StatusBadge: React.FC<{status: 'draft' | 'published'}> = ({ status }) => {
 const GalleryCard: React.FC<{ 
     gallery: Gallery; 
     project?: Project;
+    isNew: boolean;
     onSelect: () => void; 
     onDelete: () => void;
     onDuplicate?: () => void;
-}> = ({ gallery, project, onSelect, onDelete, onDuplicate }) => {
+}> = React.memo(({ gallery, project, isNew, onSelect, onDelete, onDuplicate }) => {
     const { t } = useTranslation();
     
     const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
     return (
         <div 
-            className="group relative bg-white dark:bg-gray-900 rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] hover:shadow-amber-500/20 transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-800 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            className={`group relative bg-white dark:bg-gray-900 rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] hover:shadow-amber-500/20 transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-800 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${isNew ? 'animate-newItem' : ''}`}
             onClick={onSelect}
             onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}
             tabIndex={0}
@@ -94,9 +100,9 @@ const GalleryCard: React.FC<{
             </div>
         </div>
     );
-};
+});
 
-export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, projects, onCreateNew, onSelectGallery, onDeleteGallery, onDuplicateGallery, hideHeader = false }) => {
+export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, projects, onCreateNew, onSelectGallery, onDeleteGallery, onDuplicateGallery, hideHeader = false, newlyCreatedId }) => {
     const { t } = useTranslation();
     
     if (galleries.length === 0 && !hideHeader) {
@@ -128,11 +134,12 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, proje
                 </PageHeader>
             )}
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {galleries.sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map(gallery => (
+                {[...galleries].sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map(gallery => (
                     <GalleryCard 
                         key={gallery.id} 
                         gallery={gallery} 
                         project={projects?.find(p => p.id === gallery.projectId)}
+                        isNew={gallery.id === newlyCreatedId}
                         onSelect={() => onSelectGallery(gallery.id)} 
                         onDelete={() => onDeleteGallery(gallery.id)}
                         onDuplicate={onDuplicateGallery ? () => onDuplicateGallery(gallery.id) : undefined}
