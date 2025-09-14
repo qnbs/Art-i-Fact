@@ -46,7 +46,7 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
 
     const handleSave = useCallback(() => {
         onUpdateEntry(entry.id, { title, content });
-        showToast(t('save'), 'success');
+        showToast(t('toast.journal.saved'), 'success');
     }, [entry.id, title, content, onUpdateEntry, showToast, t]);
 
     const handleBlur = () => {
@@ -204,16 +204,16 @@ export const Journal: React.FC<JournalProps> = (props) => {
         if (activeEntryId === entryId) {
             onSelectEntry(null);
         }
-        showToast(t('toast.journal.deleted', { title: entryTitle }), 'success');
+        showToast(t('toast.journal.deleted'), 'success');
         hideModal();
     }, [onDeleteEntry, activeEntryId, onSelectEntry, showToast, t, hideModal]);
 
     const handleDelete = useCallback((e: React.MouseEvent, entryId: string, entryTitle: string) => {
         e.stopPropagation();
         if (appSettings.showDeletionConfirmation) {
-            showModal(t('delete.journal.title'), (
+            showModal(t('journal.delete.title'), (
                 <div>
-                    <p>{t('delete.journal.confirm', { title: entryTitle })}</p>
+                    <p>{t('journal.delete.confirm', { title: entryTitle })}</p>
                     <div className="flex justify-end gap-2 mt-4">
                         <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
                         <Button variant="danger" onClick={() => confirmAndDelete(entryId, entryTitle)}>{t('remove')}</Button>
@@ -225,10 +225,10 @@ export const Journal: React.FC<JournalProps> = (props) => {
         }
     }, [showModal, t, appSettings.showDeletionConfirmation, confirmAndDelete, hideModal]);
     
-    const handleNew = () => {
+    const handleNew = useCallback(() => {
         const newId = onNewEntry();
         onSelectEntry(newId);
-    }
+    }, [onNewEntry, onSelectEntry]);
 
     if (entries.length === 0 && !isControlled) {
         return (

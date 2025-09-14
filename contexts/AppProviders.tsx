@@ -8,6 +8,7 @@ import { ToastProvider } from './ToastContext.tsx';
 import { AIStatusProvider } from './AIStatusContext.tsx';
 import { AppSettingsProvider } from './AppSettingsContext.tsx';
 import { ProfileProvider } from './ProfileContext.tsx';
+import { ToastContainer } from '../components/ui/Toast.tsx';
 
 export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return (
@@ -22,6 +23,7 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children
                         </ProfileProvider>
                     </AppSettingsProvider>
                 </AIStatusProvider>
+                <ToastContainer />
             </ToastProvider>
         </TranslationProvider>
     );

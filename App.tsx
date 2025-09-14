@@ -154,27 +154,31 @@ const App: React.FC = () => {
     }, [showModal, t, language]);
 
     const handleInitiateAdd = useCallback((artwork: Artwork) => {
-        const handleAddToGallery = (galleryId: string) => {
-            addArtworkToGallery(galleryId, artwork);
-            showToast(t('toast.artwork.added', { gallery: galleries.find(g => g.id === galleryId)?.title || '' }), 'success');
-            hideModal();
-        }
-        const handleCreateAndAdd = () => {
-             const newId = createGallery({
-                title: t('gallery.new'),
-                description: '',
-                projectId: activeProjectId,
-             });
-             addArtworkToGallery(newId, artwork);
-             showToast(t('toast.artwork.added', { gallery: t('gallery.new') }), 'success');
-             hideModal();
-        }
-        showModal(t('modal.addToGallery.title'), <AddToGalleryModal 
-            galleries={galleries}
-            onSelectGallery={handleAddToGallery}
-            onCreateAndAdd={handleCreateAndAdd}
-            activeProjectId={activeProjectId}
-        />);
+        hideModal();
+        
+        setTimeout(() => {
+            const handleAddToGallery = (galleryId: string) => {
+                addArtworkToGallery(galleryId, artwork);
+                showToast(t('toast.artwork.added', { gallery: galleries.find(g => g.id === galleryId)?.title || '' }), 'success');
+                hideModal();
+            }
+            const handleCreateAndAdd = () => {
+                 const newId = createGallery({
+                    title: t('gallery.new'),
+                    description: '',
+                    projectId: activeProjectId,
+                 });
+                 addArtworkToGallery(newId, artwork);
+                 showToast(t('toast.artwork.added', { gallery: t('gallery.new') }), 'success');
+                 hideModal();
+            }
+            showModal(t('modal.addToGallery.title'), <AddToGalleryModal 
+                galleries={galleries}
+                onSelectGallery={handleAddToGallery}
+                onCreateAndAdd={handleCreateAndAdd}
+                activeProjectId={activeProjectId}
+            />);
+        }, 200);
     }, [addArtworkToGallery, showToast, t, galleries, hideModal, createGallery, activeProjectId, showModal]);
 
     const handleViewArtworkDetails = useCallback((artwork: Artwork) => {
@@ -318,6 +322,7 @@ const App: React.FC = () => {
                     project={activeProject}
                     onClose={() => handleSetView('workspace')}
                     onUpdateProject={updateProject}
+                    onEditProject={handleEditProject}
                     galleries={projectGalleries}
                     journalEntries={projectJournals}
                     language={language}
@@ -344,8 +349,6 @@ const App: React.FC = () => {
                     onReorderArtworks={(reordered) => reorderArtworksInGallery(activeGallery.id, reordered)}
                     onViewDetails={handleViewArtworkDetails}
                     onInitiateAdd={handleInitiateAdd}
-                    // FIX: Added missing onFindSimilar prop.
-                    onFindSimilar={handleFindSimilar}
                 /> : null;
             case 'gallerysuite':
                 return <GalleryManager 

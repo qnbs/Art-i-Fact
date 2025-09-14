@@ -30,6 +30,16 @@ const ProjectCard: React.FC<{
     
     const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
+    const getGalleryCountText = () => {
+        if (galleryCount === 1) return t('workspace.project.galleries_one');
+        return t('workspace.project.galleries_other', { count: String(galleryCount) });
+    };
+
+    const getJournalCountText = () => {
+        if (journalCount === 1) return t('workspace.project.journals_one');
+        return t('workspace.project.journals_other', { count: String(journalCount) });
+    };
+
     return (
         <div 
             className={`group relative bg-white dark:bg-gray-900 rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] hover:shadow-amber-500/20 transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-800 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${isNew ? 'animate-newItem' : ''}`} 
@@ -42,8 +52,8 @@ const ProjectCard: React.FC<{
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-3 h-[60px]">{project.description}</p>
             </div>
             <div className="p-4 border-t border-gray-100 dark:border-gray-800/50 flex justify-between text-xs text-gray-400 dark:text-gray-500">
-                <span>{t('workspace.project.galleries', { count: String(galleryCount)})}</span>
-                <span>{t('workspace.project.journals', { count: String(journalCount)})}</span>
+                <span>{getGalleryCountText()}</span>
+                <span>{getJournalCountText()}</span>
             </div>
              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" onClick={stopPropagation}>
                  <details className="relative">

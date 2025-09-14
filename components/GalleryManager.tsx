@@ -1,6 +1,3 @@
-
-
-
 import React, { useCallback } from 'react';
 // FIX: Added .tsx extension to fix module resolution error.
 import type { Gallery, Project } from '../types.ts';
@@ -49,6 +46,12 @@ const GalleryCard: React.FC<{
     
     const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
+    const getArtworkCountText = () => {
+        const count = gallery.artworks.length;
+        if (count === 1) return t('gallery.manager.artworkCount_one');
+        return t('gallery.manager.artworkCount_other', { count: String(count) });
+    };
+
     return (
         <div 
             className={`group relative bg-white dark:bg-gray-900 rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] hover:shadow-amber-500/20 transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-800 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${isNew ? 'animate-newItem' : ''}`}
@@ -80,7 +83,7 @@ const GalleryCard: React.FC<{
                 )}
                 
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800/50">
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('gallery.manager.artworkCount', { count: String(gallery.artworks.length) })}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{getArtworkCountText()}</p>
                     <StatusBadge status={gallery.status || 'draft'} />
                 </div>
             </div>

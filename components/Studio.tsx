@@ -55,6 +55,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
         const result = await handleAiTask(taskName, apiFn) as string | undefined;
 
         if (result) {
+            showToast(t('toast.studio.generated'), 'success');
             setIsImageVisible(false); // Hide before setting new image to re-trigger fade-in
             setGeneratedImage(result);
 

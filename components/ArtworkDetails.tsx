@@ -218,7 +218,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                     <Button onClick={() => onFindSimilar(artwork)}>{t('modal.details.findSimilar')}</Button>
                     {isInGallery 
                         ? <Button variant="danger" onClick={() => onRemoveFromGallery(artwork.id)}>{t('modal.details.removeFromGallery')}</Button>
-                        : <Button variant="secondary" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => { onInitiateAddToGallery(artwork); onClose(); }}>{t('modal.details.addToGallery')}</Button>
+                        : <Button variant="secondary" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => onInitiateAddToGallery(artwork)}>{t('modal.details.addToGallery')}</Button>
                     }
                     <Button variant="secondary" onClick={() => { onStartChat(artwork); }}>
                         <ChatBubbleLeftEllipsisIcon className="w-5 h-5 mr-2" />

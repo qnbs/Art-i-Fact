@@ -23,7 +23,7 @@ const textColorClasses = {
 
 export const ToastContainer = () => {
   const { toasts, removeToast } = useToast();
-  const el = document.getElementById('root');
+  const el = document.getElementById('toast-root');
 
   if (!el) return null;
 
@@ -31,7 +31,7 @@ export const ToastContainer = () => {
     <div
       aria-live="polite"
       aria-atomic="true"
-      className="fixed top-5 right-5 z-50 flex flex-col items-end gap-3"
+      className="fixed top-5 right-5 z-[100] flex flex-col items-end gap-3"
     >
       {toasts.map((toast) => (
         <div

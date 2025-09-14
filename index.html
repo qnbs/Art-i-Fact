@@ -74,8 +74,8 @@
        .animate-slide-out { animation: slideOutToLeft 0.5s ease-out forwards; }
 
       @keyframes toast-in { 
-        from { opacity: 0; transform: translate(-50%, 20px); } 
-        to { opacity: 1; transform: translate(-50%, 0); } 
+        from { opacity: 0; transform: translateY(20px); } 
+        to { opacity: 1; transform: translateY(0); } 
       }
       @keyframes newItem {
         from {
@@ -123,6 +123,8 @@
 </head>
   <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-200 transition-colors duration-300">
     <div id="root"></div>
+    <div id="modal-root"></div>
+    <div id="toast-root"></div>
     <div id="command-palette-root"></div>
     <script type="module" src="/index.tsx"></script>
     

@@ -1,8 +1,4 @@
-
-
-
-
-import React, { useState, DragEvent, memo, useRef } from 'react';
+import React, { useState, DragEvent, memo, useRef, useCallback } from 'react';
 import type { Gallery, Artwork, AudioGuide, GalleryCritique } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
@@ -10,7 +6,7 @@ import { useModal } from '../contexts/ModalContext.tsx';
 import { useAI } from '../contexts/AIStatusContext.tsx';
 import { useProfile } from '../contexts/ProfileContext.tsx';
 import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
-import { SparklesIcon, PresentationChartBarIcon, ShareIcon, TrashIcon, CheckCircleIcon, PencilIcon, SpinnerIcon, InfoIcon, HomeIcon, ArrowDownIcon, GalleryIcon, ArrowUpIcon } from './IconComponents.tsx';
+import { SparklesIcon, PresentationChartBarIcon, ShareIcon, TrashIcon, CheckCircleIcon, PencilIcon, SpinnerIcon, InfoIcon, HomeIcon, ArrowDownIcon, GalleryIcon, ArrowUpIcon, VideoCameraIcon } from './IconComponents.tsx';
 import { Button } from './ui/Button.tsx';
 import { ExhibitionMode } from './ExhibitionMode.tsx';
 import { CritiqueModalContent } from './CritiqueModalContent.tsx';
@@ -18,6 +14,7 @@ import { ShareModal } from './ShareModal.tsx';
 import * as gemini from '../services/geminiService.ts';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
+import { EmptyState } from './ui/EmptyState.tsx';
 
 interface GalleryViewProps {
     gallery: Gallery;
@@ -28,7 +25,6 @@ interface GalleryViewProps {
     onReorderArtworks: (reorderedArtworks: Artwork[]) => void;
     onViewDetails: (artwork: Artwork) => void;
     onInitiateAdd: (artwork: Artwork) => void;
-    onFindSimilar: (artwork: Artwork) => void;
 }
 
 const DraggableArtworkItem: React.FC<{
@@ -101,55 +97,54 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
     const dragItem = useRef<number | null>(null);
     const dragOverItem = useRef<number | null>(null);
 
-    const handleSave = () => {
+    const handleSave = useCallback(() => {
         onUpdate(g => ({ ...g, title: editedTitle, description: editedDescription }));
         setIsEditing(false);
-    };
+    }, [onUpdate, editedTitle, editedDescription]);
     
     // AI handlers
-    const handleCritique = async () => {
+    const handleCritique = useCallback(async () => {
         aiAssistantMenuRef.current?.removeAttribute('open');
         const result = await handleAiTask('critique', () => gemini.generateCritique(gallery, appSettings, language)) as GalleryCritique | undefined;
         if (result) {
-            showModal(t('gallery.suite.title'), <CritiqueModalContent critiqueResult={result} />);
+            showModal(t('gallery.critique.modal.critique'), <CritiqueModalContent critiqueResult={result} />);
         }
-    };
+    }, [handleAiTask, gallery, appSettings, language, showModal, t]);
     
-    const handleAudioGuide = async () => {
+    const handleAudioGuide = useCallback(async () => {
         aiAssistantMenuRef.current?.removeAttribute('open');
         const script = await handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile, appSettings, language)) as AudioGuide | undefined;
         if (script) {
             onUpdate(g => ({ ...g, audioGuide: script }));
             showModal("Audio Guide Ready", <div>The audio guide script has been generated and saved with this gallery. You can access it in Exhibition Mode.</div>);
         }
-    };
+    }, [handleAiTask, gallery, profile, appSettings, language, onUpdate, showModal]);
 
-    const handleTrailer = async () => {
+    const handleTrailer = useCallback(async () => {
         aiAssistantMenuRef.current?.removeAttribute('open');
         onUpdate(g => ({ ...g, trailerVideoStatus: 'pending' }));
-        // FIX: Renamed AI task from 'trailer' to 'video' to match the AiTask type definition.
         const downloadLink = await handleAiTask('video', () => gemini.generateTrailerVideo(gallery)) as string | undefined;
         if (downloadLink) {
             onUpdate(g => ({ ...g, trailerVideoUrl: downloadLink, trailerVideoStatus: 'ready' }));
         } else {
             onUpdate(g => ({ ...g, trailerVideoStatus: 'failed' }));
         }
-    };
+    }, [handleAiTask, onUpdate, gallery]);
     
-    const handleShare = () => {
+    const handleShare = useCallback(() => {
         showModal(t('share.modal.title'), <ShareModal gallery={gallery} profile={profile} onClose={hideModal} />);
-    };
+    }, [showModal, t, gallery, profile, hideModal]);
 
     // Drag and drop handlers
-    const handleDragStart = (e: DragEvent<HTMLDivElement>, position: number) => {
+    const handleDragStart = useCallback((e: DragEvent<HTMLDivElement>, position: number) => {
         dragItem.current = position;
-    };
+    }, []);
     
-    const handleDragEnter = (e: DragEvent<HTMLDivElement>, position: number) => {
+    const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>, position: number) => {
         dragOverItem.current = position;
-    };
+    }, []);
 
-    const handleDragEnd = () => {
+    const handleDragEnd = useCallback(() => {
         if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
             return;
         }
@@ -159,9 +154,9 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
         dragItem.current = null;
         dragOverItem.current = null;
         onReorderArtworks(newArtworkList);
-    };
+    }, [gallery.artworks, onReorderArtworks]);
 
-    const handleMoveArtwork = (index: number, direction: 'up' | 'down') => {
+    const handleMoveArtwork = useCallback((index: number, direction: 'up' | 'down') => {
         if ((direction === 'up' && index === 0) || (direction === 'down' && index === gallery.artworks.length - 1)) {
             return;
         }
@@ -170,7 +165,7 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
         const newIndex = direction === 'up' ? index - 1 : index + 1;
         newArtworks.splice(newIndex, 0, item);
         onReorderArtworks(newArtworks);
-    };
+    }, [gallery.artworks, onReorderArtworks]);
 
     return (
         <div className="flex flex-col h-full">
@@ -217,6 +212,18 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
                     <ShareIcon className="w-5 h-5 mr-2"/>
                     {t('share')}
                 </Button>
+                 {gallery.trailerVideoStatus === 'ready' && gallery.trailerVideoUrl && (
+                    <Button variant="secondary" onClick={() => window.open(`${gallery.trailerVideoUrl}&key=${process.env.API_KEY}`, '_blank')}>
+                        <VideoCameraIcon className="w-5 h-5 mr-2" />
+                        {t('gallery.ai.viewTrailer')}
+                    </Button>
+                )}
+                {gallery.trailerVideoStatus === 'pending' && (
+                    <Button variant="secondary" disabled>
+                        <SpinnerIcon className="w-5 h-5 mr-2" />
+                        {t('gallery.ai.trailerPending')}
+                    </Button>
+                )}
                 <details ref={aiAssistantMenuRef} className="relative">
                     <summary className="list-none">
                         <Button variant="secondary" as="div">
@@ -234,12 +241,12 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
                            {activeAiTask === 'audioGuide' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
                            {t('gallery.ai.audioGuide')}
                         </button>
-                        {/* FIX: Renamed AI task from 'trailer' to 'video' to match the AiTask type definition. */}
-                        <button onClick={handleTrailer} disabled={activeAiTask === 'video' || gallery.trailerVideoStatus === 'pending'} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                           {/* FIX: Renamed AI task from 'trailer' to 'video' to match the AiTask type definition. */}
-                           {activeAiTask === 'video' || gallery.trailerVideoStatus === 'pending' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
-                           {t('gallery.ai.trailer')}
-                        </button>
+                         {gallery.trailerVideoStatus !== 'ready' && (
+                            <button onClick={handleTrailer} disabled={activeAiTask === 'video' || gallery.trailerVideoStatus === 'pending'} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                               {activeAiTask === 'video' || gallery.trailerVideoStatus === 'pending' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
+                               {gallery.trailerVideoStatus === 'failed' ? t('gallery.ai.trailerFailed') : t('gallery.ai.trailer')}
+                            </button>
+                        )}
                     </div>
                 </details>
             </div>
@@ -263,9 +270,11 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-16">
-                        <p className="text-gray-500">This gallery is empty. Add some art from the Discover tab!</p>
-                    </div>
+                    <EmptyState
+                        icon={<GalleryIcon className="w-16 h-16" />}
+                        title={t('gallery.empty.title')}
+                        message={t('gallery.empty.prompt')}
+                    />
                 )}
             </div>
         </div>

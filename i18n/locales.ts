@@ -30,6 +30,11 @@ const en: Locale = {
     gallerysuite: 'Gallery Suite',
   },
 
+  // Loader
+  loader: {
+    generic: 'Loading your experience...',
+  },
+
   // Profile
   profile: {
       title: "Curator's Profile",
@@ -57,6 +62,9 @@ const en: Locale = {
   
   // Toasts
   toast: {
+      ai: {
+        thinking: 'AI is thinking...',
+      },
       settings: {
           reset: 'Settings have been reset to default.',
           exported: 'Your data has been successfully exported.',
@@ -67,20 +75,26 @@ const en: Locale = {
           added: 'Artwork added to "{{gallery}}".'
       },
       journal: {
-          deleted: 'Journal entry deleted.'
+          deleted: 'Journal entry deleted.',
+          saved: 'Journal entry saved.',
       },
       share: {
           linkCopied: 'Shareable link copied to clipboard.'
       },
       studio: {
-        promptEnhanced: 'Prompt enhanced successfully!'
+        promptEnhanced: 'Prompt enhanced successfully!',
+        generated: 'Artwork generated successfully.',
       },
       gallery: {
         imported: 'Gallery "{{title}}" imported successfully!',
-        duplicated: 'Gallery "{{title}}" duplicated successfully!'
+        duplicated: 'Gallery "{{title}}" duplicated successfully!',
+        deleted: 'Gallery "{{title}}" has been deleted.',
+      },
+      project: {
+        deleted: 'Project "{{title}}" and all its contents have been deleted.',
       },
       error: {
-        gemini: "Gemini API request failed."
+        gemini: "The AI Assistant couldn't complete the request. Please try again.",
       }
   },
   
@@ -115,7 +129,7 @@ const en: Locale = {
     addToGallery: {
       title: 'Add to Gallery',
       create: 'Create New Gallery & Add',
-      select: '...or add to an existing one:',
+      select: 'Or add to an existing gallery:',
     }
   },
   chat: {
@@ -134,7 +148,8 @@ const en: Locale = {
         published: 'Published',
     },
     manager: {
-        artworkCount: '{{count}} artworks',
+        artworkCount_one: '1 Artwork',
+        artworkCount_other: '{{count}} Artworks',
         empty: {
             title: 'No Galleries Here Yet',
             prompt: 'Create your first gallery to start curating.',
@@ -150,7 +165,10 @@ const en: Locale = {
     ai: {
         critique: 'Critique Gallery',
         audioGuide: 'Generate Audio Guide',
-        trailer: 'Generate Video Trailer'
+        trailer: 'Generate Video Trailer',
+        viewTrailer: 'View Trailer',
+        trailerPending: 'Trailer is processing...',
+        trailerFailed: 'Retry Trailer Generation',
     },
     critique: {
         modal: {
@@ -166,13 +184,18 @@ const en: Locale = {
         description: 'Description',
         'title.placeholder': 'e.g., "Impressionist Landscapes"',
         'description.placeholder': 'e.g., "A collection of works exploring light and nature."',
+    },
+    empty: {
+        title: "This Gallery is Empty",
+        prompt: "Add artworks from the Discover tab to begin curating your collection.",
     }
   },
   journal: {
     title: 'Journal',
     new: 'New Entry',
     delete: {
-        confirm: 'Are you sure you want to delete the entry "{{title}}"?',
+        title: 'Delete Entry?',
+        confirm: 'Are you sure you want to permanently delete the entry "{{title}}"? This action cannot be undone.',
     },
     research: {
         heading: 'AI Research: {{topic}}',
@@ -196,8 +219,10 @@ const en: Locale = {
       newProject: 'New Project',
       editProject: 'Edit Project',
       project: {
-          galleries: '{{count}} Galleries',
-          journals: '{{count}} Journals',
+          galleries_one: '1 Gallery',
+          galleries_other: '{{count}} Galleries',
+          journals_one: '1 Journal Entry',
+          journals_other: '{{count}} Journal Entries',
           creator: {
             title: "Project Title",
             description: "Description",
@@ -205,13 +230,20 @@ const en: Locale = {
             'description.placeholder': "e.g., 'Research on post-impressionism and cubism.'"
           }
       },
-      delete: {
-          projectLabel: 'Delete project {{title}}'
-      },
       empty: {
           title: 'Welcome to your Workspace!',
           prompt: 'Projects are containers for your galleries and research. Create a project to get started.',
           button: 'Create First Project'
+      }
+  },
+  delete: {
+      gallery: {
+          title: 'Delete Gallery?',
+          confirm: 'Are you sure you want to permanently delete the gallery "{{title}}"? This action cannot be undone.'
+      },
+      project: {
+          title: 'Delete Project?',
+          confirm: "Are you sure you want to permanently delete the project '{{title}}' and all its galleries and journal entries? This action cannot be undone.",
       }
   },
   settings: {
@@ -232,14 +264,14 @@ const en: Locale = {
       },
       confirmDelete: {
         label: "Confirm Deletions",
-        desc: "Show a confirmation dialog before deleting items."
+        desc: "Requires confirmation before permanently deleting items to prevent accidental data loss."
       }
     },
     ai: {
         title: "AI Assistant",
         creativity: {
             label: "Creativity Level",
-            desc: "Controls the randomness of AI responses. 'Creative' may be less factual.",
+            desc: "Adjusts the AI's creativity. 'Focused' is predictable; 'Creative' is more imaginative.",
             focused: "Focused",
             balanced: "Balanced",
             creative: "Creative"
@@ -253,7 +285,7 @@ const en: Locale = {
         title: "AI Studio",
         enhancement: {
             label: "Prompt Enhancement Style",
-            desc: "Determines how the AI enhances your prompts.",
+            desc: "Determines how the AI enriches your text prompts before generation.",
             subtle: "Subtle",
             descriptive: "Descriptive",
             artistic: "Artistic"
@@ -267,17 +299,17 @@ const en: Locale = {
         title: "Data Management",
         export: {
             label: "Export Data",
-            desc: "Save all your projects, galleries, and settings to a file.",
+            desc: "Save all your projects, galleries, and settings to a single backup file.",
             button: "Export All Data"
         },
         import: {
             label: "Import Data",
-            desc: "Load data from a backup file. This will overwrite current data.",
+            desc: "Importing will replace your current data with the contents of the backup file.",
             button: "Import from File"
         },
         reset: {
             label: "Reset Application",
-            desc: "Delete all your data and restore default settings. This cannot be undone.",
+            desc: "Delete all data and restore default settings. This cannot be undone.",
             button: "Reset App Data"
         }
     }
@@ -406,12 +438,12 @@ const en: Locale = {
           title: 'Share or Export Gallery',
           link: {
               title: 'Share a Link',
-              description: "Copy a unique link to share this gallery. Others can view it in their browser or import it into their own Art-i-Fact app.",
+              description: "Generate a unique link to share a beautiful, read-only version of your gallery. Anyone with the link can view it in their browser.",
               copy: 'Copy Shareable Link'
           },
           export: {
               title: 'Export as File',
-              description: 'Download the gallery data as a JSON file. This is useful for backups or for sharing directly with others.',
+              description: 'Download the gallery as a JSON file. This file can be used as a backup or imported by another Art-i-Fact user.',
               button: 'Export .json File'
           }
       }
@@ -420,7 +452,7 @@ const en: Locale = {
     title: "AI Studio",
     subtitle: "Create unique artworks from text prompts.",
     prompt: {
-        placeholder: "e.g., A cubist portrait of a person reading a book...",
+        placeholder: "Describe anything you can imagine. For example: A cubist portrait of a person reading a book, oil on canvas...",
     },
     inspiration: "Need inspiration? Try one of these:",
     aspectRatio: "Aspect Ratio",
@@ -477,6 +509,11 @@ const de: Locale = {
     gallerysuite: 'Galerie-Übersicht',
   },
 
+  // Loader
+  loader: {
+      generic: 'Lade deine Erfahrung...',
+  },
+
   // Profile
   profile: {
       title: "Kuratorprofil",
@@ -504,6 +541,9 @@ const de: Locale = {
 
   // Toasts
   toast: {
+      ai: {
+        thinking: 'KI denkt nach...',
+      },
       settings: {
           reset: 'Die Einstellungen wurden auf die Standardwerte zurückgesetzt.',
           exported: 'Deine Daten wurden erfolgreich exportiert.',
@@ -514,20 +554,26 @@ const de: Locale = {
           added: 'Kunstwerk zu "{{gallery}}" hinzugefügt.'
       },
       journal: {
-          deleted: 'Journaleintrag gelöscht.'
+          deleted: 'Journaleintrag gelöscht.',
+          saved: 'Journaleintrag gespeichert.',
       },
       share: {
           linkCopied: 'Link zum Teilen in die Zwischenablage kopiert.'
       },
       studio: {
-        promptEnhanced: 'Prompt erfolgreich verbessert!'
+        promptEnhanced: 'Prompt erfolgreich verbessert!',
+        generated: 'Kunstwerk erfolgreich generiert.',
       },
       gallery: {
         imported: 'Galerie "{{title}}" erfolgreich importiert!',
-        duplicated: 'Galerie "{{title}}" erfolgreich dupliziert!'
+        duplicated: 'Galerie "{{title}}" erfolgreich dupliziert!',
+        deleted: 'Galerie "{{title}}" wurde gelöscht.',
+      },
+      project: {
+        deleted: 'Projekt "{{title}}" und alle Inhalte wurden gelöscht.',
       },
       error: {
-        gemini: "Anfrage an die Gemini API fehlgeschlagen."
+        gemini: "Der KI-Assistent konnte die Anfrage nicht abschließen. Bitte versuche es erneut.",
       }
   },
   
@@ -562,7 +608,7 @@ const de: Locale = {
     addToGallery: {
       title: 'Zur Galerie hinzufügen',
       create: 'Neue Galerie erstellen & hinzufügen',
-      select: '...oder zu einer bestehenden hinzufügen:',
+      select: 'Oder zu einer bestehenden Galerie hinzufügen:',
     }
   },
   chat: {
@@ -581,7 +627,8 @@ const de: Locale = {
         published: 'Veröffentlicht',
     },
     manager: {
-        artworkCount: '{{count}} Kunstwerke',
+        artworkCount_one: '1 Kunstwerk',
+        artworkCount_other: '{{count}} Kunstwerke',
         empty: {
             title: 'Noch keine Galerien hier',
             prompt: 'Erstelle deine erste Galerie, um mit dem Kuratieren zu beginnen.',
@@ -597,7 +644,10 @@ const de: Locale = {
     ai: {
         critique: 'Galerie kritisieren',
         audioGuide: 'Audioguide erstellen',
-        trailer: 'Videotrailer erstellen'
+        trailer: 'Videotrailer erstellen',
+        viewTrailer: 'Trailer ansehen',
+        trailerPending: 'Trailer wird verarbeitet...',
+        trailerFailed: 'Trailer-Erstellung wiederholen',
     },
     critique: {
         modal: {
@@ -613,13 +663,18 @@ const de: Locale = {
         description: 'Beschreibung',
         'title.placeholder': 'z.B. "Impressionistische Landschaften"',
         'description.placeholder': 'z.B. "Eine Sammlung von Werken, die Licht und Natur erforschen."',
+    },
+    empty: {
+        title: "Diese Galerie ist leer",
+        prompt: "Füge Kunstwerke aus dem Entdecken-Tab hinzu, um mit dem Kuratieren deiner Sammlung zu beginnen.",
     }
   },
   journal: {
     title: 'Journal',
     new: 'Neuer Eintrag',
     delete: {
-        confirm: 'Bist du sicher, dass du den Eintrag "{{title}}" löschen möchtest?',
+        title: 'Eintrag löschen?',
+        confirm: 'Bist du sicher, dass du den Eintrag "{{title}}" endgültig löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.',
     },
     research: {
         heading: 'KI-Recherche: {{topic}}',
@@ -643,8 +698,10 @@ const de: Locale = {
       newProject: 'Neues Projekt',
       editProject: 'Projekt bearbeiten',
       project: {
-          galleries: '{{count}} Galerien',
-          journals: '{{count}} Journaleinträge',
+          galleries_one: '1 Galerie',
+          galleries_other: '{{count}} Galerien',
+          journals_one: '1 Journaleintrag',
+          journals_other: '{{count}} Journaleinträge',
           creator: {
             title: "Projekttitel",
             description: "Beschreibung",
@@ -652,13 +709,20 @@ const de: Locale = {
             'description.placeholder': "z.B. 'Forschung zu Post-Impressionismus und Kubismus.'"
           }
       },
-      delete: {
-          projectLabel: 'Projekt {{title}} löschen'
-      },
       empty: {
           title: 'Willkommen in deinem Arbeitsbereich!',
           prompt: 'Projekte sind Ordner für deine Galerien und Recherchen. Erstelle ein Projekt, um loszulegen.',
           button: 'Erstes Projekt erstellen'
+      }
+  },
+  delete: {
+      gallery: {
+          title: 'Galerie löschen?',
+          confirm: 'Möchtest du die Galerie "{{title}}" wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden.'
+      },
+      project: {
+          title: 'Projekt löschen?',
+          confirm: "Möchtest du das Projekt '{{title}}' und alle zugehörigen Galerien und Journaleinträge wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
       }
   },
   settings: {
@@ -679,14 +743,14 @@ const de: Locale = {
       },
       confirmDelete: {
         label: "Löschen bestätigen",
-        desc: "Ein Bestätigungsdialogfeld vor dem Löschen von Elementen anzeigen."
+        desc: "Erfordert eine Bestätigung vor dem endgültigen Löschen von Elementen, um Datenverlust zu vermeiden."
       }
     },
     ai: {
         title: "KI-Assistent",
         creativity: {
             label: "Kreativitätsstufe",
-            desc: "Steuert die Zufälligkeit der KI-Antworten. 'Kreativ' kann weniger faktenbasiert sein.",
+            desc: "Passt die Kreativität der KI an. 'Fokussiert' ist vorhersagbar; 'Kreativ' ist fantasievoller.",
             focused: "Fokussiert",
             balanced: "Ausgewogen",
             creative: "Kreativ"
@@ -700,7 +764,7 @@ const de: Locale = {
         title: "KI-Studio",
         enhancement: {
             label: "Stil der Prompt-Verbesserung",
-            desc: "Bestimmt, wie die KI deine Prompts verbessert.",
+            desc: "Bestimmt, wie die KI deine Text-Prompts vor der Generierung anreichert.",
             subtle: "Subtil",
             descriptive: "Beschreibend",
             artistic: "Künstlerisch"
@@ -714,17 +778,17 @@ const de: Locale = {
         title: "Datenverwaltung",
         export: {
             label: "Daten exportieren",
-            desc: "Sichere all deine Projekte, Galerien und Einstellungen in einer Datei.",
+            desc: "Sichere all deine Projekte, Galerien und Einstellungen in einer einzigen Sicherungsdatei.",
             button: "Alle Daten exportieren"
         },
         import: {
             label: "Daten importieren",
-            desc: "Lade Daten aus einer Sicherungsdatei. Dies überschreibt aktuelle Daten.",
+            desc: "Durch den Import werden deine aktuellen Daten mit dem Inhalt der Sicherungsdatei ersetzt.",
             button: "Aus Datei importieren"
         },
         reset: {
             label: "Anwendung zurücksetzen",
-            desc: "Lösche alle deine Daten und stelle die Standardeinstellungen wieder her. Dies kann nicht rückgängig gemacht werden.",
+            desc: "Lösche alle Daten und stelle die Standardeinstellungen wieder her. Dies kann nicht rückgängig gemacht werden.",
             button: "App-Daten zurücksetzen"
         }
     }
@@ -853,12 +917,12 @@ const de: Locale = {
           title: 'Galerie teilen oder exportieren',
           link: {
               title: 'Link teilen',
-              description: "Kopiere einen einzigartigen Link, um diese Galerie zu teilen. Andere können sie im Browser ansehen oder in ihre eigene Art-i-Fact-App importieren.",
+              description: "Erzeuge einen einzigartigen Link, um eine ansprechende, schreibgeschützte Version deiner Galerie zu teilen. Jeder mit dem Link kann sie im Browser ansehen.",
               copy: 'Link zum Teilen kopieren'
           },
           export: {
               title: 'Als Datei exportieren',
-              description: 'Lade die Galeriedaten als JSON-Datei herunter. Dies ist nützlich für Backups oder zum direkten Teilen mit anderen.',
+              description: 'Lade die Galerie als JSON-Datei herunter. Diese Datei kann als Backup verwendet oder von einem anderen Art-i-Fact-Benutzer importiert werden.',
               button: '.json-Datei exportieren'
           }
       }
@@ -867,7 +931,7 @@ const de: Locale = {
     title: "KI-Studio",
     subtitle: "Erschaffe einzigartige Kunstwerke aus Text-Prompts.",
     prompt: {
-        placeholder: "z.B. Ein kubistisches Porträt einer Person, die ein Buch liest...",
+        placeholder: "Beschreibe, was immer du dir vorstellen kannst. Z.B.: Ein kubistisches Porträt einer lesenden Person, Öl auf Leinwand...",
     },
     inspiration: "Brauchst du Inspiration? Versuche es mit einem dieser Vorschläge:",
     aspectRatio: "Seitenverhältnis",

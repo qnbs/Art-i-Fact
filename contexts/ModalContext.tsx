@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { Modal } from '../components/Modal.tsx';
-import { ToastContainer } from '../components/ui/Toast.tsx';
 
 interface ModalContextType {
   showModal: (title: string, content: React.ReactNode, onCloseCallback?: () => void) => void;
@@ -36,7 +35,6 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       <Modal isOpen={isOpen} onClose={hideModal} title={modalContent.title}>
         {modalContent.content}
       </Modal>
-      <ToastContainer />
     </ModalContext.Provider>
   );
 };
