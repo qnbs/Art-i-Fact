@@ -4,15 +4,29 @@ import { APP_SETTINGS_LOCAL_STORAGE_KEY } from '../constants';
 import type { AppSettings } from '../types';
 
 const defaultAppSettings: AppSettings = {
+  // General
+  showDeletionConfirmation: true,
+  compactMode: false,
+  
+  // AI
   aiResultsCount: 15,
   aiCreativity: 'balanced',
+  aiContentLanguage: 'ui',
+  aiThinkingBudget: 50,
+
+  // Studio
+  promptEnhancementStyle: 'descriptive',
+  studioDefaultAspectRatio: '1:1',
+  studioAutoSave: false,
+
+  // Exhibition
   slideshowSpeed: 5,
   slideshowTransition: 'fade',
   exhibitAutoplay: false,
+  exhibitLoopSlideshow: true,
   showArtworkInfoInSlideshow: true,
-  promptEnhancementStyle: 'descriptive',
-  aiContentLanguage: 'ui',
-  compactMode: false,
+  
+  // Audio Guide
   audioGuideVoiceURI: '',
   audioGuideSpeed: 1,
 };

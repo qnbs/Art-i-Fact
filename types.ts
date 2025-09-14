@@ -1,6 +1,4 @@
-// FIX: Add language field for AI prompts.
-// This is the full, correct implementation of the types.
-// This is the full, correct implementation of the types.
+
 import type { Chat } from '@google/genai';
 
 export type ImageAspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
@@ -77,15 +75,29 @@ export interface Profile {
 }
 
 export interface AppSettings {
+  // General
+  showDeletionConfirmation: boolean;
+  compactMode: boolean;
+
+  // AI
   aiResultsCount: number;
   aiCreativity: 'focused' | 'balanced' | 'creative';
+  aiContentLanguage: 'ui' | 'de' | 'en';
+  aiThinkingBudget: number; // For gemini-2.5-flash
+
+  // Studio
+  promptEnhancementStyle: 'subtle' | 'descriptive' | 'artistic';
+  studioDefaultAspectRatio: ImageAspectRatio;
+  studioAutoSave: boolean;
+
+  // Exhibition
   slideshowSpeed: number; // in seconds
   slideshowTransition: 'fade' | 'slide';
   exhibitAutoplay: boolean;
+  exhibitLoopSlideshow: boolean;
   showArtworkInfoInSlideshow: boolean;
-  promptEnhancementStyle: 'subtle' | 'descriptive' | 'artistic';
-  aiContentLanguage: 'ui' | 'de' | 'en';
-  compactMode: boolean;
+
+  // Audio Guide
   audioGuideVoiceURI: string; // URI of the selected SpeechSynthesisVoice
   audioGuideSpeed: number; // Playback rate
 }

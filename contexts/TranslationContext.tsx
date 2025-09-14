@@ -5,7 +5,6 @@ import { translations } from '../i18n/locales';
 type Language = 'de' | 'en';
 type TranslationContextType = {
   language: Language;
-  // FIX: Updated the type of `setLanguage` to correctly support function updates.
   setLanguage: React.Dispatch<React.SetStateAction<Language>>;
   t: (key: string, replacements?: { [key: string]: string }) => string;
 };

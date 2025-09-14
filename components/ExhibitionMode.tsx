@@ -61,6 +61,12 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
   }, [resetInactivityTimer]);
 
   const goToNext = useCallback(() => {
+    const isLastSlide = currentIndex === artworks.length - 1;
+    if (isLastSlide && !appSettings.exhibitLoopSlideshow) {
+        setSlideshowPlaying(false);
+        return;
+    }
+
     if (appSettings.slideshowTransition === 'slide') {
         setSlideDirection('out');
         setTimeout(() => {
@@ -70,7 +76,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
     } else {
         setCurrentIndex(prevIndex => (prevIndex + 1) % artworks.length);
     }
-  }, [artworks.length, appSettings.slideshowTransition]);
+  }, [artworks.length, appSettings.slideshowTransition, appSettings.exhibitLoopSlideshow, currentIndex]);
 
   const goToPrevious = useCallback(() => {
     // Note: Slide transition for previous is not implemented to keep it simple

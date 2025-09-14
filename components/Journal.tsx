@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { JournalEntry, Gallery } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -29,7 +28,7 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
     entry, onUpdateEntry, language
 }) => {
     const { t } = useTranslation();
-    const { handleAiTask, activeAiTask, aiError } = useAI();
+    const { handleAiTask, activeAiTask, aiError, loadingMessage } = useAI();
     const { appSettings } = useAppSettings();
     const [title, setTitle] = useState(entry.title);
     const [content, setContent] = useState(entry.content);
@@ -138,6 +137,7 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
                         {activeAiTask === 'journal' ? <SpinnerIcon className="w-5 h-5"/> : <SparklesIcon className="w-5 h-5" />}
                     </Button>
                 </div>
+                {activeAiTask === 'journal' && <p className="text-sm text-center text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>}
                 <div>
                      <h4 className="text-sm font-semibold mb-2">{t('journal.preview')}</h4>
                      <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md max-h-48 overflow-y-auto">

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, ChangeEvent, useCallback } from 'react';
 import type { Artwork } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -88,7 +87,7 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
 }) => {
   const { t } = useTranslation();
   const { appSettings } = useAppSettings();
-  const { aiError } = useAI();
+  const { aiError, loadingMessage } = useAI();
   const [inputValue, setInputValue] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -182,9 +181,12 @@ export const ArtLibrary: React.FC<ArtLibraryProps> = ({
   };
   
   const renderLoading = () => (
-     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {Array.from({ length: appSettings.aiResultsCount }).map((_, i) => <ArtworkItemSkeleton key={i} />)}
-    </div>
+     <div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {Array.from({ length: appSettings.aiResultsCount }).map((_, i) => <ArtworkItemSkeleton key={i} />)}
+        </div>
+        <p className="mt-4 text-center text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>
+     </div>
   )
 
   return (

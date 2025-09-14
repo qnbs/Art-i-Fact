@@ -27,6 +27,8 @@ const ArtworkItemComponent: React.FC<ArtworkItemProps> = ({ artwork, onViewDetai
       onClick={handleCardClick}
       className="group relative cursor-pointer overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 transition-transform duration-300 hover:scale-105 hover:shadow-amber-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-100 dark:focus-visible:ring-offset-gray-950"
       tabIndex={0}
+      role="button"
+      aria-label={`${artwork.title} by ${artwork.artist}`}
       onKeyDown={(e) => { if(e.key === 'Enter') handleCardClick(); }}
     >
       <ImageWithFallback 

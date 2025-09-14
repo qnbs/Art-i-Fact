@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HomeIcon, GalleryIcon, JournalIcon, SearchIcon, PaintBrushIcon, UserCircleIcon } from './IconComponents';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -21,6 +22,7 @@ const NavButton: React.FC<{
       onClick={onClick}
       className={`flex-1 flex flex-col items-center justify-center pt-2 pb-1 transition-colors duration-200 relative ${isActive ? 'text-amber-500 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
       aria-current={isActive ? 'page' : undefined}
+      aria-label={label}
     >
       <div className="relative">
         {icon}

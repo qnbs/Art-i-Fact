@@ -9,6 +9,7 @@ import { PageHeader } from './ui/PageHeader';
 import { Cog6ToothIcon, UserCircleIcon, SparklesIcon, PaintBrushIcon, PresentationChartBarIcon, TrashIcon } from './IconComponents';
 import { Button } from './ui/Button';
 import { Avatar } from './ui/Avatar';
+import type { ImageAspectRatio } from '../../types';
 
 const AppResetModal: React.FC<{ onConfirm: () => void, onClose: () => void }> = ({ onConfirm, onClose }) => {
     const { t } = useTranslation();
@@ -85,6 +86,7 @@ export const Setup: React.FC<SetupProps> = ({ theme, onToggleTheme, language, on
     };
 
     const availableAvatars = ['avatar-1', 'avatar-2', 'avatar-3', 'avatar-4', 'avatar-5', 'avatar-6'];
+    const aspectRatios: ImageAspectRatio[] = ['1:1', '16:9', '9:16', '4:3', '3:4'];
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -134,6 +136,9 @@ export const Setup: React.FC<SetupProps> = ({ theme, onToggleTheme, language, on
                 <SettingRow label={t('settings.general.compactMode')} description={t('settings.general.compactMode.desc')}>
                     <Toggle enabled={appSettings.compactMode} onToggle={() => handleSettingsChange('compactMode', !appSettings.compactMode)} />
                 </SettingRow>
+                 <SettingRow label={t('settings.general.confirmDelete')} description={t('settings.general.confirmDelete.desc')}>
+                    <Toggle enabled={appSettings.showDeletionConfirmation} onToggle={() => handleSettingsChange('showDeletionConfirmation', !appSettings.showDeletionConfirmation)} />
+                </SettingRow>
             </Section>
 
             <Section title={t('settings.ai.title')} icon={<SparklesIcon className="w-5 h-5" />}>
@@ -170,6 +175,18 @@ export const Setup: React.FC<SetupProps> = ({ theme, onToggleTheme, language, on
                         className="w-20 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2 text-right"
                     />
                 </SettingRow>
+                 <SettingRow label={t('settings.ai.thinkingBudget')} description={t('settings.ai.thinkingBudget.desc')}>
+                     <input
+                        type="range"
+                        min="0"
+                        max="200"
+                        step="10"
+                        value={appSettings.aiThinkingBudget}
+                        onChange={(e) => handleSettingsChange('aiThinkingBudget', parseInt(e.target.value, 10))}
+                        className="w-32"
+                    />
+                    <span className="ml-4 text-sm font-mono">{appSettings.aiThinkingBudget}</span>
+                 </SettingRow>
             </Section>
             
             <Section title={t('settings.studio.title')} icon={<PaintBrushIcon className="w-5 h-5" />}>
@@ -183,6 +200,18 @@ export const Setup: React.FC<SetupProps> = ({ theme, onToggleTheme, language, on
                         <option value="subtle">{t('settings.studio.enhancementStyle.subtle')}</option>
                         <option value="artistic">{t('settings.studio.enhancementStyle.artistic')}</option>
                     </select>
+                </SettingRow>
+                 <SettingRow label={t('settings.studio.defaultAspectRatio')} description={t('settings.studio.defaultAspectRatio.desc')}>
+                    <select
+                        value={appSettings.studioDefaultAspectRatio}
+                        onChange={(e) => handleSettingsChange('studioDefaultAspectRatio', e.target.value)}
+                        className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-1 px-2"
+                    >
+                        {aspectRatios.map(ar => <option key={ar} value={ar}>{ar}</option>)}
+                    </select>
+                </SettingRow>
+                <SettingRow label={t('settings.studio.autoSave')} description={t('settings.studio.autoSave.desc')}>
+                    <Toggle enabled={appSettings.studioAutoSave} onToggle={() => handleSettingsChange('studioAutoSave', !appSettings.studioAutoSave)} />
                 </SettingRow>
             </Section>
 
@@ -214,6 +243,9 @@ export const Setup: React.FC<SetupProps> = ({ theme, onToggleTheme, language, on
                 </SettingRow>
                  <SettingRow label={t('settings.exhibit.showInfo')} description={t('settings.exhibit.showInfo.desc')}>
                     <Toggle enabled={appSettings.showArtworkInfoInSlideshow} onToggle={() => handleSettingsChange('showArtworkInfoInSlideshow', !appSettings.showArtworkInfoInSlideshow)} />
+                 </SettingRow>
+                <SettingRow label={t('settings.exhibit.loop')} description={t('settings.exhibit.loop.desc')}>
+                    <Toggle enabled={appSettings.exhibitLoopSlideshow} onToggle={() => handleSettingsChange('exhibitLoopSlideshow', !appSettings.exhibitLoopSlideshow)} />
                  </SettingRow>
             </Section>
             

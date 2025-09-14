@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import type { Artwork, Gallery, DeepDive } from '../types';
 import { useTranslation } from '../contexts/TranslationContext';
@@ -9,7 +8,7 @@ import { getWikimediaImageUrl } from '../services/wikimediaService';
 import { ColorPalette } from './ColorPalette';
 import { AccordionItem } from './ui/AccordionItem';
 import { Button } from './ui/Button';
-import { JournalIcon, ChatBubbleLeftEllipsisIcon } from './IconComponents';
+import { JournalIcon, ChatBubbleLeftEllipsisIcon, SpinnerIcon } from './IconComponents';
 import { ImageWithFallback } from './ui/ImageWithFallback';
 
 interface ArtworkDetailsProps {
@@ -49,7 +48,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
     onClose,
 }) => {
     const { t } = useTranslation();
-    const { handleAiTask, activeAiTask } = useAI();
+    const { handleAiTask, activeAiTask, loadingMessage } = useAI();
     const { appSettings } = useAppSettings();
     const [deepDive, setDeepDive] = useState<DeepDive | null>(null);
 
@@ -195,8 +194,9 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                         )}
                     </div>
                     {isLoadingDeepDive && (
-                        <div className="flex justify-center items-center py-4" role="status" aria-label={t('gallery.suggestions.analyzing')}>
-                            <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="py-4 text-center" role="status" aria-label={loadingMessage}>
+                            <SpinnerIcon className="w-8 h-8 text-amber-500 mx-auto" />
+                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>
                         </div>
                     )}
                     {deepDive && (

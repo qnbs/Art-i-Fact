@@ -15,6 +15,8 @@ import { Tooltip } from './ui/Tooltip';
 import * as gemini from '../services/geminiService';
 import { ImageWithFallback } from './ui/ImageWithFallback';
 import { PageHeader } from './ui/PageHeader';
+import { Modal } from './Modal';
+import { LoadingOverlay } from './ui/LoadingOverlay';
 
 interface GalleryViewProps {
     gallery: Gallery;
@@ -52,6 +54,8 @@ const DraggableArtworkItem = memo<{
             className={`group relative cursor-grab overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 transition-all duration-300 hover:scale-105 hover:shadow-amber-500/20 focus-within:ring-2 focus-within:ring-amber-400 hover:z-20 
                 ${draggedIndex === index ? 'opacity-30' : ''} 
                 ${dropTargetIndex === index ? 'ring-2 ring-amber-500 ring-offset-2 dark:ring-offset-gray-950' : ''}`}
+            aria-roledescription="Draggable artwork"
+            aria-describedby="drag-instructions"
         >
            <ImageWithFallback src={art.thumbnailUrl || art.imageUrl} alt={art.title} fallbackText={art.title} className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-75"/>
            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-end">
@@ -85,7 +89,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
 }) => {
     const { t } = useTranslation();
     const { showModal, hideModal } = useModal();
-    const { handleAiTask } = useAI();
+    const { handleAiTask, activeAiTask, loadingMessage } = useAI();
     const { profile } = useProfile();
     const { appSettings } = useAppSettings();
     
@@ -97,6 +101,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
     const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
 
     const handleSave = () => {
@@ -106,28 +111,32 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
 
     const handleCritique = () => {
         setIsAiMenuOpen(false);
-        const result = handleAiTask('critique', () => gemini.generateCritique(gallery, appSettings, language)) as Promise<GalleryCritique | undefined>;
-        result.then(critiqueResult => {
-            if (critiqueResult) {
-                showModal(t('gallery.critique.modal.critique'), <CritiqueModalContent critiqueResult={critiqueResult} />);
-            }
-        });
+        setIsAiModalOpen(true);
+        handleAiTask('critique', () => gemini.generateCritique(gallery, appSettings, language))
+            .then(critiqueResult => {
+                setIsAiModalOpen(false);
+                if (critiqueResult) {
+                    showModal(t('gallery.critique.modal.critique'), <CritiqueModalContent critiqueResult={critiqueResult as GalleryCritique} />);
+                }
+            });
     };
 
     const handleAudioGuide = () => {
         setIsAiMenuOpen(false);
-        const result = handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile, appSettings, language)) as Promise<AudioGuide | undefined>;
-        result.then(audioGuideResult => {
-            if (audioGuideResult) {
-                setExhibitionAudioGuide(audioGuideResult);
-                setShowExhibition(true);
-            }
-        });
+        setIsAiModalOpen(true);
+        handleAiTask('audioGuide', () => gemini.generateAudioGuideScript(gallery, profile, appSettings, language))
+            .then(audioGuideResult => {
+                setIsAiModalOpen(false);
+                if (audioGuideResult) {
+                    setExhibitionAudioGuide(audioGuideResult as AudioGuide);
+                    setShowExhibition(true);
+                }
+            });
     };
     
     const handleTrailer = () => {
         setIsAiMenuOpen(false);
-        if (gallery.trailerVideoStatus === 'pending') return;
+        if (gallery.trailerVideoStatus === 'pending' || activeAiTask === 'trailer') return;
         handleAiTask('trailer', () => gemini.generateTrailerVideo(gallery), {
             onStart: () => onUpdate(g => ({ ...g, trailerVideoStatus: 'pending' })),
             onEnd: (result) => {
@@ -179,6 +188,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
 
     return (
         <div className="flex flex-col h-full">
+             <span id="drag-instructions" className="sr-only">Drag to reorder artworks in the gallery.</span>
+            <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} title={t('gallery.suggestions.analyzing')}>
+                <LoadingOverlay message={loadingMessage} />
+            </Modal>
             {showExhibition && (
                 <ExhibitionMode
                     artworks={gallery.artworks}
@@ -250,8 +263,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                         </div>
                     )}
                 </details>
-                {gallery.trailerVideoUrl && gallery.trailerVideoStatus === 'ready' && <a href={`${gallery.trailerVideoUrl}&key=${process.env.API_KEY!}`} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600">{t('gallery.ai.trailer.ready')}</a>}
-                {gallery.trailerVideoStatus === 'pending' && <p className="text-sm text-amber-600 flex items-center gap-2"><SpinnerIcon className="w-4 h-4" /> {t('gallery.ai.trailer.pending')}</p>}
+                {gallery.trailerVideoUrl && gallery.trailerVideoStatus === 'ready' && <a href={`${gallery.trailerVideoUrl}&key=${process.env.API_KEY!}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-green-600 dark:text-green-400 hover:underline">{t('gallery.ai.trailer.ready')}</a>}
+                {(gallery.trailerVideoStatus === 'pending' || activeAiTask === 'trailer') && <p className="text-sm text-amber-600 flex items-center gap-2"><SpinnerIcon className="w-4 h-4" /> {loadingMessage || t('gallery.ai.trailer.pending')}</p>}
                 {gallery.trailerVideoStatus === 'failed' && <p className="text-sm text-red-600">{t('gallery.ai.trailer.failed')}</p>}
             </div>
 

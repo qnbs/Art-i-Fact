@@ -55,13 +55,13 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="md:hidden sticky top-0 z-30 grid grid-cols-3 items-center h-16 px-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-white/10">
       <div className="flex items-center gap-2 justify-start">
         <Tooltip text={t('commandPalette.placeholder')}>
-          <button onClick={onOpenCommandPalette} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+          <button onClick={onOpenCommandPalette} aria-label={t('commandPalette.placeholder')} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
             <CommandLineIcon className="w-6 h-6" />
           </button>
         </Tooltip>
         {showBackButton && (
           <Tooltip text={t('navigateBack')}>
-            <button onClick={onNavigateBack} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+            <button onClick={onNavigateBack} aria-label={t('navigateBack')} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
               <ArrowLeftIcon className="w-6 h-6" />
             </button>
           </Tooltip>
@@ -75,39 +75,39 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-2 justify-end">
         {activeView === 'workspace' && !isProjectView && (
             <Tooltip text={t('workspace.newProject')}>
-              <button onClick={onNewProject} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+              <button onClick={onNewProject} aria-label={t('workspace.newProject')} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
                   <PlusCircleIcon className="w-7 h-7" />
               </button>
             </Tooltip>
         )}
         {isProjectView && (
              <Tooltip text={t('gallery.manager.create')}>
-              <button onClick={onNewGallery} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+              <button onClick={onNewGallery} aria-label={t('gallery.manager.create')} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
                   <PlusCircleIcon className="w-7 h-7" />
               </button>
             </Tooltip>
         )}
         {activeView === 'gallery' && !isProjectView && !isGalleryView && (
             <Tooltip text={t('gallery.manager.create')}>
-              <button onClick={onNewGallery} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+              <button onClick={onNewGallery} aria-label={t('gallery.manager.create')} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
                   <PlusCircleIcon className="w-7 h-7" />
               </button>
             </Tooltip>
         )}
         {activeView === 'journal' && !isProjectView && (
             <Tooltip text={t('journal.new')}>
-              <button onClick={onNewJournalEntry} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+              <button onClick={onNewJournalEntry} aria-label={t('journal.new')} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
                   <PlusCircleIcon className="w-7 h-7" />
               </button>
             </Tooltip>
         )}
         <Tooltip text={t('settings.title')}>
-          <button onClick={onNavigateToSettings} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+          <button onClick={onNavigateToSettings} aria-label={t('settings.title')} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
               <Cog6ToothIcon className="w-6 h-6" />
           </button>
         </Tooltip>
          <Tooltip text={t('help.title')}>
-          <button onClick={onNavigateToHelp} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
+          <button onClick={onNavigateToHelp} aria-label={t('help.title')} className="p-2 text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400">
               <QuestionMarkCircleIcon className="w-6 h-6" />
           </button>
         </Tooltip>

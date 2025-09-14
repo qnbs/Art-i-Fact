@@ -95,7 +95,7 @@ export const findArtworks = async (query: string, count: number): Promise<Artwor
     }
 };
 
-export const analyzeImage = async (file: File): Promise<Artwork | null> => {
+export const analyzeImage = async (file: File, appSettings: AppSettings): Promise<Artwork | null> => {
     try {
         const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -111,6 +111,9 @@ export const analyzeImage = async (file: File): Promise<Artwork | null> => {
                     { inlineData: { mimeType: file.type, data: base64 } },
                     { text: "Identify this artwork. What is its title and who is the artist? Just give the title and artist." }
                 ]
+            },
+            config: {
+                thinkingConfig: { thinkingBudget: appSettings.aiThinkingBudget > 0 ? appSettings.aiThinkingBudget : 0 }
             }
         });
 
@@ -135,6 +138,7 @@ export const generateDeepDive = async (artwork: Artwork, appSettings: AppSetting
         config: {
             temperature: getTemperature(appSettings.aiCreativity),
             responseMimeType: 'application/json',
+            thinkingConfig: { thinkingBudget: appSettings.aiThinkingBudget > 0 ? appSettings.aiThinkingBudget : 0 },
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -159,6 +163,7 @@ export const generateCritique = async (gallery: Gallery, appSettings: AppSetting
         config: {
             temperature: getTemperature(appSettings.aiCreativity),
             responseMimeType: 'application/json',
+            thinkingConfig: { thinkingBudget: appSettings.aiThinkingBudget > 0 ? appSettings.aiThinkingBudget : 0 },
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -181,6 +186,7 @@ export const generateGalleryIntroduction = async (gallery: Gallery, appSettings:
         contents: prompts[language].galleryIntroduction(gallery.title, gallery.description, artworkList),
         config: {
             temperature: getTemperature(appSettings.aiCreativity),
+            thinkingConfig: { thinkingBudget: appSettings.aiThinkingBudget > 0 ? appSettings.aiThinkingBudget : 0 },
         }
     });
     return response.text;
@@ -198,6 +204,7 @@ export const generateAudioGuideScript = async (gallery: Gallery, profile: Profil
         config: {
             temperature: getTemperature(appSettings.aiCreativity),
             responseMimeType: 'application/json',
+            thinkingConfig: { thinkingBudget: appSettings.aiThinkingBudget > 0 ? appSettings.aiThinkingBudget : 0 },
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -247,6 +254,7 @@ export const startArtChat = (artwork: Artwork, appSettings: AppSettings, languag
         config: {
             systemInstruction: prompts[language].chatSystemInstruction(artwork.title, artwork.artist, artwork.description || ''),
             temperature: getTemperature(appSettings.aiCreativity),
+            thinkingConfig: { thinkingBudget: appSettings.aiThinkingBudget > 0 ? appSettings.aiThinkingBudget : 0 },
         }
     });
 };
@@ -261,6 +269,7 @@ export const enhancePrompt = async (prompt: string, appSettings: AppSettings, la
         contents: prompts[language].enhance(prompt, appSettings.promptEnhancementStyle),
         config: {
             temperature: getTemperature(appSettings.aiCreativity),
+            thinkingConfig: { thinkingBudget: appSettings.aiThinkingBudget > 0 ? appSettings.aiThinkingBudget : 0 },
         },
     });
     return response.text.replace(/["']/g, ''); // Clean up quotes from response
@@ -329,7 +338,7 @@ export const generateTrailerVideo = async (gallery: Gallery): Promise<string | n
         if (!downloadLink) {
             throw new Error("Video generation finished but no download link was provided.");
         }
-        return `${downloadLink}&key=${process.env.API_KEY!}`;
+        return downloadLink;
 
     } catch (error) {
         console.error("Failed to generate video trailer:", error);

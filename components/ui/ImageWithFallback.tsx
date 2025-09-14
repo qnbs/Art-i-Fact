@@ -20,7 +20,7 @@ const generateSvgFallback = (text: string, isUnavailable: boolean = false) => {
         content = `<text x="50" y="55" font-family="sans-serif" font-size="40" fill="#9ca3af" text-anchor="middle" dominant-baseline="middle">${initials}</text>`;
     }
     
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%"><rect width="100" height="100" fill="#e5e7eb" class="dark:fill-gray-800"></rect>${content}</svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%"><rect width="100" height="100" />${content}</svg>`;
     return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 

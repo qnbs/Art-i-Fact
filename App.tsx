@@ -207,7 +207,7 @@ const App: React.FC = () => {
     }, [appSettings.aiResultsCount, handleAiTask, navigateTo]);
 
     const handleAnalyzeImage = useCallback(async (file: File) => {
-        const result = await handleAiTask('analyze', () => gemini.analyzeImage(file));
+        const result = await handleAiTask('analyze', () => gemini.analyzeImage(file, appSettings));
         if (result) {
             setArtworks([result]);
             setSearchTerm(result.title);
@@ -215,7 +215,7 @@ const App: React.FC = () => {
         } else {
             showToast(t('toast.error.imageRecognition'), 'error');
         }
-    }, [handleAiTask, t, showToast]);
+    }, [handleAiTask, t, showToast, appSettings]);
 
     // Gallery Management Handlers
     const initiateAddToGallery = useCallback((artwork: Artwork) => {
@@ -246,22 +246,28 @@ const App: React.FC = () => {
         const galleryToDelete = galleries.find(g => g.id === galleryId);
         if (!galleryToDelete) return;
 
-        showModal(
-            t('gallery.manager.delete.confirmTitle'),
-            <>
-                <p>{t('gallery.manager.delete.confirm', { title: galleryToDelete.title })}</p>
-                <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
-                    <Button variant="danger" onClick={() => {
-                        deleteGallery(galleryId);
-                        unlinkGallery(galleryId);
-                        showToast(t('toast.gallery.deleted'), 'success');
-                        hideModal();
-                    }}>{t('remove')}</Button>
-                </div>
-            </>
-        );
-    }, [galleries, deleteGallery, unlinkGallery, t, showToast, showModal, hideModal]);
+        const performDelete = () => {
+            deleteGallery(galleryId);
+            unlinkGallery(galleryId);
+            showToast(t('toast.gallery.deleted'), 'success');
+            hideModal();
+        };
+
+        if (appSettings.showDeletionConfirmation) {
+            showModal(
+                t('gallery.manager.delete.confirmTitle'),
+                <>
+                    <p>{t('gallery.manager.delete.confirm', { title: galleryToDelete.title })}</p>
+                    <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                        <Button variant="danger" onClick={performDelete}>{t('remove')}</Button>
+                    </div>
+                </>
+            );
+        } else {
+            performDelete();
+        }
+    }, [galleries, deleteGallery, unlinkGallery, t, showToast, showModal, hideModal, appSettings.showDeletionConfirmation]);
     
     const handleNewGallery = useCallback(() => {
         // Creates a gallery in the current context (either standalone or in a project)
@@ -315,23 +321,29 @@ const App: React.FC = () => {
     }, [showModal, t, createProject, navigateTo, hideModal]);
     
     const handleDeleteProject = useCallback((id: string, title: string) => {
-         showModal(
-            t('workspace.delete.confirmTitle'),
-            <>
-                <p>{t('workspace.delete.confirm', { title })}</p>
-                 <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
-                    <Button variant="danger" onClick={() => {
-                        deleteProject(id, galleries, journalEntries);
-                        setGalleries(prev => prev.filter(g => g.projectId !== id));
-                        setJournalEntries(prev => prev.filter(j => j.projectId !== id));
-                        showToast(t('toast.project.deleted'), 'success');
-                        hideModal();
-                    }}>{t('remove')}</Button>
-                </div>
-            </>
-        );
-    }, [showModal, t, deleteProject, galleries, journalEntries, showToast, hideModal, setGalleries, setJournalEntries]);
+        const performDelete = () => {
+            deleteProject(id, galleries, journalEntries);
+            setGalleries(prev => prev.filter(g => g.projectId !== id));
+            setJournalEntries(prev => prev.filter(j => j.projectId !== id));
+            showToast(t('toast.project.deleted'), 'success');
+            hideModal();
+        };
+
+        if (appSettings.showDeletionConfirmation) {
+            showModal(
+                t('workspace.delete.confirmTitle'),
+                <>
+                    <p>{t('workspace.delete.confirm', { title })}</p>
+                    <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                        <Button variant="danger" onClick={performDelete}>{t('remove')}</Button>
+                    </div>
+                </>
+            );
+        } else {
+            performDelete();
+        }
+    }, [showModal, t, deleteProject, galleries, journalEntries, showToast, hideModal, setGalleries, setJournalEntries, appSettings.showDeletionConfirmation]);
     
     const handleNewJournalEntryForProject = useCallback((): string => {
         if (!currentProjectId) return '';

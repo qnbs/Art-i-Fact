@@ -5,7 +5,7 @@ import { useAI } from '../contexts/AIStatusContext';
 import { useAppSettings } from '../contexts/AppSettingsContext';
 import { useToast } from '../contexts/ToastContext';
 import { PaintBrushIcon, SparklesIcon, SpinnerIcon, PlusCircleIcon, GalleryIcon, MagicWandIcon, CloseIcon } from './IconComponents';
-import type { Artwork } from '../types';
+import type { Artwork, ImageAspectRatio } from '../types';
 import { Button } from './ui/Button';
 import { Skeleton } from './ui/Skeleton';
 import { ImageWithFallback } from './ui/ImageWithFallback';
@@ -16,10 +16,9 @@ interface StudioProps {
     onInitiateAdd: (artwork: Artwork) => void;
 }
 
-const aspectRatios = ['1:1', '16:9', '9:16', '4:3', '3:4'] as const;
-type AspectRatio = typeof aspectRatios[number];
+const aspectRatios: ImageAspectRatio[] = ['1:1', '16:9', '9:16', '4:3', '3:4'];
 
-const aspectRatioClasses: Record<AspectRatio, string> = {
+const aspectRatioClasses: Record<ImageAspectRatio, string> = {
     '1:1': 'aspect-square',
     '16:9': 'aspect-video',
     '9:16': 'aspect-[9/16]',
@@ -35,7 +34,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
     const { showToast } = useToast();
     
     const [prompt, setPrompt] = useState('');
-    const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
+    const [aspectRatio, setAspectRatio] = useState<ImageAspectRatio>(appSettings.studioDefaultAspectRatio);
     const [generatedImage, setGeneratedImage] = useState<string | null>(null);
     const [isImageVisible, setIsImageVisible] = useState(false);
     const [isRemixMode, setIsRemixMode] = useState(false);
@@ -57,11 +56,22 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
         if (result) {
             setIsImageVisible(false); // Hide before setting new image to re-trigger fade-in
             setGeneratedImage(result);
-            if (isRemixMode) {
-                setOriginalPrompt(prev => `${prev}, remixed with: "${prompt}"`);
-                setPrompt('');
-            } else {
-                setOriginalPrompt(prompt);
+
+            const newOriginalPrompt = isRemixMode ? `${originalPrompt}, remixed with: "${prompt}"` : prompt;
+            setOriginalPrompt(newOriginalPrompt);
+            if (isRemixMode) { setPrompt(''); }
+            
+            if (appSettings.studioAutoSave) {
+                 const newArtwork: Artwork = {
+                    id: `ai_${Date.now()}`,
+                    title: newOriginalPrompt.length > 50 ? newOriginalPrompt.substring(0, 47) + '...' : newOriginalPrompt,
+                    artist: 'Art-i-Fact AI Studio',
+                    year: new Date().getFullYear().toString(),
+                    imageUrl: `data:image/jpeg;base64,${result}`,
+                    description: `AI-generated artwork based on the prompt: "${newOriginalPrompt}"`,
+                    isGenerated: true,
+                };
+                onInitiateAdd(newArtwork);
             }
         }
     };
@@ -78,7 +88,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
 
     const handleEnhance = async () => {
         if (!prompt.trim()) return;
-        const enhancedPrompt = await handleAiTask('enhance', () => gemini.enhancePrompt(prompt, appSettings, language)) as string | undefined;
+        const enhancedPrompt = await handleAiTask('enhance', () => gemini.enhancePrompt(prompt, appSettings, language as 'de' | 'en')) as string | undefined;
 
         if (enhancedPrompt) {
             setPrompt(enhancedPrompt);
@@ -124,15 +134,16 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                         aria-label={t('studio.prompt.placeholder')}
                     />
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('studio.aspectRatio')}</label>
-                        <div className={`grid grid-cols-5 gap-2 ${isRemixMode ? 'opacity-50' : ''}`}>
+                        <label id="aspect-ratio-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('studio.aspectRatio')}</label>
+                        <div role="radiogroup" aria-labelledby="aspect-ratio-label" className={`grid grid-cols-5 gap-2 ${isRemixMode ? 'opacity-50' : ''}`}>
                             {aspectRatios.map(ar => (
                                 <button
                                     key={ar}
+                                    role="radio"
+                                    aria-checked={aspectRatio === ar}
                                     onClick={() => setAspectRatio(ar)}
                                     className={`py-2 px-1 text-sm rounded-md transition-colors ${aspectRatio === ar ? 'bg-amber-600 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
                                     disabled={isLoading || isEnhancing || isRemixMode}
-                                    aria-pressed={aspectRatio === ar}
                                 >
                                     {ar}
                                 </button>
@@ -201,6 +212,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                             </div>
                         </div>
                     )}
+                     {isEnhancing && <p className="text-sm text-center text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>}
                 </div>
 
                 {/* Image Display */}
