@@ -16,10 +16,13 @@ export const useGallery = () => {
     }, []);
 
     const updateAndSave = useCallback(async (newGalleries: Gallery[] | ((prev: Gallery[]) => Gallery[])) => {
-        const updatedGalleries = typeof newGalleries === 'function' ? newGalleries(galleries) : newGalleries;
-        setGalleries(updatedGalleries);
-        await db.saveGalleries(updatedGalleries);
-    }, [galleries]);
+        // Use a functional update with the most recent state
+        setGalleries(currentGalleries => {
+            const updatedGalleries = typeof newGalleries === 'function' ? newGalleries(currentGalleries) : newGalleries;
+            db.saveGalleries(updatedGalleries);
+            return updatedGalleries;
+        });
+    }, []);
     
     const createGallery = useCallback((details: { title: string; description: string; projectId: string | null }): string => {
         const newGallery: Gallery = {
@@ -43,30 +46,74 @@ export const useGallery = () => {
     }, [updateAndSave]);
 
     const addArtworkToGallery = useCallback((galleryId: string, artwork: Artwork) => {
-        updateGallery(galleryId, gallery => ({
-            ...gallery,
-            artworks: gallery.artworks.some(a => a.id === artwork.id) ? gallery.artworks : [...gallery.artworks, artwork],
-            thumbnailUrl: gallery.artworks.length === 0 ? artwork.thumbnailUrl || artwork.imageUrl : gallery.thumbnailUrl
-        }));
-    }, [updateGallery]);
+        setGalleries(currentGalleries => {
+            const galleryExists = currentGalleries.some(g => g.id === galleryId);
+            if (!galleryExists) {
+                console.warn(`Attempted to add artwork to non-existent gallery with id: ${galleryId}`);
+                return currentGalleries;
+            }
+            
+            const newGalleries = currentGalleries.map(gallery => {
+                if (gallery.id === galleryId) {
+                    return {
+                        ...gallery,
+                        artworks: gallery.artworks.some(a => a.id === artwork.id) ? gallery.artworks : [...gallery.artworks, artwork],
+                        thumbnailUrl: gallery.artworks.length === 0 ? artwork.thumbnailUrl || artwork.imageUrl : gallery.thumbnailUrl,
+                        updatedAt: new Date().toISOString(),
+                    }
+                }
+                return gallery;
+            });
+            db.saveGalleries(newGalleries);
+            return newGalleries;
+        });
+    }, []);
     
     const removeArtworkFromGallery = useCallback((galleryId: string, artworkId: string) => {
-        updateGallery(galleryId, gallery => {
-            const newArtworks = gallery.artworks.filter(a => a.id !== artworkId);
-            return {
-                ...gallery,
-                artworks: newArtworks,
-                thumbnailUrl: newArtworks[0]?.thumbnailUrl || newArtworks[0]?.imageUrl || undefined,
-            };
+         setGalleries(currentGalleries => {
+            const galleryExists = currentGalleries.some(g => g.id === galleryId);
+            if (!galleryExists) {
+                 console.warn(`Attempted to remove artwork from non-existent gallery with id: ${galleryId}`);
+                return currentGalleries;
+            }
+            const newGalleries = currentGalleries.map(gallery => {
+                 if (gallery.id === galleryId) {
+                    const newArtworks = gallery.artworks.filter(a => a.id !== artworkId);
+                    return {
+                        ...gallery,
+                        artworks: newArtworks,
+                        thumbnailUrl: newArtworks[0]?.thumbnailUrl || newArtworks[0]?.imageUrl || undefined,
+                        updatedAt: new Date().toISOString(),
+                    };
+                 }
+                 return gallery;
+            });
+            db.saveGalleries(newGalleries);
+            return newGalleries;
         });
-    }, [updateGallery]);
+    }, []);
 
     const reorderArtworksInGallery = useCallback((galleryId: string, reorderedArtworks: Artwork[]) => {
-        updateGallery(galleryId, gallery => ({
-            ...gallery,
-            artworks: reorderedArtworks
-        }));
-    }, [updateGallery]);
+        setGalleries(currentGalleries => {
+            const galleryExists = currentGalleries.some(g => g.id === galleryId);
+            if (!galleryExists) {
+                console.warn(`Attempted to reorder artworks in non-existent gallery with id: ${galleryId}`);
+                return currentGalleries;
+            }
+            const newGalleries = currentGalleries.map(gallery => {
+                 if (gallery.id === galleryId) {
+                    return {
+                        ...gallery,
+                        artworks: reorderedArtworks,
+                        updatedAt: new Date().toISOString(),
+                    };
+                 }
+                 return gallery;
+            });
+            db.saveGalleries(newGalleries);
+            return newGalleries;
+        });
+    }, []);
 
     const importGallery = useCallback((galleryToImport: Gallery) => {
         const importedGallery: Gallery = {

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
@@ -11,9 +10,10 @@ interface GalleryCreatorProps {
   onSave: (details: { title: string; description: string }) => void;
   onCancel: () => void;
   gallery?: Gallery | null;
+  isCompact?: boolean;
 }
 
-export const GalleryCreator: React.FC<GalleryCreatorProps> = ({ onSave, onCancel, gallery }) => {
+export const GalleryCreator: React.FC<GalleryCreatorProps> = ({ onSave, onCancel, gallery, isCompact = false }) => {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -33,7 +33,7 @@ export const GalleryCreator: React.FC<GalleryCreatorProps> = ({ onSave, onCancel
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className={`space-y-4 ${isCompact ? 'p-1' : ''}`}>
       <div>
         <label htmlFor="gallery-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {t('gallery.creator.title')}
@@ -46,6 +46,7 @@ export const GalleryCreator: React.FC<GalleryCreatorProps> = ({ onSave, onCancel
           placeholder={t('gallery.creator.title.placeholder')}
           className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
           required
+          autoFocus={isCompact}
         />
       </div>
       <div>
@@ -57,13 +58,13 @@ export const GalleryCreator: React.FC<GalleryCreatorProps> = ({ onSave, onCancel
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t('gallery.creator.description.placeholder')}
-          rows={4}
+          rows={isCompact ? 3 : 4}
           className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
         />
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          {t('cancel')}
+          {isCompact ? t('back') : t('cancel')}
         </Button>
         <Button type="submit">
           {gallery ? t('save') : t('create')}

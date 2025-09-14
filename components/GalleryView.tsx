@@ -31,50 +31,55 @@ const DraggableArtworkItem: React.FC<{
     artwork: Artwork;
     index: number;
     artworkCount: number;
+    isDragging: boolean;
+    isDragOver: boolean;
     onDragStart: (e: DragEvent<HTMLDivElement>, index: number) => void;
     onDragEnter: (e: DragEvent<HTMLDivElement>, index: number) => void;
     onDragEnd: (e: DragEvent<HTMLDivElement>) => void;
     onViewDetails: (artwork: Artwork) => void;
     onRemove: (artworkId: string) => void;
     onMove: (index: number, direction: 'up' | 'down') => void;
-}> = memo(({ artwork, index, artworkCount, onDragStart, onDragEnter, onDragEnd, onViewDetails, onRemove, onMove }) => {
+}> = memo(({ artwork, index, artworkCount, isDragging, isDragOver, onDragStart, onDragEnter, onDragEnd, onViewDetails, onRemove, onMove }) => {
     const { t } = useTranslation();
     return (
-        <div
-            draggable
-            onDragStart={(e) => onDragStart(e, index)}
-            onDragEnter={(e) => onDragEnter(e, index)}
-            onDragEnd={onDragEnd}
-            onDragOver={(e) => e.preventDefault()}
-            tabIndex={0}
-            className="group relative cursor-grab overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-            aria-label={`${artwork.title} by ${artwork.artist}`}
-            aria-roledescription="Reorderable artwork"
-        >
-            <ImageWithFallback 
-                src={artwork.thumbnailUrl || artwork.imageUrl} 
-                alt={artwork.title} 
-                fallbackText={artwork.title}
-                className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-50 group-focus-within:brightness-50"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-end">
-                <h3 className="font-bold text-base text-white truncate">{artwork.title}</h3>
-                <p className="text-sm text-gray-300 truncate">{artwork.artist}</p>
-            </div>
-             {/* Accessible Controls Overlay */}
-            <div className="absolute inset-0 bg-black/75 flex-col items-center justify-center gap-2 p-2 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex">
-                <Button variant="secondary" size="sm" className="w-full" disabled={index === 0} onClick={() => onMove(index, 'up')} aria-label={t('artwork.moveUp', { title: artwork.title })}>
-                    <ArrowUpIcon className="w-5 h-5 mr-2" /> Move Up
-                </Button>
-                <Button variant="secondary" size="sm" className="w-full" onClick={() => onViewDetails(artwork)}>
-                    <InfoIcon className="w-5 h-5 mr-2" /> Details
-                </Button>
-                <Button variant="secondary" size="sm" className="w-full" disabled={index === artworkCount - 1} onClick={() => onMove(index, 'down')} aria-label={t('artwork.moveDown', { title: artwork.title })}>
-                    <ArrowDownIcon className="w-5 h-5 mr-2" /> Move Down
-                </Button>
-                <Button variant="danger" size="sm" className="w-full mt-2" onClick={() => onRemove(artwork.id)}>
-                    <TrashIcon className="w-5 h-5 mr-2" /> Remove
-                </Button>
+        <div className="relative">
+             {isDragOver && <div className="absolute -left-1 top-0 bottom-0 w-1 bg-amber-500 rounded-full animate-pulse" />}
+            <div
+                draggable
+                onDragStart={(e) => onDragStart(e, index)}
+                onDragEnter={(e) => onDragEnter(e, index)}
+                onDragEnd={onDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                tabIndex={0}
+                className={`group relative cursor-grab overflow-hidden rounded-lg shadow-lg bg-gray-200 dark:bg-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 transition-opacity ${isDragging ? 'opacity-40' : 'opacity-100'}`}
+                aria-label={`${artwork.title} by ${artwork.artist}`}
+                aria-roledescription="Reorderable artwork"
+            >
+                <ImageWithFallback 
+                    src={artwork.thumbnailUrl || artwork.imageUrl} 
+                    alt={artwork.title} 
+                    fallbackText={artwork.title}
+                    className="w-full h-auto object-cover aspect-[3/4] transition-opacity duration-300 group-hover:brightness-50 group-focus-within:brightness-50"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 flex flex-col justify-end">
+                    <h3 className="font-bold text-base text-white truncate">{artwork.title}</h3>
+                    <p className="text-sm text-gray-300 truncate">{artwork.artist}</p>
+                </div>
+                {/* Accessible Controls Overlay */}
+                <div className="absolute inset-0 bg-black/75 flex-col items-center justify-center gap-2 p-2 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex">
+                    <Button variant="secondary" size="sm" className="w-full" disabled={index === 0} onClick={() => onMove(index, 'up')} aria-label={t('artwork.moveUp', { title: artwork.title })}>
+                        <ArrowUpIcon className="w-5 h-5 mr-2" /> Move Up
+                    </Button>
+                    <Button variant="secondary" size="sm" className="w-full" onClick={() => onViewDetails(artwork)}>
+                        <InfoIcon className="w-5 h-5 mr-2" /> Details
+                    </Button>
+                    <Button variant="secondary" size="sm" className="w-full" disabled={index === artworkCount - 1} onClick={() => onMove(index, 'down')} aria-label={t('artwork.moveDown', { title: artwork.title })}>
+                        <ArrowDownIcon className="w-5 h-5 mr-2" /> Move Down
+                    </Button>
+                    <Button variant="danger" size="sm" className="w-full mt-2" onClick={() => onRemove(artwork.id)}>
+                        <TrashIcon className="w-5 h-5 mr-2" /> Remove
+                    </Button>
+                </div>
             </div>
         </div>
     );
@@ -94,8 +99,10 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
     const [editedTitle, setEditedTitle] = useState(gallery.title);
     const [editedDescription, setEditedDescription] = useState(gallery.description);
     const [showExhibition, setShowExhibition] = useState(false);
-    const dragItem = useRef<number | null>(null);
-    const dragOverItem = useRef<number | null>(null);
+    
+    // State for drag & drop UX
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     const handleSave = useCallback(() => {
         onUpdate(g => ({ ...g, title: editedTitle, description: editedDescription }));
@@ -137,24 +144,26 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
 
     // Drag and drop handlers
     const handleDragStart = useCallback((e: DragEvent<HTMLDivElement>, position: number) => {
-        dragItem.current = position;
+        setDraggedIndex(position);
     }, []);
     
     const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>, position: number) => {
-        dragOverItem.current = position;
-    }, []);
+        if (draggedIndex === null || draggedIndex === position) return;
+        setDragOverIndex(position);
+    }, [draggedIndex]);
 
     const handleDragEnd = useCallback(() => {
-        if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
-            return;
+        if (draggedIndex === null || dragOverIndex === null || draggedIndex === dragOverIndex) {
+            // Reset state if no valid drop occurred
+        } else {
+            const newArtworkList = [...gallery.artworks];
+            const dragItemContent = newArtworkList.splice(draggedIndex, 1)[0];
+            newArtworkList.splice(dragOverIndex, 0, dragItemContent);
+            onReorderArtworks(newArtworkList);
         }
-        const newArtworkList = [...gallery.artworks];
-        const dragItemContent = newArtworkList.splice(dragItem.current, 1)[0];
-        newArtworkList.splice(dragOverItem.current, 0, dragItemContent);
-        dragItem.current = null;
-        dragOverItem.current = null;
-        onReorderArtworks(newArtworkList);
-    }, [gallery.artworks, onReorderArtworks]);
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    }, [gallery.artworks, onReorderArtworks, draggedIndex, dragOverIndex]);
 
     const handleMoveArtwork = useCallback((index: number, direction: 'up' | 'down') => {
         if ((direction === 'up' && index === 0) || (direction === 'down' && index === gallery.artworks.length - 1)) {
@@ -260,6 +269,8 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
                                 artwork={art} 
                                 index={index}
                                 artworkCount={gallery.artworks.length}
+                                isDragging={draggedIndex === index}
+                                isDragOver={dragOverIndex === index}
                                 onDragStart={handleDragStart}
                                 onDragEnter={handleDragEnter}
                                 onDragEnd={handleDragEnd}

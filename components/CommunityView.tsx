@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import type { Gallery } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { getCommunityGalleries } from '../services/communityService.ts';
@@ -21,7 +21,7 @@ const CommunityGalleryCard: React.FC<{
     gallery: Gallery;
     onPreview: () => void;
     onImport: () => void;
-}> = ({ gallery, onPreview, onImport }) => {
+}> = memo(({ gallery, onPreview, onImport }) => {
     const { t } = useTranslation();
     const { curatorProfile } = gallery;
 
@@ -60,7 +60,8 @@ const CommunityGalleryCard: React.FC<{
             </div>
         </div>
     );
-};
+});
+CommunityGalleryCard.displayName = 'CommunityGalleryCard';
 
 const CommunityGalleryCardSkeleton: React.FC = () => (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 flex flex-col">

@@ -1,17 +1,17 @@
 
-
-import React from 'react';
+import React, { useState } from 'react';
 import type { Artwork, Gallery } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { PlusCircleIcon, GalleryIcon } from './IconComponents.tsx';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
+import { GalleryCreator } from './GalleryCreator.tsx';
 
 interface AddToGalleryModalProps {
   artwork: Artwork;
   galleries: Gallery[];
-  onSelectGallery: (galleryId: string) => void;
-  onCreateAndAdd: () => void;
+  onAddExisting: (galleryId: string) => void;
+  onCreateAndAdd: (details: { title: string; description: string; }) => void;
   activeProjectId: string | null;
 }
 
@@ -34,14 +34,27 @@ const GalleryListItem: React.FC<{gallery: Gallery, onSelect: (id: string) => voi
     );
 }
 
-export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ artwork, galleries, onSelectGallery, onCreateAndAdd, activeProjectId }) => {
+export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ artwork, galleries, onAddExisting, onCreateAndAdd, activeProjectId }) => {
   const { t } = useTranslation();
+  const [view, setView] = useState<'list' | 'create'>('list');
 
   const projectGalleries = activeProjectId ? galleries.filter(g => g.projectId === activeProjectId) : [];
   const otherGalleries = activeProjectId ? galleries.filter(g => g.projectId !== activeProjectId) : galleries;
 
+  if (view === 'create') {
+    return (
+        <div className="animate-fade-in">
+            <GalleryCreator 
+                onSave={onCreateAndAdd}
+                onCancel={() => setView('list')}
+                isCompact
+            />
+        </div>
+    );
+  }
+
   return (
-    <div>
+    <div className="animate-fade-in">
         <div className="flex items-center gap-4 mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <ImageWithFallback 
                 src={artwork.thumbnailUrl || artwork.imageUrl} 
@@ -56,7 +69,7 @@ export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ artwork, g
         </div>
 
         <button
-            onClick={onCreateAndAdd}
+            onClick={() => setView('create')}
             className="w-full flex items-center justify-center p-3 mb-4 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
         >
             <PlusCircleIcon className="w-5 h-5 mr-2" />
@@ -70,13 +83,13 @@ export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ artwork, g
                     {projectGalleries.length > 0 && (
                         <div className="mb-2">
                             <h4 className="text-xs uppercase font-bold text-gray-500 my-2 px-1">In This Project</h4>
-                            {projectGalleries.map(gallery => <GalleryListItem key={gallery.id} gallery={gallery} onSelect={onSelectGallery} />)}
+                            {projectGalleries.map(gallery => <GalleryListItem key={gallery.id} gallery={gallery} onSelect={onAddExisting} />)}
                         </div>
                     )}
                     {otherGalleries.length > 0 && (
                           <div className="mb-2">
                             {projectGalleries.length > 0 && otherGalleries.length > 0 && <h4 className="text-xs uppercase font-bold text-gray-500 my-2 px-1">Other Galleries</h4>}
-                            {otherGalleries.map(gallery => <GalleryListItem key={gallery.id} gallery={gallery} onSelect={onSelectGallery} />)}
+                            {otherGalleries.map(gallery => <GalleryListItem key={gallery.id} gallery={gallery} onSelect={onAddExisting} />)}
                         </div>
                     )}
                 </div>

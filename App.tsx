@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { ActiveView, Artwork, Gallery, Project, JournalEntry, Profile, ShareableGalleryData } from './types.ts';
 import { useTranslation } from './contexts/TranslationContext.tsx';
@@ -154,25 +155,26 @@ const App: React.FC = () => {
     }, [showModal, t, language]);
 
     const handleInitiateAdd = useCallback((artwork: Artwork) => {
-        const handleAddToGallery = (galleryId: string) => {
+        const handleAddExisting = (galleryId: string) => {
             addArtworkToGallery(galleryId, artwork);
             showToast(t('toast.artwork.added', { gallery: galleries.find(g => g.id === galleryId)?.title || '' }), 'success');
             hideModal();
         }
-        const handleCreateAndAdd = () => {
+        
+        const handleCreateAndAdd = (details: { title: string; description: string; }) => {
              const newId = createGallery({
-                title: t('gallery.new'),
-                description: '',
+                ...details,
                 projectId: activeProjectId,
              });
              addArtworkToGallery(newId, artwork);
-             showToast(t('toast.artwork.added', { gallery: t('gallery.new') }), 'success');
+             showToast(t('toast.artwork.added', { gallery: details.title }), 'success');
              hideModal();
         }
+
         showModal(t('modal.addToGallery.title'), <AddToGalleryModal 
             artwork={artwork}
             galleries={galleries}
-            onSelectGallery={handleAddToGallery}
+            onAddExisting={handleAddExisting}
             onCreateAndAdd={handleCreateAndAdd}
             activeProjectId={activeProjectId}
         />);

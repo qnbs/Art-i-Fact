@@ -12,6 +12,7 @@ import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
 import * as gemini from '../services/geminiService.ts';
 import { studioInspirationPrompts } from '../data/inspiration.ts';
+import { RetryPrompt } from './ui/RetryPrompt.tsx';
 
 interface StudioProps {
     onInitiateAdd: (artwork: Artwork) => void;
@@ -30,7 +31,7 @@ const aspectRatioClasses: Record<ImageAspectRatio, string> = {
 
 export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
     const { t, language } = useTranslation();
-    const { handleAiTask, activeAiTask, loadingMessage } = useAI();
+    const { handleAiTask, activeAiTask, loadingMessage, aiError } = useAI();
     const { appSettings } = useAppSettings();
     const { showToast } = useToast();
     
@@ -40,12 +41,14 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
     const [isImageVisible, setIsImageVisible] = useState(false);
     const [isRemixMode, setIsRemixMode] = useState(false);
     const [originalPrompt, setOriginalPrompt] = useState('');
+    const [error, setError] = useState<{ message: string, onRetry: () => void } | null>(null);
 
     const isLoading = activeAiTask === 'studioGenerate' || activeAiTask === 'remix';
     const isEnhancing = activeAiTask === 'enhance';
 
     const handleGenerateOrRemix = async () => {
         if (!prompt.trim()) return;
+        setError(null);
         
         const taskName = isRemixMode ? 'remix' : 'studioGenerate';
         const apiFn = isRemixMode 
@@ -77,6 +80,12 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                 };
                 onInitiateAdd(newArtwork);
             }
+        } else {
+            // handleAiTask now shows a toast, so we just need to set local error state for retry UI
+            setError({
+                message: aiError?.message || t('toast.error.gemini'),
+                onRetry: handleGenerateOrRemix
+            });
         }
     };
     
@@ -92,11 +101,17 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
 
     const handleEnhance = async () => {
         if (!prompt.trim()) return;
+        setError(null);
         const enhancedPrompt = await handleAiTask('enhance', () => gemini.enhancePrompt(prompt, appSettings, language as 'de' | 'en')) as string | undefined;
 
         if (enhancedPrompt) {
             setPrompt(enhancedPrompt);
             showToast(t('toast.studio.promptEnhanced'), 'success');
+        } else {
+             setError({
+                message: aiError?.message || t('toast.error.gemini'),
+                onRetry: handleEnhance
+            });
         }
     };
 
@@ -116,6 +131,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
         setIsRemixMode(false);
         setPrompt('');
         setOriginalPrompt('');
+        setError(null);
     }
 
     return (
@@ -214,7 +230,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                                 </div>
                             )}
                             <div className="flex gap-2">
-                                <Button variant="secondary" onClick={isRemixMode ? () => { setGeneratedImage(null); handleExitRemixMode(); } : handleEnterRemixMode} disabled={isLoading}>
+                                <Button variant="secondary" onClick={isRemixMode ? () => { setGeneratedImage(null); handleExitRemixMode(); setError(null); } : handleEnterRemixMode} disabled={isLoading}>
                                     <PaintBrushIcon className="w-5 h-5 mr-2" />
                                     {t('studio.remix.button')}
                                 </Button>
@@ -240,6 +256,8 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                             </div>
                             <p className="mt-4 text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>
                         </div>
+                    ) : error ? (
+                        <RetryPrompt title="Generation Failed" message={error.message} onRetry={error.onRetry} />
                     ) : generatedImage ? (
                         <ImageWithFallback 
                             src={`data:image/jpeg;base64,${generatedImage}`} 

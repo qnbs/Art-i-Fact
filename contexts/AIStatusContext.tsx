@@ -46,7 +46,13 @@ export const AIStatusProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 return result;
             } catch (error: any) {
                 console.error(`AI Task "${taskName}" failed:`, error);
-                const errorMessage = t('toast.error.gemini');
+                
+                let errorMessage = t('toast.error.gemini');
+                if (error.name === 'GeminiError') {
+                    // Use the more specific message from our custom error
+                    errorMessage = error.message;
+                }
+
                 showToast(errorMessage, 'error');
                 setAiError({
                     message: errorMessage,
@@ -61,7 +67,7 @@ export const AIStatusProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 return undefined;
             }
         },
-        [language, t, showToast]
+        [t, showToast] // Removed language dependency as t() already handles it
     );
 
     const value = { activeAiTask, loadingMessage, aiError, handleAiTask };
