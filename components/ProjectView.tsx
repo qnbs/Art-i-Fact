@@ -74,6 +74,35 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
         }
     }, [props.galleries, appSettings.showDeletionConfirmation, showModal, t, confirmAndDeleteGallery, hideModal]);
 
+    const renderJournalContent = () => {
+        if (props.journalEntries.length > 0) {
+            return (
+                <Journal 
+                    entries={props.journalEntries}
+                    galleries={[]} // Galleries not needed for project-specific journal view
+                    language={props.language}
+                    activeEntryId={activeJournalId}
+                    onSelectEntry={setActiveJournalId}
+                    onUpdateEntry={props.onUpdateJournalEntry}
+                    onDeleteEntry={props.onDeleteJournalEntry}
+                    onNewEntry={props.onNewJournalEntry}
+                />
+            );
+        }
+        return (
+            <EmptyState 
+                icon={<JournalIcon className="w-16 h-16" />}
+                title={t('journal.empty.title')}
+                message={t('journal.empty.prompt')}
+            >
+                <Button onClick={handleNewJournal}>
+                    <PlusCircleIcon className="w-5 h-5 mr-2" />
+                    {t('journal.new')}
+                </Button>
+            </EmptyState>
+        );
+    }
+
     return (
         <div className="flex flex-col h-full">
             {/* Project Header */}
@@ -131,31 +160,7 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                         hideHeader={true}
                     />
                 )}
-                {activeTab === 'journal' && (
-                    props.journalEntries.length > 0 ? (
-                        <Journal 
-                            entries={props.journalEntries}
-                            galleries={[]} // Galleries not needed for project-specific journal view
-                            language={props.language}
-                            activeEntryId={activeJournalId}
-                            onSelectEntry={setActiveJournalId}
-                            onUpdateEntry={props.onUpdateJournalEntry}
-                            onDeleteEntry={props.onDeleteJournalEntry}
-                            onNewEntry={props.onNewJournalEntry}
-                        />
-                    ) : (
-                        <EmptyState 
-                            icon={<JournalIcon className="w-16 h-16" />}
-                            title={t('journal.empty.title')}
-                            message={t('journal.empty.prompt')}
-                        >
-                            <Button onClick={handleNewJournal}>
-                                <PlusCircleIcon className="w-5 h-5 mr-2" />
-                                {t('journal.new')}
-                            </Button>
-                        </EmptyState>
-                    )
-                )}
+                {activeTab === 'journal' && renderJournalContent()}
             </div>
         </div>
     );

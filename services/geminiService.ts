@@ -31,30 +31,18 @@ export const sanitizeInput = (str: string): string => {
     return div.innerHTML;
 };
 
-const handleApiCall = async <T>(apiFn: () => Promise<GenerateContentResponse | { generatedImages: { image: { imageBytes: string } }[] }>): Promise<T> => {
+const handleApiCall = async <T>(apiFn: () => Promise<GenerateContentResponse>): Promise<T> => {
     try {
         const response = await apiFn();
         
         // FIX: Corrected safety check to use `response.promptFeedback` as `promptFeedback` is not on the candidate.
         // Check for safety blocks in text/json generation
-        if ('promptFeedback' in response && response.promptFeedback?.blockReason) {
+        if (response.promptFeedback?.blockReason) {
             throw new GeminiError(`Request was blocked due to ${response.promptFeedback.blockReason}.`, response.promptFeedback.blockReason);
         }
 
-        // Check for safety blocks in image generation
-        if ('generatedImages' in response && response.generatedImages.length === 0) {
-             throw new GeminiError("Image generation was blocked, likely due to the safety policy. Please adjust your prompt.", "SAFETY");
-        }
+        return JSON.parse(response.text) as T;
 
-        if ('text' in response) {
-            return JSON.parse(response.text) as T;
-        }
-
-        if('generatedImages' in response) {
-            return response.generatedImages[0].image.imageBytes as T;
-        }
-
-        return response as T;
     } catch (error) {
         if (error instanceof GeminiError) {
             throw error; // Re-throw custom errors

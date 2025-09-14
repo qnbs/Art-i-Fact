@@ -121,6 +121,11 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
         setOriginalPrompt('');
     }
 
+    const handleInspirationClick = (inspirationPrompt: string) => {
+        setPrompt(inspirationPrompt);
+        promptRef.current?.focus();
+    }
+
     return (
         <div className="flex flex-col h-full">
             <PageHeader 
@@ -146,7 +151,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                         <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400">{t('studio.inspiration')}</h3>
                         <div className="flex flex-wrap gap-2">
                         {studioInspirationPrompts.flatMap(cat => cat.prompts.slice(0,2)).map((p, i) => (
-                             <button key={i} onClick={() => { setPrompt(p); promptRef.current?.focus(); }} className="px-2 py-1 bg-gray-200 dark:bg-gray-800 text-xs rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors">
+                             <button key={i} onClick={() => handleInspirationClick(p)} className="px-2 py-1 bg-gray-200 dark:bg-gray-800 text-xs rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors">
                                 {p.split(' ').slice(0, 4).join(' ')}...
                             </button>
                         ))}
