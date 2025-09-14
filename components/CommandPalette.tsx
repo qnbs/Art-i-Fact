@@ -36,7 +36,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
 
     useEffect(() => {
         if (isOpen) {
-            // Reset state when opening
             setSearchTerm('');
             setActiveIndex(0);
             inputRef.current?.focus();
@@ -64,7 +63,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
     }, [isOpen, onClose, filteredCommands, activeIndex]);
     
     useEffect(() => {
-        // Scroll active item into view
         const activeItem = document.getElementById(`command-item-${activeIndex}`);
         activeItem?.scrollIntoView({ block: 'nearest' });
     }, [activeIndex]);
@@ -83,15 +81,43 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
         return acc;
     }, {} as Record<string, Command[]>);
 
+    const CommandList = () => (
+        <>
+        {Object.entries(groupedCommands).map(([section, cmds]) => (
+            <div key={section} className="mb-2">
+                <h3 className="text-xs font-semibold uppercase text-gray-400 px-3 py-1">{section}</h3>
+                <ul>
+                    {cmds.map((command, i) => {
+                        const index = filteredCommands.findIndex(c => c.id === command.id);
+                        return (
+                        <li
+                            key={command.id}
+                            id={`command-item-${index}`}
+                            onClick={command.action}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer text-gray-800 dark:text-gray-200 ${
+                                activeIndex === index ? 'bg-amber-100 dark:bg-amber-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                            }`}
+                        >
+                            <span className="text-gray-500">{command.icon}</span>
+                            <span>{command.name}</span>
+                        </li>
+                    )})}
+                </ul>
+            </div>
+        ))}
+        </>
+    );
+
     return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-start pt-20 animate-fade-in"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-start md:pt-20 animate-fade-in"
             onClick={onClose}
             role="dialog"
             aria-modal="true"
         >
+            {/* Desktop Modal */}
             <div
-                className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col animate-command-palette-in"
+                className="hidden md:flex bg-white dark:bg-gray-900 w-full max-w-lg rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 flex-col animate-command-palette-in"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="relative p-2 border-b border-gray-200 dark:border-gray-800">
@@ -107,28 +133,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
                 </div>
                 <div className="p-2 max-h-[60vh] overflow-y-auto">
                     {filteredCommands.length > 0 ? (
-                        Object.entries(groupedCommands).map(([section, cmds]) => (
-                            <div key={section} className="mb-2">
-                                <h3 className="text-xs font-semibold uppercase text-gray-400 px-3 py-1">{section}</h3>
-                                <ul>
-                                    {cmds.map((command) => {
-                                        const index = filteredCommands.findIndex(c => c.id === command.id);
-                                        return (
-                                        <li
-                                            key={command.id}
-                                            id={`command-item-${index}`}
-                                            onClick={command.action}
-                                            className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer text-gray-800 dark:text-gray-200 ${
-                                                activeIndex === index ? 'bg-amber-100 dark:bg-amber-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                                            }`}
-                                        >
-                                            <span className="text-gray-500">{command.icon}</span>
-                                            <span>{command.name}</span>
-                                        </li>
-                                    )})}
-                                </ul>
-                            </div>
-                        ))
+                        <CommandList />
                     ) : (
                         <div className="text-center py-8 text-gray-500">
                             No results found for "{searchTerm}"
@@ -136,6 +141,19 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
                     )}
                 </div>
             </div>
+
+            {/* Mobile Bottom Sheet */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl border-t border-gray-200 dark:border-gray-700 flex flex-col max-h-[70vh] animate-slide-in-from-bottom"
+                 onClick={e => e.stopPropagation()}
+            >
+                 <div className="text-center py-3 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+                    <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto" />
+                </div>
+                 <div className="p-2 overflow-y-auto">
+                    <CommandList />
+                 </div>
+            </div>
+
         </div>,
         paletteRoot
     );

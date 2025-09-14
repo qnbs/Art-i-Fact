@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-// FIX: Added .ts extension to fix module resolution error.
+// FIX: Added .tsx extension to fix module resolution error.
 import type { JournalEntry, Gallery } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
@@ -87,7 +87,6 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
 
         await handleAiTask('journal', async () => {
             if (appSettings.streamJournalResponses) {
-                // FIX: Added 'await' to resolve the promise and get the async iterator.
                 const resultStream = await gemini.generateJournalInsightsStream(topicForHeader, appSettings, language);
                 let firstChunk = true;
                 for await (const chunk of resultStream) {
@@ -99,7 +98,6 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
                         setContent(prev => `${prev}${chunk.text}`);
                     }
                 }
-                // Sources are typically at the end, so we might need a final call or check the last chunk. For simplicity, we won't get sources in stream mode.
             } else {
                 const response = await gemini.generateJournalInsights(topicForHeader, appSettings, language);
                 const responseText = response.text;
@@ -178,6 +176,7 @@ export const Journal: React.FC<JournalProps> = (props) => {
     const { t } = useTranslation();
     const { showModal, hideModal } = useModal();
     const { showToast } = useToast();
+    const { appSettings } = useAppSettings();
     const { entries, onDeleteEntry, onNewEntry } = props;
     
     const [internalActiveEntryId, setInternalActiveEntryId] = useState<string | null>(null);
@@ -199,27 +198,32 @@ export const Journal: React.FC<JournalProps> = (props) => {
     }, [entries, activeEntryId, isControlled]);
 
     const activeEntry = useMemo(() => entries.find(e => e.id === activeEntryId), [entries, activeEntryId]);
+    
+    const confirmAndDelete = useCallback((entryId: string, entryTitle: string) => {
+        onDeleteEntry(entryId);
+        if (activeEntryId === entryId) {
+            onSelectEntry(null);
+        }
+        showToast(t('toast.journal.deleted', { title: entryTitle }), 'success');
+        hideModal();
+    }, [onDeleteEntry, activeEntryId, onSelectEntry, showToast, t, hideModal]);
 
     const handleDelete = useCallback((e: React.MouseEvent, entryId: string, entryTitle: string) => {
         e.stopPropagation();
-        showModal(
-            t('journal.delete.confirm', { title: entryTitle }),
-            <>
-                <p>{t('journal.delete.confirm', { title: entryTitle })}</p>
-                <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
-                    <Button variant="danger" onClick={() => {
-                        onDeleteEntry(entryId);
-                        if (activeEntryId === entryId) {
-                            onSelectEntry(null);
-                        }
-                        showToast(t('toast.journal.deleted'), 'success');
-                        hideModal();
-                    }}>{t('remove')}</Button>
+        if (appSettings.showDeletionConfirmation) {
+            showModal(t('delete.journal.title'), (
+                <div>
+                    <p>{t('delete.journal.confirm', { title: entryTitle })}</p>
+                    <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                        <Button variant="danger" onClick={() => confirmAndDelete(entryId, entryTitle)}>{t('remove')}</Button>
+                    </div>
                 </div>
-            </>
-        );
-    }, [showModal, hideModal, t, onDeleteEntry, activeEntryId, onSelectEntry, showToast]);
+            ));
+        } else {
+            confirmAndDelete(entryId, entryTitle);
+        }
+    }, [showModal, t, appSettings.showDeletionConfirmation, confirmAndDelete, hideModal]);
     
     const handleNew = () => {
         const newId = onNewEntry();

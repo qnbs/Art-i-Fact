@@ -7,7 +7,7 @@ type LoadingMessages = {
         deepDive: string[];
         critique: string[];
         audioGuide: string[];
-        trailer: string[];
+        video: string[];
         journal: string[];
         enhance: string[];
         studioGenerate: string[];
@@ -24,7 +24,7 @@ export const loadingMessages: LoadingMessages = {
         deepDive: ['Studiere die Komposition...', 'Untersuche den historischen Kontext...', 'Deute die Symbolik...', 'Formuliere die Analyse...'],
         critique: ['Bewerte die Auswahl der Kunstwerke...', 'Analysiere den narrativen Fluss...', 'Prüfe die thematische Kohärenz...', 'Formuliere Verbesserungsvorschläge...'],
         audioGuide: ['Entwickle ein Ausstellungskonzept...', 'Schreibe die Einleitung...', 'Verfasse Skripte für jedes Kunstwerk...', 'Stelle den Audioguide zusammen...'],
-        trailer: ['Analysiere die Stimmung der Galerie...', 'Wähle Schlüsselbilder aus...', 'Plane filmische Sequenzen...', 'Rendere die Video-Assets...'],
+        video: ['Analysiere die Stimmung der Galerie...', 'Wähle Schlüsselbilder aus...', 'Plane filmische Sequenzen...', 'Rendere die Video-Assets...'],
         journal: ['Recherchiere das Thema...', 'Synthetisiere Informationen...', 'Strukturiere die Erkenntnisse...', 'Schreibe den Entwurf...'],
         enhance: ['Analysiere den ursprünglichen Prompt...', 'Füge künstlerische Details hinzu...', 'Beschreibe Licht und Stimmung...', 'Verfeinere die Komposition...'],
         studioGenerate: ['Interpretiere den Prompt...', 'Wähle einen Kunststil...', 'Generiere erste Konzepte...', 'Verfeinere das Bild...'],
@@ -38,7 +38,7 @@ export const loadingMessages: LoadingMessages = {
         deepDive: ['Studying the composition...', 'Researching historical context...', 'Interpreting symbolism...', 'Formulating the analysis...'],
         critique: ['Evaluating artwork selection...', 'Analyzing narrative flow...', 'Checking for thematic coherence...', 'Formulating suggestions...'],
         audioGuide: ['Developing an exhibition concept...', 'Writing the introduction...', 'Drafting scripts for each artwork...', 'Assembling the audio guide...'],
-        trailer: ['Analyzing gallery mood...', 'Selecting key visuals...', 'Planning cinematic sequences...', 'Rendering video assets...'],
+        video: ['Analyzing gallery mood...', 'Selecting key visuals...', 'Planning cinematic sequences...', 'Rendering video assets...'],
         journal: ['Researching the topic...', 'Synthesizing information...', 'Structuring the insights...', 'Writing the draft...'],
         enhance: ['Analyzing original prompt...', 'Adding artistic details...', 'Describing lighting and mood...', 'Refining composition...'],
         studioGenerate: ['Interpreting the prompt...', 'Selecting an art style...', 'Generating initial concepts...', 'Refining the image...'],

@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'de';
 
 export interface Locale {
@@ -28,11 +27,19 @@ const en: Locale = {
     project: 'Project',
     gallery: 'Gallery',
     community: 'Community',
+    gallerysuite: 'Gallery Suite',
   },
 
   // Profile
   profile: {
       title: "Curator's Profile",
+      edit: {
+        title: "Edit Profile",
+        button: "Edit Profile",
+        username: "Username",
+        bio: "Bio",
+        avatar: "Avatar"
+      },
       stats: {
           galleries: 'Galleries Curated',
           discovered: 'Artworks Discovered',
@@ -69,7 +76,8 @@ const en: Locale = {
         promptEnhanced: 'Prompt enhanced successfully!'
       },
       gallery: {
-        imported: 'Gallery "{{title}}" imported successfully!'
+        imported: 'Gallery "{{title}}" imported successfully!',
+        duplicated: 'Gallery "{{title}}" duplicated successfully!'
       },
       error: {
         gemini: "Gemini API request failed."
@@ -186,10 +194,16 @@ const en: Locale = {
   workspace: {
       title: 'Workspace',
       newProject: 'New Project',
-      editProject: 'Edit Project Details',
+      editProject: 'Edit Project',
       project: {
           galleries: '{{count}} Galleries',
           journals: '{{count}} Journals',
+          creator: {
+            title: "Project Title",
+            description: "Description",
+            'title.placeholder': "e.g., 'Modern Art Studies'",
+            'description.placeholder': "e.g., 'Research on post-impressionism and cubism.'"
+          }
       },
       delete: {
           projectLabel: 'Delete project {{title}}'
@@ -203,7 +217,7 @@ const en: Locale = {
   settings: {
     title: "Settings",
     about: {
-      version: "Version 1.0.0",
+      version: "1.0.0",
       license: "All rights reserved."
     },
     general: {
@@ -460,11 +474,19 @@ const de: Locale = {
     project: 'Projekt',
     gallery: 'Galerie',
     community: 'Community',
+    gallerysuite: 'Galerie-Übersicht',
   },
 
   // Profile
   profile: {
       title: "Kuratorprofil",
+       edit: {
+        title: "Profil bearbeiten",
+        button: "Profil bearbeiten",
+        username: "Benutzername",
+        bio: "Biografie",
+        avatar: "Avatar"
+      },
       stats: {
           galleries: 'Kuratierte Galerien',
           discovered: 'Entdeckte Kunstwerke',
@@ -501,7 +523,8 @@ const de: Locale = {
         promptEnhanced: 'Prompt erfolgreich verbessert!'
       },
       gallery: {
-        imported: 'Galerie "{{title}}" erfolgreich importiert!'
+        imported: 'Galerie "{{title}}" erfolgreich importiert!',
+        duplicated: 'Galerie "{{title}}" erfolgreich dupliziert!'
       },
       error: {
         gemini: "Anfrage an die Gemini API fehlgeschlagen."
@@ -618,10 +641,16 @@ const de: Locale = {
   workspace: {
       title: 'Arbeitsbereich',
       newProject: 'Neues Projekt',
-      editProject: 'Projektdetails bearbeiten',
+      editProject: 'Projekt bearbeiten',
       project: {
           galleries: '{{count}} Galerien',
           journals: '{{count}} Journaleinträge',
+          creator: {
+            title: "Projekttitel",
+            description: "Beschreibung",
+            'title.placeholder': "z.B. 'Studien zur modernen Kunst'",
+            'description.placeholder': "z.B. 'Forschung zu Post-Impressionismus und Kubismus.'"
+          }
       },
       delete: {
           projectLabel: 'Projekt {{title}} löschen'

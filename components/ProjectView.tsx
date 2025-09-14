@@ -1,6 +1,7 @@
 
 
-import React, { useState } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import type { Project, Gallery, JournalEntry } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
@@ -9,6 +10,9 @@ import { Journal } from './Journal.tsx';
 import { Button } from './ui/Button.tsx';
 import { PlusCircleIcon, GalleryIcon, JournalIcon, PencilIcon, CheckCircleIcon, HomeIcon } from './IconComponents.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
+import { useAppSettings } from '../../contexts/AppSettingsContext.tsx';
+import { useModal } from '../../contexts/ModalContext.tsx';
+import { useToast } from '../../contexts/ToastContext.tsx';
 
 interface ProjectViewProps {
     project: Project;
@@ -29,6 +33,10 @@ type ProjectTab = 'galleries' | 'journal';
 
 export const ProjectView: React.FC<ProjectViewProps> = (props) => {
     const { t } = useTranslation();
+    const { appSettings } = useAppSettings();
+    const { showModal, hideModal } = useModal();
+    const { showToast } = useToast();
+
     const [activeTab, setActiveTab] = useState<ProjectTab>('galleries');
     const [activeJournalId, setActiveJournalId] = useState<string | null>(null);
     const [isEditingProject, setIsEditingProject] = useState(false);
@@ -48,6 +56,33 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
         setActiveJournalId(newId);
         setActiveTab('journal');
     }
+
+    const confirmAndDeleteGallery = useCallback((galleryId: string) => {
+        const gallery = props.galleries.find(g => g.id === galleryId);
+        if (!gallery) return;
+        props.onDeleteGallery(galleryId);
+        showToast(t('toast.gallery.deleted', { title: gallery.title }), 'success');
+        hideModal();
+    }, [props.galleries, props.onDeleteGallery, showToast, t, hideModal]);
+    
+    const handleDeleteGallery = useCallback((galleryId: string) => {
+        const gallery = props.galleries.find(g => g.id === galleryId);
+        if (!gallery) return;
+
+        if (appSettings.showDeletionConfirmation) {
+            showModal(t('delete.gallery.title'), (
+                <div>
+                    <p>{t('delete.gallery.confirm', { title: gallery.title })}</p>
+                    <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                        <Button variant="danger" onClick={() => confirmAndDeleteGallery(galleryId)}>{t('remove')}</Button>
+                    </div>
+                </div>
+            ));
+        } else {
+            confirmAndDeleteGallery(galleryId);
+        }
+    }, [props.galleries, appSettings.showDeletionConfirmation, showModal, t, confirmAndDeleteGallery, hideModal]);
 
     return (
         <div className="flex flex-col h-full">
@@ -126,7 +161,7 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                         galleries={props.galleries}
                         onCreateNew={props.onNewGallery}
                         onSelectGallery={props.onSelectGallery}
-                        onDeleteGallery={props.onDeleteGallery}
+                        onDeleteGallery={handleDeleteGallery}
                         hideHeader={true}
                     />
                 )}

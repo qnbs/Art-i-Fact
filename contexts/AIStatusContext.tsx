@@ -4,7 +4,7 @@ import { loadingMessages } from '../i18n/loadingMessages.ts';
 import { useTranslation } from './TranslationContext.tsx';
 import { useToast } from './ToastContext.tsx';
 
-export type AiTask = 'deepDive' | 'critique' | 'audioGuide' | 'trailer' | 'journal' | 'enhance' | 'studioGenerate' | 'remix' | null;
+export type AiTask = 'deepDive' | 'critique' | 'audioGuide' | 'video' | 'journal' | 'enhance' | 'studioGenerate' | 'remix' | null;
 
 interface AiError {
     message: string;
@@ -33,8 +33,6 @@ export const AIStatusProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const messages = useMemo(() => activeAiTask ? loadingMessages[language][activeAiTask] || loadingMessages[language].generic : [], [activeAiTask, language]);
     const loadingMessage = useDynamicLoadingMessage(messages, 2500, !!activeAiTask);
 
-    // FIX: Removed the generic <T> from the function implementation inside useCallback to fix TSX parsing errors.
-    // The generic signature from AIStatusContextType will still be applied to consumers of the context.
     const handleAiTask = useCallback(
         async (taskName: NonNullable<AiTask>, taskFn: () => Promise<any>, options: EndTaskOptions = {}): Promise<any> => {
             setActiveAiTask(taskName);

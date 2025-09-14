@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, DragEvent, memo, useRef } from 'react';
 import type { Gallery, Artwork, AudioGuide, GalleryCritique } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
@@ -126,8 +127,8 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
     const handleTrailer = async () => {
         aiAssistantMenuRef.current?.removeAttribute('open');
         onUpdate(g => ({ ...g, trailerVideoStatus: 'pending' }));
-        // FIX: Added 'as string | undefined' to fix type error.
-        const downloadLink = await handleAiTask('trailer', () => gemini.generateTrailerVideo(gallery)) as string | undefined;
+        // FIX: Renamed AI task from 'trailer' to 'video' to match the AiTask type definition.
+        const downloadLink = await handleAiTask('video', () => gemini.generateTrailerVideo(gallery)) as string | undefined;
         if (downloadLink) {
             onUpdate(g => ({ ...g, trailerVideoUrl: downloadLink, trailerVideoStatus: 'ready' }));
         } else {
@@ -233,8 +234,10 @@ export const GalleryView: React.FC<GalleryViewProps> = (props) => {
                            {activeAiTask === 'audioGuide' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
                            {t('gallery.ai.audioGuide')}
                         </button>
-                        <button onClick={handleTrailer} disabled={activeAiTask === 'trailer' || gallery.trailerVideoStatus === 'pending'} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                           {activeAiTask === 'trailer' || gallery.trailerVideoStatus === 'pending' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
+                        {/* FIX: Renamed AI task from 'trailer' to 'video' to match the AiTask type definition. */}
+                        <button onClick={handleTrailer} disabled={activeAiTask === 'video' || gallery.trailerVideoStatus === 'pending'} className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                           {/* FIX: Renamed AI task from 'trailer' to 'video' to match the AiTask type definition. */}
+                           {activeAiTask === 'video' || gallery.trailerVideoStatus === 'pending' ? <SpinnerIcon className="w-4 h-4 mr-2"/> : <SparklesIcon className="w-4 h-4 mr-2"/>}
                            {t('gallery.ai.trailer')}
                         </button>
                     </div>

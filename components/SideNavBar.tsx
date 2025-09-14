@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ActiveView } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, SparklesIcon, GlobeAltIcon } from './IconComponents.tsx';
+import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, SparklesIcon, GlobeAltIcon, GalleryIcon } from './IconComponents.tsx';
 
 interface SideNavBarProps {
   activeView: ActiveView;
@@ -34,6 +34,7 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveVie
   const navItems: { view: ActiveView, label: string, icon: React.ReactNode }[] = [
     { view: 'workspace', label: t('view.workspace'), icon: <HomeIcon /> },
     { view: 'discover', label: t('view.discover'), icon: <SearchIcon /> },
+    { view: 'gallerysuite', label: t('view.gallerysuite'), icon: <GalleryIcon /> },
     { view: 'studio', label: t('view.studio'), icon: <PaintBrushIcon /> },
     { view: 'journal', label: t('view.journal'), icon: <JournalIcon /> },
     { view: 'community', label: t('view.community'), icon: <GlobeAltIcon /> },

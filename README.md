@@ -17,6 +17,7 @@
 -   **Curator's Journal:** Keep a personal journal with a **rich text Markdown editor**. Document your thoughts, link entries to specific projects, and use AI to **research topics directly within your notes**.
 -   **Command Palette:** Access all major functions, navigate quickly, and search through all your content (projects, galleries, journals) from anywhere with a simple `Ctrl+K` (or `Cmd+K`) command.
 -   **Exhibit & Share:** Present your finished galleries in a beautiful, immersive exhibition mode. **Share your creations with the world via a simple, data-encoded link** for a read-only viewing experience.
+-   **Installable & Offline-Ready (PWA):** Install Art-i-Fact on your device like a native app and use it even without an internet connection, thanks to its Progressive Web App architecture. All your work is saved locally.
 -   **Full Data Control:** **Export and import your entire workspace** (projects, galleries, journal, settings) as a single JSON file. Your data belongs to you.
 -   **Personalization:** Create a curator profile, track your stats, and customize the app's appearance and AI behavior in the settings.
 
@@ -76,6 +77,7 @@ This project is licensed under the MIT License.
 -   **Kuratoren-Journal:** Führen Sie ein persönliches Journal mit einem **Rich-Text-Markdown-Editor**. Dokumentieren Sie Ihre Gedanken, verknüpfen Sie Einträge mit bestimmten Projekten und nutzen Sie die KI, um **Themen direkt in Ihren Notizen zu recherchieren**.
 -   **Befehlspalette:** Greifen Sie auf alle wichtigen Funktionen zu, navigieren Sie schnell und durchsuchen Sie all Ihre Inhalte (Projekte, Galerien, Journale) von überall aus mit dem einfachen Befehl `Strg+K` (oder `Cmd+K`).
 -   **Ausstellen & Teilen:** Präsentieren Sie Ihre fertigen Galerien in einem schönen, immersiven Ausstellungsmodus. **Teilen Sie Ihre Kreationen mit der Welt über einen einfachen, datenkodierten Link** für ein schreibgeschütztes Seherlebnis.
+-   **Installierbar & Offline-fähig (PWA):** Installieren Sie Art-i-Fact wie eine native App auf Ihrem Gerät und nutzen Sie sie auch ohne Internetverbindung, dank der Progressive Web App-Architektur. Alle Ihre Arbeiten werden lokal gespeichert.
 -   **Volle Datenkontrolle:** **Exportieren und importieren Sie Ihren gesamten Arbeitsbereich** (Projekte, Galerien, Journal, Einstellungen) als einzelne JSON-Datei. Ihre Daten gehören Ihnen.
 -   **Personalisierung:** Erstellen Sie ein Kuratorenprofil, verfolgen Sie Ihre Statistiken und passen Sie das Aussehen und das KI-Verhalten der App in den Einstellungen an.
 

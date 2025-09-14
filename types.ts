@@ -1,4 +1,6 @@
-export type ActiveView = 'workspace' | 'project' | 'discover' | 'gallery' | 'studio' | 'journal' | 'profile' | 'setup' | 'help' | 'community';
+
+// FIX: Removed unused and incorrect imports for types that are defined locally or not needed.
+export type ActiveView = 'workspace' | 'project' | 'discover' | 'gallery' | 'gallerysuite' | 'studio' | 'journal' | 'profile' | 'setup' | 'help' | 'community';
 
 export interface Artwork {
     id: string;

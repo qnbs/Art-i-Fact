@@ -1,16 +1,14 @@
-
-
-
 import React from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { useProfile } from '../contexts/ProfileContext';
-import { Avatar } from './ui/Avatar';
-import { Cog6ToothIcon, QuestionMarkCircleIcon, ChevronRightIcon, UserCircleIcon } from './IconComponents';
-import { PageHeader } from './ui/PageHeader';
+import { useProfile } from '../contexts/ProfileContext.tsx';
+import { Avatar } from './ui/Avatar.tsx';
+import { Cog6ToothIcon, QuestionMarkCircleIcon, ChevronRightIcon, UserCircleIcon, PencilIcon } from './IconComponents.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
+import { Button } from './ui/Button.tsx';
 
 interface ProfileViewProps {
     setActiveView: (view: 'setup' | 'help') => void;
+    onEditProfile: () => void;
     stats: {
         galleriesCurated: number;
         artworksDiscovered: number;
@@ -33,14 +31,18 @@ const ProfileLink: React.FC<{ icon: React.ReactNode; label: string; onClick: () 
     </button>
 ));
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ setActiveView, stats }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ setActiveView, onEditProfile, stats }) => {
     const { t } = useTranslation();
     const { profile } = useProfile();
 
     return (
         <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
-            {/* FIX: Use nested translation key for the profile title. */}
-            <PageHeader title={t('profile.title')} icon={<UserCircleIcon className="w-8 h-8" />} />
+            <PageHeader title={t('profile.title')} icon={<UserCircleIcon className="w-8 h-8" />}>
+                 <Button variant="secondary" onClick={onEditProfile}>
+                    <PencilIcon className="w-5 h-5 mr-2" />
+                    {t('profile.edit.button')}
+                </Button>
+            </PageHeader>
             <div className="flex flex-col md:flex-row items-center text-center md:text-left p-8 mb-8 bg-white/50 dark:bg-black/20 rounded-xl">
                 <Avatar seed={profile.avatar} className="w-32 h-32 rounded-full mb-4 md:mb-0 md:mr-8 flex-shrink-0" />
                 <div>
@@ -50,7 +52,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ setActiveView, stats }
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                {/* FIX: Use nested translation keys for profile stats. */}
                 <StatItem value={stats.galleriesCurated} label={t('profile.stats.galleries')} />
                 <StatItem value={stats.artworksDiscovered} label={t('profile.stats.discovered')} />
                 <StatItem value={stats.aiArtworksCreated} label={t('profile.stats.created')} />

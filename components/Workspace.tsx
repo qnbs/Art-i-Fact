@@ -1,12 +1,7 @@
-
-
 import React from 'react';
-// FIX: Added .ts extension to fix module resolution error.
 import type { Project } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-// FIX: Added .tsx extension to fix module resolution error.
-import { HomeIcon, PlusCircleIcon, PencilIcon, TrashIcon } from './IconComponents.tsx';
+import { HomeIcon, PlusCircleIcon, PencilIcon, TrashIcon, EllipsisVerticalIcon } from './IconComponents.tsx';
 import { Button } from './ui/Button.tsx';
 import { EmptyState } from './ui/EmptyState.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
@@ -15,8 +10,8 @@ interface WorkspaceProps {
     projects: Project[];
     onNewProject: () => void;
     onSelectProject: (id: string) => void;
-    // FIX: Changed signature to match the implementation in App.tsx.
-    onDeleteProject: (id: string) => void;
+    onEditProject: (project: Project) => void;
+    onDeleteProject: (project: Project) => void;
     galleryCountByProject: (projectId: string) => number;
     journalCountByProject: (projectId: string) => number;
     newlyCreatedId: string | null;
@@ -26,16 +21,14 @@ const ProjectCard: React.FC<{
     project: Project; 
     isNew: boolean;
     onSelect: () => void; 
+    onEdit: () => void;
     onDelete: () => void;
     galleryCount: number;
     journalCount: number;
-}> = React.memo(({ project, isNew, onSelect, onDelete, galleryCount, journalCount }) => {
+}> = React.memo(({ project, isNew, onSelect, onEdit, onDelete, galleryCount, journalCount }) => {
     const { t } = useTranslation();
     
-    const handleDeleteClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        onDelete();
-    };
+    const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
     return (
         <div 
@@ -52,22 +45,31 @@ const ProjectCard: React.FC<{
                 <span>{t('workspace.project.galleries', { count: String(galleryCount)})}</span>
                 <span>{t('workspace.project.journals', { count: String(journalCount)})}</span>
             </div>
-            {/* FIX: Completed the truncated button element. */}
-             <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 group-focus-within:opacity-100">
-                <button onClick={handleDeleteClick} aria-label={t('workspace.delete.projectLabel', { title: project.title })} className="p-2 bg-red-600/80 text-white rounded-full hover:bg-red-700/80 transition-colors">
-                    <TrashIcon className="w-4 h-4" />
-                </button>
+             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" onClick={stopPropagation}>
+                 <details className="relative">
+                    <summary className="list-none cursor-pointer p-2 bg-black/40 text-white rounded-full hover:bg-black/60">
+                        <EllipsisVerticalIcon className="w-5 h-5"/>
+                    </summary>
+                    <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                        <button onClick={onEdit} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <PencilIcon className="w-4 h-4" /> {t('workspace.editProject')}
+                        </button>
+                        <button onClick={onDelete} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/50">
+                            <TrashIcon className="w-4 h-4" /> {t('remove')}
+                        </button>
+                    </div>
+                </details>
             </div>
         </div>
     );
 });
 ProjectCard.displayName = 'ProjectCard';
 
-// FIX: Added the missing Workspace component and exported it.
 export const Workspace: React.FC<WorkspaceProps> = ({
     projects,
     onNewProject,
     onSelectProject,
+    onEditProject,
     onDeleteProject,
     galleryCountByProject,
     journalCountByProject,
@@ -109,7 +111,8 @@ export const Workspace: React.FC<WorkspaceProps> = ({
                             project={project}
                             isNew={project.id === newlyCreatedId}
                             onSelect={() => onSelectProject(project.id)}
-                            onDelete={() => onDeleteProject(project.id)}
+                            onEdit={() => onEditProject(project)}
+                            onDelete={() => onDeleteProject(project)}
                             galleryCount={galleryCountByProject(project.id)}
                             journalCount={journalCountByProject(project.id)}
                         />

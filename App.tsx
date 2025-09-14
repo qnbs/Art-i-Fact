@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import type { ActiveView, Artwork, Gallery, Project, JournalEntry } from './types.ts';
+import type { ActiveView, Artwork, Gallery, Project, JournalEntry, Profile, ShareableGalleryData } from './types.ts';
 import { useTranslation } from './contexts/TranslationContext.tsx';
 import { useAppSettings } from './contexts/AppSettingsContext.tsx';
 import { useProfile } from './contexts/ProfileContext.tsx';
@@ -15,7 +15,6 @@ import { WELCOME_PORTAL_SEEN_KEY } from './constants.ts';
 import { SideNavBar } from './components/SideNavBar.tsx';
 import { BottomNavBar } from './components/BottomNavBar.tsx';
 import { Header } from './components/Header.tsx';
-// FIX: Correctly export and import Workspace component.
 import { Workspace } from './components/Workspace.tsx';
 import { ProjectView } from './components/ProjectView.tsx';
 import { ArtLibrary } from './components/ArtLibrary.tsx';
@@ -33,13 +32,16 @@ import { PageLoader } from './components/ui/PageLoader.tsx';
 import { CommunityView } from './components/CommunityView.tsx';
 import { ExhibitionMode } from './components/ExhibitionMode.tsx';
 import CommandPalette from './components/CommandPalette.tsx';
-import { Cog6ToothIcon, GlobeAltIcon, HomeIcon, JournalIcon, PaintBrushIcon, QuestionMarkCircleIcon, SearchIcon, UserCircleIcon } from './components/IconComponents.tsx';
+import { GalleryManager } from './components/GalleryManager.tsx';
+import { Cog6ToothIcon, GlobeAltIcon, HomeIcon, JournalIcon, PaintBrushIcon, QuestionMarkCircleIcon, SearchIcon, UserCircleIcon, GalleryIcon } from './components/IconComponents.tsx';
+import { ProjectEditor } from './components/ProjectEditor.tsx';
+import { ProfileEditor } from './components/ProfileEditor.tsx';
+import { Button } from './components/ui/Button.tsx';
 
 const App: React.FC = () => {
     const { t, language } = useTranslation();
     const { appSettings, isLoading: settingsLoading } = useAppSettings();
-    // FIX: Destructure isLoading from useProfile hook, which is now correctly provided by the context.
-    const { profile, isLoading: profileLoading } = useProfile();
+    const { profile, setProfile, isLoading: profileLoading } = useProfile();
     const { showModal, hideModal } = useModal();
     const { showToast } = useToast();
 
@@ -48,6 +50,7 @@ const App: React.FC = () => {
     const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
     const [activeGalleryId, setActiveGalleryId] = useState<string | null>(null);
     const [newlyCreatedProjectId, setNewlyCreatedProjectId] = useState<string | null>(null);
+    const [newlyCreatedGalleryId, setNewlyCreatedGalleryId] = useState<string | null>(null);
     const [showWelcome, setShowWelcome] = useState(false);
     const [previewGallery, setPreviewGallery] = useState<Gallery | null>(null);
     const [initialDiscoverSearch, setInitialDiscoverSearch] = useState<string>('');
@@ -56,7 +59,7 @@ const App: React.FC = () => {
 
     // Hooks
     const { projects, addProject, updateProject, deleteProject, isLoading: projectsLoading } = useProjects();
-    const { galleries, createGallery, updateGallery, deleteGallery, addArtworkToGallery, removeArtworkFromGallery, reorderArtworksInGallery, importGallery, isLoading: galleriesLoading } = useGallery();
+    const { galleries, createGallery, updateGallery, deleteGallery, addArtworkToGallery, removeArtworkFromGallery, reorderArtworksInGallery, importGallery, isLoading: galleriesLoading, duplicateGallery } = useGallery();
     const { entries, createJournalEntry, updateJournalEntry, deleteJournalEntry, deleteJournalsByProjectId, isLoading: journalLoading } = useJournal(appSettings.defaultJournalTitle);
     
     const isLoading = settingsLoading || profileLoading || projectsLoading || galleriesLoading || journalLoading;
@@ -71,6 +74,33 @@ const App: React.FC = () => {
         };
         checkWelcomeSeen();
     }, []);
+    
+    // Effect to handle shared gallery URLs
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash;
+            if (hash.startsWith('#view=')) {
+                try {
+                    const encodedData = hash.substring(6);
+                    const decodedJson = atob(encodedData);
+                    const data: ShareableGalleryData = JSON.parse(decodedJson);
+                    
+                    if (data.gallery && data.profile) {
+                        setPreviewGallery({ ...data.gallery, curatorProfile: data.profile });
+                        // Clean the URL
+                        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+                    }
+                } catch (error) {
+                    console.error("Failed to parse shared gallery data:", error);
+                    showToast(t('toast.error.generic'), 'error');
+                }
+            }
+        };
+        
+        handleHashChange(); // Check on initial load
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, [showToast, t]);
 
     useEffect(() => {
       document.documentElement.className = appSettings.theme;
@@ -95,52 +125,35 @@ const App: React.FC = () => {
         setActiveView(view);
     }, []);
 
-    const handleSelectProject = (id: string) => {
+    const handleSelectProject = useCallback((id: string) => {
         setActiveProjectId(id);
         setActiveView('project');
-    };
+    }, []);
 
-    const handleSelectGallery = (id: string) => {
+    const handleSelectGallery = useCallback((id: string) => {
         setActiveGalleryId(id);
         setActiveView('gallery');
-    };
+    }, []);
 
-    const handleFindSimilar = async (artwork: Artwork) => {
+    const handleFindSimilar = useCallback(async (artwork: Artwork) => {
         hideModal();
-        showToast('AI is crafting a search for similar art...', 'info');
+        showToast(t('toast.ai.thinking'), 'info');
         try {
             const query = await gemini.generateSimilarArtSearchQuery(artwork, language as 'de' | 'en');
             setInitialDiscoverSearch(query);
             setActiveView('discover');
-            // Clear the initial search so it doesn't re-trigger
             setTimeout(() => setInitialDiscoverSearch(''), 0);
         } catch (e) {
             console.error(e);
             showToast(t('toast.error.gemini'), 'error');
         }
-    };
-
-    const handleViewArtworkDetails = (artwork: Artwork) => {
-        showModal(artwork.title, <ArtworkDetails 
-            artwork={artwork}
-            activeGallery={activeGallery}
-            language={language}
-            onClose={hideModal}
-            onFindSimilar={handleFindSimilar}
-            onInitiateAddToGallery={handleInitiateAdd}
-            // FIX: Pass a function that calls removeArtworkFromGallery with the required galleryId.
-            onRemoveFromGallery={(artworkId) => activeGalleryId && removeArtworkFromGallery(activeGalleryId, artworkId)}
-            onAddComment={(artworkId, comment) => updateGallery(activeGalleryId!, g => ({ ...g, artworks: g.artworks.map(a => a.id === artworkId ? {...a, comment} : a) }))}
-            onThematicSearch={() => {}}
-            onStartChat={handleStartChat}
-        />);
-    };
-
-    const handleStartChat = (artwork: Artwork) => {
-        showModal(t('chat.title', { title: artwork.title }), <ChatModal artwork={artwork} language={language} />);
-    };
+    }, [hideModal, showToast, t, language]);
     
-    const handleInitiateAdd = (artwork: Artwork) => {
+    const handleStartChat = useCallback((artwork: Artwork) => {
+        showModal(t('chat.title', { title: artwork.title }), <ChatModal artwork={artwork} language={language} />);
+    }, [showModal, t, language]);
+
+    const handleInitiateAdd = useCallback((artwork: Artwork) => {
         const handleAddToGallery = (galleryId: string) => {
             addArtworkToGallery(galleryId, artwork);
             showToast(t('toast.artwork.added', { gallery: galleries.find(g => g.id === galleryId)?.title || '' }), 'success');
@@ -162,33 +175,105 @@ const App: React.FC = () => {
             onCreateAndAdd={handleCreateAndAdd}
             activeProjectId={activeProjectId}
         />);
-    };
+    }, [addArtworkToGallery, showToast, t, galleries, hideModal, createGallery, activeProjectId, showModal]);
 
-    const handleNewProject = () => {
-        const id = addProject('New Project', 'A collection of galleries and research.');
+    const handleViewArtworkDetails = useCallback((artwork: Artwork) => {
+        showModal(artwork.title, <ArtworkDetails 
+            artwork={artwork}
+            activeGallery={activeGallery}
+            language={language}
+            onClose={hideModal}
+            onFindSimilar={handleFindSimilar}
+            onInitiateAddToGallery={handleInitiateAdd}
+            onRemoveFromGallery={(artworkId) => activeGalleryId && removeArtworkFromGallery(activeGalleryId, artworkId)}
+            onAddComment={(artworkId, comment) => updateGallery(activeGalleryId!, g => ({ ...g, artworks: g.artworks.map(a => a.id === artworkId ? {...a, comment} : a) }))}
+            onThematicSearch={() => {}}
+            onStartChat={handleStartChat}
+        />);
+    }, [activeGallery, language, hideModal, handleFindSimilar, handleInitiateAdd, activeGalleryId, removeArtworkFromGallery, updateGallery, handleStartChat, showModal]);
+
+    const handleNewProject = useCallback(() => {
+        const id = addProject(t('workspace.newProject.defaultTitle'), t('workspace.newProject.defaultDesc'));
         setNewlyCreatedProjectId(id);
         setTimeout(() => setNewlyCreatedProjectId(null), 1500);
-    };
+    }, [addProject, t]);
 
-    const handleDeleteProject = (id: string) => {
-        deleteProject(id);
-        deleteJournalsByProjectId(id);
-        galleries.filter(g => g.projectId === id).forEach(g => deleteGallery(g.id));
-    };
+    const confirmAndDeleteProject = useCallback((project: Project) => {
+        deleteProject(project.id);
+        deleteJournalsByProjectId(project.id);
+        galleries.filter(g => g.projectId === project.id).forEach(g => deleteGallery(g.id));
+        showToast(t('toast.project.deleted', { title: project.title }), 'success');
+    }, [deleteProject, deleteJournalsByProjectId, galleries, deleteGallery, showToast, t]);
 
-    const handleNewGallery = () => {
-        const newId = createGallery({ title: 'New Gallery', description: '', projectId: activeProjectId });
+    const handleDeleteProject = useCallback((project: Project) => {
+        if (appSettings.showDeletionConfirmation) {
+            showModal(t('delete.project.title'), (
+                <div>
+                    <p>{t('delete.project.confirm', { title: project.title })}</p>
+                    <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                        <Button variant="danger" onClick={() => { confirmAndDeleteProject(project); hideModal(); }}>{t('remove')}</Button>
+                    </div>
+                </div>
+            ));
+        } else {
+            confirmAndDeleteProject(project);
+        }
+    }, [appSettings.showDeletionConfirmation, showModal, hideModal, t, confirmAndDeleteProject]);
+
+    const handleNewGallery = useCallback(() => {
+        const newId = createGallery({ title: t('gallery.new'), description: '', projectId: activeProjectId });
         handleSelectGallery(newId);
-    };
+    }, [createGallery, activeProjectId, handleSelectGallery, t]);
+
+    const handleNewGallerySuite = useCallback(() => {
+        const newId = createGallery({ title: t('gallery.new'), description: '', projectId: null });
+        setNewlyCreatedGalleryId(newId);
+        setTimeout(() => setNewlyCreatedGalleryId(null), 1500);
+        handleSelectGallery(newId);
+    }, [createGallery, handleSelectGallery, t]);
+    
+    const handleDuplicateGallery = useCallback((id: string) => {
+        const galleryToDuplicate = galleries.find(g => g.id === id);
+        if (!galleryToDuplicate) return;
+        
+        const newId = duplicateGallery(id);
+        if(newId) {
+            showToast(t('toast.gallery.duplicated', { title: galleryToDuplicate.title }), 'success');
+        }
+    }, [galleries, duplicateGallery, showToast, t]);
     
     const handleImportGallery = useCallback((gallery: Gallery) => {
         importGallery(gallery);
         showToast(t('toast.gallery.imported', { title: gallery.title }), 'success');
     }, [importGallery, showToast, t]);
+
+    const handleEditProject = useCallback((project: Project) => {
+        showModal(t('workspace.editProject'), <ProjectEditor 
+            project={project}
+            onSave={(details) => {
+                updateProject(project.id, details);
+                hideModal();
+            }}
+            onCancel={hideModal}
+        />);
+    }, [showModal, t, updateProject, hideModal]);
+
+    const handleEditProfile = useCallback(() => {
+        showModal(t('profile.edit.title'), <ProfileEditor 
+            profile={profile}
+            onSave={(newProfileData) => {
+                setProfile(newProfileData);
+                hideModal();
+            }}
+            onCancel={hideModal}
+        />);
+    }, [showModal, t, profile, setProfile, hideModal]);
     
     const commands = useMemo(() => [
         { id: 'nav-workspace', name: t('view.workspace'), action: () => { handleSetView('workspace'); setIsCommandPaletteOpen(false); }, icon: <HomeIcon className="w-5 h-5"/>, section: 'Navigation' },
         { id: 'nav-discover', name: t('view.discover'), action: () => { handleSetView('discover'); setIsCommandPaletteOpen(false); }, icon: <SearchIcon className="w-5 h-5"/>, section: 'Navigation' },
+        { id: 'nav-gallerysuite', name: t('view.gallerysuite'), action: () => { handleSetView('gallerysuite'); setIsCommandPaletteOpen(false); }, icon: <GalleryIcon className="w-5 h-5"/>, section: 'Navigation' },
         { id: 'nav-studio', name: t('view.studio'), action: () => { handleSetView('studio'); setIsCommandPaletteOpen(false); }, icon: <PaintBrushIcon className="w-5 h-5"/>, section: 'Navigation' },
         { id: 'nav-journal', name: t('view.journal'), action: () => { handleSetView('journal'); setIsCommandPaletteOpen(false); }, icon: <JournalIcon className="w-5 h-5"/>, section: 'Navigation' },
         { id: 'nav-community', name: t('view.community'), action: () => { handleSetView('community'); setIsCommandPaletteOpen(false); }, icon: <GlobeAltIcon className="w-5 h-5"/>, section: 'Navigation' },
@@ -198,7 +283,7 @@ const App: React.FC = () => {
     ], [t, handleSetView]);
 
     if (isLoading) {
-        return <PageLoader message="Loading your creative space..." />;
+        return <PageLoader message={t('loader.generic')} />;
     }
     
     if (showWelcome) {
@@ -222,6 +307,7 @@ const App: React.FC = () => {
                     projects={projects}
                     onNewProject={handleNewProject}
                     onSelectProject={handleSelectProject}
+                    onEditProject={handleEditProject}
                     onDeleteProject={handleDeleteProject}
                     galleryCountByProject={galleryCountByProject}
                     journalCountByProject={journalCountByProject}
@@ -252,14 +338,25 @@ const App: React.FC = () => {
                 return activeGallery ? <GalleryView 
                     gallery={activeGallery} 
                     language={language}
-                    onClose={() => activeGallery.projectId ? handleSelectProject(activeGallery.projectId) : handleSetView('workspace')}
+                    onClose={() => activeGallery.projectId ? handleSelectProject(activeGallery.projectId) : handleSetView('gallerysuite')}
                     onUpdate={(updater) => updateGallery(activeGallery.id, updater)}
                     onRemoveArtwork={(artworkId) => removeArtworkFromGallery(activeGallery.id, artworkId)}
                     onReorderArtworks={(reordered) => reorderArtworksInGallery(activeGallery.id, reordered)}
                     onViewDetails={handleViewArtworkDetails}
                     onInitiateAdd={handleInitiateAdd}
-                    onFindSimilar={() => {}}
+                    // FIX: Added missing onFindSimilar prop.
+                    onFindSimilar={handleFindSimilar}
                 /> : null;
+            case 'gallerysuite':
+                return <GalleryManager 
+                    galleries={galleries}
+                    projects={projects}
+                    onSelectGallery={handleSelectGallery}
+                    onCreateNew={handleNewGallerySuite}
+                    onDeleteGallery={deleteGallery}
+                    onDuplicateGallery={handleDuplicateGallery}
+                    newlyCreatedId={newlyCreatedGalleryId}
+                />;
             case 'studio':
                 return <Studio onInitiateAdd={handleInitiateAdd} />;
             case 'journal':
@@ -275,7 +372,7 @@ const App: React.FC = () => {
                  const galleriesCurated = galleries.length;
                  const artworksDiscovered = galleries.reduce((sum, g) => sum + g.artworks.filter(a => !a.isGenerated).length, 0);
                  const aiArtworksCreated = galleries.reduce((sum, g) => sum + g.artworks.filter(a => a.isGenerated).length, 0);
-                return <ProfileView setActiveView={handleSetView} stats={{ galleriesCurated, artworksDiscovered, aiArtworksCreated }}/>;
+                return <ProfileView setActiveView={handleSetView} onEditProfile={handleEditProfile} stats={{ galleriesCurated, artworksDiscovered, aiArtworksCreated }}/>;
             case 'setup':
                 return <Setup />;
             case 'help':
@@ -290,6 +387,7 @@ const App: React.FC = () => {
                     projects={projects}
                     onNewProject={handleNewProject}
                     onSelectProject={handleSelectProject}
+                    onEditProject={handleEditProject}
                     onDeleteProject={handleDeleteProject}
                     galleryCountByProject={galleryCountByProject}
                     journalCountByProject={journalCountByProject}

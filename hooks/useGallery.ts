@@ -81,6 +81,21 @@ export const useGallery = () => {
         return importedGallery.id;
     }, [updateAndSave]);
 
+    const duplicateGallery = useCallback((id: string): string | undefined => {
+        const galleryToDuplicate = galleries.find(g => g.id === id);
+        if (!galleryToDuplicate) return undefined;
+
+        const newGallery: Gallery = {
+            ...galleryToDuplicate,
+            id: `gal_${Date.now()}`,
+            title: `${galleryToDuplicate.title} (Copy)`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        updateAndSave(prev => [newGallery, ...prev]);
+        return newGallery.id;
+    }, [galleries, updateAndSave]);
+
     return {
         galleries,
         isLoading,
@@ -91,5 +106,6 @@ export const useGallery = () => {
         removeArtworkFromGallery,
         reorderArtworksInGallery,
         importGallery,
+        duplicateGallery,
     };
 };

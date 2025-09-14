@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ActiveView } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, GlobeAltIcon } from './IconComponents.tsx';
+import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, GlobeAltIcon, GalleryIcon } from './IconComponents.tsx';
 
 interface BottomNavBarProps {
   activeView: ActiveView;
@@ -32,7 +32,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeView, setActiv
   const navItems: { view: ActiveView, label: string, icon: React.ReactNode }[] = [
     { view: 'workspace', label: t('view.workspace'), icon: <HomeIcon className="w-6 h-6" /> },
     { view: 'discover', label: t('view.discover'), icon: <SearchIcon className="w-6 h-6" /> },
-    { view: 'community', label: t('view.community'), icon: <GlobeAltIcon className="w-6 h-6" /> },
+    { view: 'gallerysuite', label: t('view.gallerysuite'), icon: <GalleryIcon className="w-6 h-6" /> },
     { view: 'studio', label: t('view.studio'), icon: <PaintBrushIcon className="w-6 h-6" /> },
     { view: 'journal', label: t('view.journal'), icon: <JournalIcon className="w-6 h-6" /> },
   ];
