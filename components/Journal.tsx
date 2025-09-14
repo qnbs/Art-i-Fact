@@ -13,7 +13,6 @@ import { MarkdownRenderer } from './MarkdownRenderer.tsx';
 import { Button } from './ui/Button.tsx';
 import { EmptyState } from './ui/EmptyState.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
-import { RetryPrompt } from './ui/RetryPrompt.tsx';
 import * as gemini from '../services/geminiService.ts';
 import { GenerateContentResponse } from '@google/genai';
 
@@ -32,7 +31,7 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
     entry, onUpdateEntry, language
 }) => {
     const { t } = useTranslation();
-    const { handleAiTask, activeAiTask, aiError, loadingMessage } = useAI();
+    const { handleAiTask, activeAiTask } = useAI();
     const { appSettings } = useAppSettings();
     const { showToast } = useToast();
     const [title, setTitle] = useState(entry.title);
@@ -89,28 +88,37 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
             if (appSettings.streamJournalResponses) {
                 const resultStream = await gemini.generateJournalInsightsStream(topicForHeader, appSettings, language);
                 let firstChunk = true;
+                let fullResponseText = '';
                 for await (const chunk of resultStream) {
                     if (firstChunk) {
                         setContent(prev => `${prev}${header}`);
                         firstChunk = false;
                     }
                     if (chunk.text) {
+                        fullResponseText += chunk.text;
                         setContent(prev => `${prev}${chunk.text}`);
                     }
                 }
+                // At the end of the stream, we don't have the full response object for sources.
+                // This is a limitation of streaming with grounding. 
+                // We'll update the content with the streamed text.
+                return fullResponseText;
             } else {
                 const response = await gemini.generateJournalInsights(topicForHeader, appSettings, language);
                 const responseText = response.text;
                 const sourcesText = appendSources(response, topicForHeader);
-                setContent(prev => `${prev}${header}${responseText}${sourcesText}`);
+                const combinedText = `${responseText}${sourcesText}`;
+                setContent(prev => `${prev}${header}${combinedText}`);
+                return combinedText; // Return the text that was added
             }
-            return true;
         }, {
             onEnd: (result) => {
                 if (result === undefined) { // Task failed
                     setContent(currentContent);
                 } else if (appSettings.autoSaveJournal) {
-                    onUpdateEntry(entry.id, { title, content });
+                    // onUpdateEntry is called inside handleBlur, which should be triggered
+                    // or we can call it manually after a state update
+                    onUpdateEntry(entry.id, { title, content: `${currentContent}${header}${result}` });
                 }
             }
         });
@@ -156,15 +164,10 @@ const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNe
                         {activeAiTask === 'journal' ? <SpinnerIcon className="w-5 h-5"/> : <SparklesIcon className="w-5 h-5" />}
                     </Button>
                 </div>
-                {activeAiTask === 'journal' && <p className="text-sm text-center text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>}
                 <div>
                      <h4 className="text-sm font-semibold mb-2">{t('journal.preview')}</h4>
                      <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md max-h-48 overflow-y-auto">
-                        {aiError && activeAiTask === null ? (
-                           <RetryPrompt message={aiError.message} onRetry={aiError.onRetry} />
-                        ) : (
-                           <MarkdownRenderer markdown={content} />
-                        )}
+                        <MarkdownRenderer markdown={content} />
                      </div>
                 </div>
             </div>

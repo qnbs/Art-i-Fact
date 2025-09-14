@@ -1,3 +1,5 @@
+
+
 import React, { useState, useCallback } from 'react';
 import type { Project, Gallery, JournalEntry } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
@@ -10,6 +12,7 @@ import { PageHeader } from './ui/PageHeader.tsx';
 import { useAppSettings } from '../../contexts/AppSettingsContext.tsx';
 import { useModal } from '../../contexts/ModalContext.tsx';
 import { useToast } from '../../contexts/ToastContext.tsx';
+import { EmptyState } from './ui/EmptyState.tsx';
 
 interface ProjectViewProps {
     project: Project;
@@ -129,16 +132,29 @@ export const ProjectView: React.FC<ProjectViewProps> = (props) => {
                     />
                 )}
                 {activeTab === 'journal' && (
-                    <Journal 
-                        entries={props.journalEntries}
-                        galleries={[]} // Galleries not needed for project-specific journal view
-                        language={props.language}
-                        activeEntryId={activeJournalId}
-                        onSelectEntry={setActiveJournalId}
-                        onUpdateEntry={props.onUpdateJournalEntry}
-                        onDeleteEntry={props.onDeleteJournalEntry}
-                        onNewEntry={props.onNewJournalEntry}
-                    />
+                    props.journalEntries.length > 0 ? (
+                        <Journal 
+                            entries={props.journalEntries}
+                            galleries={[]} // Galleries not needed for project-specific journal view
+                            language={props.language}
+                            activeEntryId={activeJournalId}
+                            onSelectEntry={setActiveJournalId}
+                            onUpdateEntry={props.onUpdateJournalEntry}
+                            onDeleteEntry={props.onDeleteJournalEntry}
+                            onNewEntry={props.onNewJournalEntry}
+                        />
+                    ) : (
+                        <EmptyState 
+                            icon={<JournalIcon className="w-16 h-16" />}
+                            title={t('journal.empty.title')}
+                            message={t('journal.empty.prompt')}
+                        >
+                            <Button onClick={handleNewJournal}>
+                                <PlusCircleIcon className="w-5 h-5 mr-2" />
+                                {t('journal.new')}
+                            </Button>
+                        </EmptyState>
+                    )
                 )}
             </div>
         </div>

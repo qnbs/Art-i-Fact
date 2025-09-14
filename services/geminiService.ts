@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Chat, GenerateContentResponse, Modality, PromptFeedback } from "@google/genai";
+import { GoogleGenAI, Type, Chat, GenerateContentResponse, Modality } from "@google/genai";
 import type { Artwork, Gallery, Profile, AppSettings, DeepDive, GalleryCritique, AudioGuide } from '../types.ts';
 import { prompts } from '../i18n/prompts.ts';
 
@@ -35,12 +35,10 @@ const handleApiCall = async <T>(apiFn: () => Promise<GenerateContentResponse | {
     try {
         const response = await apiFn();
         
+        // FIX: Corrected safety check to use `response.promptFeedback` as `promptFeedback` is not on the candidate.
         // Check for safety blocks in text/json generation
-        if ('candidates' in response && response.candidates?.[0]?.finishReason !== 'STOP') {
-             const feedback = response.candidates?.[0]?.promptFeedback;
-             if (feedback?.blockReason) {
-                throw new GeminiError(`Request was blocked due to ${feedback.blockReason}.`, feedback.blockReason);
-             }
+        if ('promptFeedback' in response && response.promptFeedback?.blockReason) {
+            throw new GeminiError(`Request was blocked due to ${response.promptFeedback.blockReason}.`, response.promptFeedback.blockReason);
         }
 
         // Check for safety blocks in image generation
@@ -208,16 +206,35 @@ export const startArtChat = (artwork: Artwork, settings: AppSettings, language: 
 };
 
 // Image Generation & Editing
-export const generateImage = (prompt: string, aspectRatio: string): Promise<string> => {
-    return handleApiCall<string>(() => ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: prompt,
-        config: {
-            numberOfImages: 1,
-            outputMimeType: 'image/jpeg',
-            aspectRatio: aspectRatio as any,
-        },
-    }));
+// FIX: Rewrote `generateImage` to not use `handleApiCall` due to type incompatibilities with `generateImages` response.
+// The new implementation has its own error handling, similar to `remixImage`.
+export const generateImage = async (prompt: string, aspectRatio: string): Promise<string> => {
+    try {
+        const response = await ai.models.generateImages({
+            model: 'imagen-4.0-generate-001',
+            prompt: prompt,
+            config: {
+                numberOfImages: 1,
+                outputMimeType: 'image/jpeg',
+                aspectRatio: aspectRatio as any,
+            },
+        });
+
+        if (response.generatedImages.length === 0) {
+             throw new GeminiError("Image generation was blocked, likely due to the safety policy. Please adjust your prompt.", "SAFETY");
+        }
+
+        const imageBytes = response.generatedImages[0].image.imageBytes;
+        if (!imageBytes) {
+            throw new GeminiError("AI did not return an image for generation.", "NO_CONTENT");
+        }
+
+        return imageBytes;
+    } catch (error) {
+         if (error instanceof GeminiError) throw error;
+         console.error("Gemini API Error:", error);
+         throw new Error("Failed to generate the image. Please try again.");
+    }
 };
 
 export const remixImage = async (base64ImageData: string, prompt: string): Promise<string> => {

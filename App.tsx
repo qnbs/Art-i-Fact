@@ -6,6 +6,7 @@ import { useAppSettings } from './contexts/AppSettingsContext.tsx';
 import { useProfile } from './contexts/ProfileContext.tsx';
 import { useModal } from './contexts/ModalContext.tsx';
 import { useToast } from './contexts/ToastContext.tsx';
+import { useAI } from './contexts/AIStatusContext.tsx';
 import { useProjects } from './hooks/useProjects.ts';
 import { useGallery } from './hooks/useGallery.ts';
 import { useJournal } from './hooks/useJournal.ts';
@@ -38,6 +39,7 @@ import { Cog6ToothIcon, GlobeAltIcon, HomeIcon, JournalIcon, PaintBrushIcon, Que
 import { ProjectEditor } from './components/ProjectEditor.tsx';
 import { ProfileEditor } from './components/ProfileEditor.tsx';
 import { Button } from './components/ui/Button.tsx';
+import { LoadingOverlay } from './components/ui/LoadingOverlay.tsx';
 
 const App: React.FC = () => {
     const { t, language } = useTranslation();
@@ -45,6 +47,7 @@ const App: React.FC = () => {
     const { profile, setProfile, isLoading: profileLoading } = useProfile();
     const { showModal, hideModal } = useModal();
     const { showToast } = useToast();
+    const { activeAiTask, loadingMessage, aiError } = useAI();
 
     // State
     const [activeView, setActiveView] = useState<ActiveView>('workspace');
@@ -419,6 +422,7 @@ const App: React.FC = () => {
                 onClose={() => setIsCommandPaletteOpen(false)}
                 commands={commands}
             />
+            <LoadingOverlay isActive={!!activeAiTask || !!aiError} message={loadingMessage} error={aiError} />
         </div>
     );
 };

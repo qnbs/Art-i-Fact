@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { useAI } from '../contexts/AIStatusContext.tsx';
@@ -12,7 +13,6 @@ import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
 import * as gemini from '../services/geminiService.ts';
 import { studioInspirationPrompts } from '../data/inspiration.ts';
-import { RetryPrompt } from './ui/RetryPrompt.tsx';
 
 interface StudioProps {
     onInitiateAdd: (artwork: Artwork) => void;
@@ -31,7 +31,7 @@ const aspectRatioClasses: Record<ImageAspectRatio, string> = {
 
 export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
     const { t, language } = useTranslation();
-    const { handleAiTask, activeAiTask, loadingMessage, aiError } = useAI();
+    const { handleAiTask, activeAiTask } = useAI();
     const { appSettings } = useAppSettings();
     const { showToast } = useToast();
     
@@ -41,14 +41,13 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
     const [isImageVisible, setIsImageVisible] = useState(false);
     const [isRemixMode, setIsRemixMode] = useState(false);
     const [originalPrompt, setOriginalPrompt] = useState('');
-    const [error, setError] = useState<{ message: string, onRetry: () => void } | null>(null);
+    const promptRef = useRef<HTMLTextAreaElement>(null);
 
     const isLoading = activeAiTask === 'studioGenerate' || activeAiTask === 'remix';
     const isEnhancing = activeAiTask === 'enhance';
 
     const handleGenerateOrRemix = async () => {
         if (!prompt.trim()) return;
-        setError(null);
         
         const taskName = isRemixMode ? 'remix' : 'studioGenerate';
         const apiFn = isRemixMode 
@@ -80,18 +79,13 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                 };
                 onInitiateAdd(newArtwork);
             }
-        } else {
-            // handleAiTask now shows a toast, so we just need to set local error state for retry UI
-            setError({
-                message: aiError?.message || t('toast.error.gemini'),
-                onRetry: handleGenerateOrRemix
-            });
         }
     };
     
     const handleEnterRemixMode = () => {
         setIsRemixMode(true);
         setPrompt(appSettings.defaultRemixPrompt || '');
+        promptRef.current?.focus();
     };
     
     const handleExitRemixMode = () => {
@@ -101,17 +95,11 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
 
     const handleEnhance = async () => {
         if (!prompt.trim()) return;
-        setError(null);
         const enhancedPrompt = await handleAiTask('enhance', () => gemini.enhancePrompt(prompt, appSettings, language as 'de' | 'en')) as string | undefined;
 
         if (enhancedPrompt) {
             setPrompt(enhancedPrompt);
             showToast(t('toast.studio.promptEnhanced'), 'success');
-        } else {
-             setError({
-                message: aiError?.message || t('toast.error.gemini'),
-                onRetry: handleEnhance
-            });
         }
     };
 
@@ -131,7 +119,6 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
         setIsRemixMode(false);
         setPrompt('');
         setOriginalPrompt('');
-        setError(null);
     }
 
     return (
@@ -146,6 +133,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                 {/* Controls */}
                 <div className="md:w-1/3 flex flex-col gap-4">
                     <textarea
+                        ref={promptRef}
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder={isRemixMode ? t('studio.remix.placeholder') : t('studio.prompt.placeholder')}
@@ -158,7 +146,7 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                         <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400">{t('studio.inspiration')}</h3>
                         <div className="flex flex-wrap gap-2">
                         {studioInspirationPrompts.flatMap(cat => cat.prompts.slice(0,2)).map((p, i) => (
-                             <button key={i} onClick={() => setPrompt(p)} className="px-2 py-1 bg-gray-200 dark:bg-gray-800 text-xs rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors">
+                             <button key={i} onClick={() => { setPrompt(p); promptRef.current?.focus(); }} className="px-2 py-1 bg-gray-200 dark:bg-gray-800 text-xs rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors">
                                 {p.split(' ').slice(0, 4).join(' ')}...
                             </button>
                         ))}
@@ -199,17 +187,8 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                                 disabled={isLoading || isEnhancing || !prompt.trim()}
                                 className="flex-grow bg-amber-600 text-white rounded-lg px-4 py-3 flex items-center justify-center font-semibold hover:bg-amber-700 disabled:bg-gray-500 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all"
                             >
-                                {isLoading ? (
-                                    <>
-                                        <SpinnerIcon className="w-5 h-5 mr-2" />
-                                        {t('studio.generating')}
-                                    </>
-                                ) : (
-                                    <>
-                                        <SparklesIcon className="w-5 h-5 mr-2" />
-                                        {t('studio.generate')}
-                                    </>
-                                )}
+                                <SparklesIcon className="w-5 h-5 mr-2" />
+                                {t('studio.generate')}
                             </button>
                         </div>
                     ) : (
@@ -225,12 +204,12 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                                         disabled={isLoading || isEnhancing || !prompt.trim()}
                                         className="flex-grow bg-amber-600 text-white rounded-lg px-4 py-2 flex items-center justify-center font-semibold hover:bg-amber-700 disabled:bg-gray-500 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all"
                                     >
-                                        {isLoading ? <SpinnerIcon className="w-5 h-5" /> : <SparklesIcon className="w-5 h-5" />}
+                                        <SparklesIcon className="w-5 h-5" />
                                     </button>
                                 </div>
                             )}
                             <div className="flex gap-2">
-                                <Button variant="secondary" onClick={isRemixMode ? () => { setGeneratedImage(null); handleExitRemixMode(); setError(null); } : handleEnterRemixMode} disabled={isLoading}>
+                                <Button variant="secondary" onClick={isRemixMode ? () => { setGeneratedImage(null); handleExitRemixMode(); } : handleEnterRemixMode} disabled={isLoading}>
                                     <PaintBrushIcon className="w-5 h-5 mr-2" />
                                     {t('studio.remix.button')}
                                 </Button>
@@ -244,21 +223,11 @@ export const Studio: React.FC<StudioProps> = ({ onInitiateAdd }) => {
                             </div>
                         </div>
                     )}
-                     {isEnhancing && <p className="text-sm text-center text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>}
                 </div>
 
                 {/* Image Display */}
                 <div className="md:w-2/3 flex-grow bg-gray-100 dark:bg-gray-900/50 rounded-lg flex items-center justify-center p-4 min-h-[300px] relative" role="region" aria-live="polite" aria-label="Generated image display">
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center w-full h-full text-center" role="status" aria-label={loadingMessage}>
-                            <div className={`w-full max-w-md ${aspectRatioClasses[aspectRatio]}`}>
-                                <Skeleton className="w-full h-full" />
-                            </div>
-                            <p className="mt-4 text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>
-                        </div>
-                    ) : error ? (
-                        <RetryPrompt title="Generation Failed" message={error.message} onRetry={error.onRetry} />
-                    ) : generatedImage ? (
+                    {generatedImage ? (
                         <ImageWithFallback 
                             src={`data:image/jpeg;base64,${generatedImage}`} 
                             alt={prompt} 

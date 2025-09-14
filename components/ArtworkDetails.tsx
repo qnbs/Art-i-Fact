@@ -48,7 +48,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
     onClose,
 }) => {
     const { t } = useTranslation();
-    const { handleAiTask, activeAiTask, loadingMessage } = useAI();
+    const { handleAiTask, activeAiTask } = useAI();
     const { appSettings } = useAppSettings();
     const [deepDive, setDeepDive] = useState<DeepDive | null>(null);
 
@@ -187,20 +187,15 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({
                             <Button
                                 size="sm"
                                 onClick={handleGenerateDeepDive}
-                                isLoading={isLoadingDeepDive}
+                                disabled={isLoadingDeepDive}
                             >
-                                {isLoadingDeepDive ? t('gallery.suggestions.analyzing') : t('generate')}
+                                {isLoadingDeepDive ? <SpinnerIcon className="w-5 h-5"/> : t('generate')}
                             </Button>
                         )}
                     </div>
-                    {isLoadingDeepDive && (
-                        <div className="py-4 text-center" role="status" aria-label={loadingMessage}>
-                            <SpinnerIcon className="w-8 h-8 text-amber-500 mx-auto" />
-                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 animate-pulse">{loadingMessage}</p>
-                        </div>
-                    )}
+                    
                     {deepDive && (
-                        <div className="mt-2">
+                        <div className="mt-2 animate-fade-in">
                             <AccordionItem title={t('modal.details.deepDive.symbolism')}>
                                 {deepDive.symbolism}
                             </AccordionItem>

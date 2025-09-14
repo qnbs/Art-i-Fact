@@ -1,1 +1,2 @@
-export {}; // This file is not currently in use, but is kept to avoid module resolution errors.
+// This file is unused and can be safely deleted.
+export {};

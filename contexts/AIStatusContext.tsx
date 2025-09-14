@@ -6,7 +6,7 @@ import { useToast } from './ToastContext.tsx';
 
 export type AiTask = 'deepDive' | 'critique' | 'audioGuide' | 'video' | 'journal' | 'enhance' | 'studioGenerate' | 'remix' | null;
 
-interface AiError {
+export interface AiError {
     message: string;
     onRetry: () => void;
 }
@@ -19,6 +19,7 @@ interface AIStatusContextType {
     activeAiTask: AiTask;
     loadingMessage: string;
     aiError: AiError | null;
+    clearAiError: () => void;
     handleAiTask: <T>(taskName: NonNullable<AiTask>, taskFn: () => Promise<T>, options?: EndTaskOptions) => Promise<T | undefined>;
 }
 
@@ -32,6 +33,8 @@ export const AIStatusProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const messages = useMemo(() => activeAiTask ? loadingMessages[language][activeAiTask] || loadingMessages[language].generic : [], [activeAiTask, language]);
     const loadingMessage = useDynamicLoadingMessage(messages, 2500, !!activeAiTask);
+    
+    const clearAiError = useCallback(() => setAiError(null), []);
 
     const handleAiTask = useCallback(
         async (taskName: NonNullable<AiTask>, taskFn: () => Promise<any>, options: EndTaskOptions = {}): Promise<any> => {
@@ -49,28 +52,26 @@ export const AIStatusProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 
                 let errorMessage = t('toast.error.gemini');
                 if (error.name === 'GeminiError') {
-                    // Use the more specific message from our custom error
                     errorMessage = error.message;
                 }
 
-                showToast(errorMessage, 'error');
                 setAiError({
                     message: errorMessage,
                     onRetry: () => {
                         handleAiTask(taskName, taskFn, options);
                     },
                 });
-                setActiveAiTask(null);
+                setActiveAiTask(null); // Stop loading state on error
                 if (options.onEnd) {
                     options.onEnd(undefined); // Indicate failure
                 }
                 return undefined;
             }
         },
-        [t, showToast] // Removed language dependency as t() already handles it
+        [t] 
     );
 
-    const value = { activeAiTask, loadingMessage, aiError, handleAiTask };
+    const value = { activeAiTask, loadingMessage, aiError, clearAiError, handleAiTask };
 
     return (
         <AIStatusContext.Provider value={value}>

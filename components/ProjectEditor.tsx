@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { Button } from './ui/Button.tsx';
@@ -42,6 +43,7 @@ export const ProjectEditor: React.FC<ProjectEditorProps> = ({ onSave, onCancel, 
           placeholder={t('workspace.project.creator.title.placeholder')}
           className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
           required
+          autoFocus
         />
       </div>
       <div>

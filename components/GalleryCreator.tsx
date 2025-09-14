@@ -46,7 +46,7 @@ export const GalleryCreator: React.FC<GalleryCreatorProps> = ({ onSave, onCancel
           placeholder={t('gallery.creator.title.placeholder')}
           className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
           required
-          autoFocus={isCompact}
+          autoFocus
         />
       </div>
       <div>
