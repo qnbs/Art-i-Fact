@@ -143,6 +143,11 @@ export const useGallery = () => {
         return newGallery.id;
     }, [galleries, updateAndSave]);
 
+    // FIX: Add function to delete all galleries associated with a project ID.
+    const deleteGalleriesByProjectId = useCallback((projectId: string) => {
+        updateAndSave(prev => prev.filter(g => g.projectId !== projectId));
+    }, [updateAndSave]);
+
     return {
         galleries,
         isLoading,
@@ -154,5 +159,6 @@ export const useGallery = () => {
         reorderArtworksInGallery,
         importGallery,
         duplicateGallery,
+        deleteGalleriesByProjectId,
     };
 };

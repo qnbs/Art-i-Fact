@@ -33,7 +33,7 @@ export const ProjectEditor: React.FC<ProjectEditorProps> = ({ onSave, onCancel, 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="project-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('workspace.project.creator.title')}
+          {t('workspace.project.creator.title.label')}
         </label>
         <input
           id="project-title"
@@ -48,7 +48,7 @@ export const ProjectEditor: React.FC<ProjectEditorProps> = ({ onSave, onCancel, 
       </div>
       <div>
         <label htmlFor="project-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('workspace.project.creator.description')}
+          {t('workspace.project.creator.description.label')}
         </label>
         <textarea
           id="project-description"

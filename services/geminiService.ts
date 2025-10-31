@@ -11,7 +11,7 @@ class GeminiError extends Error {
 }
 
 // FIX: Initialize the GoogleGenAI client.
-const ai = new GoogleGenAI({apiKey: process.env.API_KEY!});
+const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 
 const getCreativitySettings = (creativity: AppSettings['aiCreativity']) => {
     switch (creativity) {

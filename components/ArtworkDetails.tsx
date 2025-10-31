@@ -112,11 +112,11 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({ artwork, activeG
                 <div className="space-y-2 mt-4">
                      <Button onClick={() => onStartChat(artwork)} variant="secondary" className="w-full">
                         <ChatBubbleLeftEllipsisIcon className="w-5 h-5 mr-2" />
-                        Chat about this Artwork
+                        {t('artwork.details.chat')}
                     </Button>
                      <Button onClick={() => onFindSimilar(artwork)} variant="secondary" className="w-full">
                         <SearchIcon className="w-5 h-5 mr-2" />
-                        Find Similar Art
+                        {t('artwork.details.findSimilar')}
                     </Button>
                     {isInActiveGallery ? (
                         onRemoveFromGallery && <Button onClick={() => { onRemoveFromGallery(artwork.id); onClose(); }} variant="danger" className="w-full">
@@ -135,7 +135,7 @@ export const ArtworkDetails: React.FC<ArtworkDetailsProps> = ({ artwork, activeG
                      {!deepDive && (
                         <Button onClick={handleGenerateDeepDive} variant="secondary" className="w-full bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-900 text-blue-800 dark:text-blue-200">
                             <SparklesIcon className="w-5 h-5 mr-2" />
-                            Generate AI Deep Dive
+                            {t('artwork.details.deepDive')}
                         </Button>
                     )}
                     {deepDive && (

@@ -310,13 +310,13 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
       </div>
       
       <div className={`flex-shrink-0 flex justify-center items-center gap-8 mt-4 transition-opacity duration-300 ${controlsVisibleClass}`}>
-          <button onClick={handlePreviousClick} className="text-gray-400 hover:text-white transition-colors p-2 rounded-full bg-white/10 hover:bg-white/20" aria-label="Previous Artwork">
+          <button onClick={handlePreviousClick} className="text-gray-400 hover:text-white transition-colors p-2 rounded-full bg-white/10 hover:bg-white/20" aria-label={t('exhibition.aria.previous')}>
               <ArrowLeftIcon className="w-6 h-6" />
           </button>
-          <button onClick={handlePlayPauseClick} className="text-white bg-amber-600 hover:bg-amber-700 transition-colors rounded-full p-4" aria-label={isPlaying ? 'Pause Slideshow' : 'Play Slideshow'}>
+          <button onClick={handlePlayPauseClick} className="text-white bg-amber-600 hover:bg-amber-700 transition-colors rounded-full p-4" aria-label={isPlaying ? t('exhibition.aria.pause') : t('exhibition.aria.play')}>
               {isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>}
           </button>
-          <button onClick={handleNextClick} className="text-gray-400 hover:text-white transition-colors p-2 rounded-full bg-white/10 hover:bg-white/20" aria-label="Next Artwork">
+          <button onClick={handleNextClick} className="text-gray-400 hover:text-white transition-colors p-2 rounded-full bg-white/10 hover:bg-white/20" aria-label={t('exhibition.aria.next')}>
               <ArrowRightIcon className="w-6 h-6" />
           </button>
            {audioGuide && (

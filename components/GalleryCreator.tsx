@@ -37,7 +37,7 @@ export const GalleryCreator: React.FC<GalleryCreatorProps> = ({ onSave, onCancel
     <form onSubmit={handleSubmit} className={`space-y-4 ${isCompact ? 'p-1' : ''}`}>
       <div>
         <label htmlFor="gallery-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('gallery.creator.title')}
+          {t('gallery.creator.title.label')}
         </label>
         <input
           id="gallery-title"
@@ -52,7 +52,7 @@ export const GalleryCreator: React.FC<GalleryCreatorProps> = ({ onSave, onCancel
       </div>
       <div>
         <label htmlFor="gallery-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {t('gallery.creator.description')}
+          {t('gallery.creator.description.label')}
         </label>
         <textarea
           id="gallery-description"

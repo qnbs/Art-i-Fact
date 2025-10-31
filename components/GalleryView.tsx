@@ -46,8 +46,8 @@ export const GalleryView: React.FC = () => {
         return (
             <EmptyState
                 icon={<GalleryIcon className="w-16 h-16" />}
-                title="No Gallery Selected"
-                message="Return to your workspace or gallery suite to select a gallery."
+                title={t('gallery.notFound.title')}
+                message={t('gallery.notFound.prompt')}
             />
         );
     }
@@ -79,7 +79,7 @@ export const GalleryView: React.FC = () => {
     
     const handleCritique = () => {
         handleAiTask<GalleryCritique>('critique', () => gemini.generateCritique(activeGallery, settings, language as 'de' | 'en'), {
-            onEnd: (result) => result && showModal('AI Curatorial Critique', <CritiqueModalContent critiqueResult={result} />)
+            onEnd: (result) => result && showModal(t('gallery.critique.modal.title'), <CritiqueModalContent critiqueResult={result} />)
         });
     };
 
@@ -88,18 +88,18 @@ export const GalleryView: React.FC = () => {
             onEnd: (result) => {
                 if (result) {
                     updateGallery(activeGallery.id, g => ({...g, audioGuide: result }));
-                    showModal('Audio Guide Script Generated', <div><p>The audio guide is now available in Exhibition Mode.</p><Button onClick={hideModal} className="mt-4">OK</Button></div>)
+                    showModal(t('gallery.audioGuide.modal.title'), <div><p>{t('gallery.audioGuide.modal.message')}</p><Button onClick={hideModal} className="mt-4">{t('gallery.audioGuide.modal.ok')}</Button></div>)
                 }
             }
         });
     };
 
     const handleShare = () => {
-        showModal(`Share "${activeGallery.title}"`, <ShareModal gallery={activeGallery} profile={profile} onClose={hideModal} />);
+        showModal(`${t('gallery.actions.share')} "${activeGallery.title}"`, <ShareModal gallery={activeGallery} profile={profile} onClose={hideModal} />);
     };
     
     const handleEditDetails = () => {
-        showModal('Edit Gallery Details', <GalleryCreator
+        showModal(t('workspace.editProject'), <GalleryCreator
             gallery={activeGallery}
             onSave={(details) => {
                 updateGallery(activeGallery.id, g => ({...g, ...details}));
@@ -119,64 +119,72 @@ export const GalleryView: React.FC = () => {
                 subtitle={activeGallery.description}
                 icon={<GalleryIcon className="w-8 h-8" />}
             >
-                <Button variant="ghost" size="sm" onClick={handleEditDetails} aria-label="Edit Details">
+                <Button variant="ghost" size="sm" onClick={handleEditDetails} aria-label={t('gallery.actions.edit')}>
                     <PencilIcon className="w-5 h-5" />
                 </Button>
             </PageHeader>
             
             <div className="flex-shrink-0 flex flex-wrap gap-2 mb-4">
                 <Button onClick={handleCritique} variant="secondary" size="sm">
-                    <SparklesIcon className="w-4 h-4 mr-1" /> Critique
+                    <SparklesIcon className="w-5 h-5 mr-2" />
+                    {t('gallery.actions.critique')}
                 </Button>
-                <Button onClick={handleAudioGuide} variant="secondary" size="sm">
-                    <SpeakerWaveIcon className="w-4 h-4 mr-1" /> Audio Guide
+                 <Button onClick={handleAudioGuide} variant="secondary" size="sm">
+                    <SpeakerWaveIcon className="w-5 h-5 mr-2" />
+                    {t('gallery.actions.audioGuide')}
                 </Button>
                  <Button onClick={handleShare} variant="secondary" size="sm">
-                    <ShareIcon className="w-4 h-4 mr-1" /> Share
+                    <ShareIcon className="w-5 h-5 mr-2" />
+                    {t('gallery.actions.share')}
                 </Button>
-                <Button onClick={() => setIsExhibiting(true)} size="sm">
-                    <PresentationChartBarIcon className="w-4 h-4 mr-1" /> Exhibit
+                 <Button onClick={() => setIsExhibiting(true)} variant="primary" size="sm">
+                    <PresentationChartBarIcon className="w-5 h-5 mr-2" />
+                    {t('gallery.actions.exhibit')}
                 </Button>
             </div>
-
-            <div className="flex-grow overflow-y-auto">
-                {activeGallery.artworks.length === 0 ? (
-                    <EmptyState
-                        icon={<GalleryIcon className="w-16 h-16" />}
-                        title="Gallery is Empty"
-                        message="Go to Discover to find and add artworks to this gallery."
-                    />
-                ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        {activeGallery.artworks.map((artwork, index) => (
-                           <DraggableArtworkItem
-                                key={artwork.id}
-                                artwork={artwork}
-                                overlayContent={
-                                     <button
-                                        onClick={(e) => { e.stopPropagation(); removeArtworkFromGallery(activeGallery.id, artwork.id); }}
-                                        className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all hover:bg-red-600/70"
-                                        aria-label={`Remove ${artwork.title}`}
-                                    >
-                                        <TrashIcon className="w-4 h-4" />
-                                    </button>
-                                }
-                                onClick={() => handleViewArtworkDetails(artwork)}
-                                index={index}
-                                isDragging={draggedIndex === index}
-                                isDragOver={dragOverIndex === index}
-                                onDragStart={handleDragStart}
-                                onDragEnter={handleDragEnter}
-                                onDragEnd={handleDragEnd}
-                           />
-                        ))}
-                    </div>
-                )}
-            </div>
-
+            
+            {activeGallery.artworks.length === 0 ? (
+                <EmptyState
+                    icon={<GalleryIcon className="w-16 h-16" />}
+                    title={t('gallery.empty.title')}
+                    message={t('gallery.empty.prompt')}
+                />
+            ) : (
+                <div 
+                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+                    onDragEnd={handleDragEnd}
+                >
+                    {activeGallery.artworks.map((artwork, index) => (
+                        <DraggableArtworkItem
+                            key={artwork.id}
+                            artwork={artwork}
+                            index={index}
+                            isDragging={draggedIndex === index}
+                            isDragOver={dragOverIndex === index}
+                            onDragStart={handleDragStart}
+                            onDragEnter={handleDragEnter}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => handleViewArtworkDetails(artwork)}
+                            overlayContent={(
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeArtworkFromGallery(activeGallery.id, artwork.id);
+                                    }}
+                                    className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-2 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-all hover:bg-red-600/70 focus-visible:ring-2 focus-visible:ring-red-400"
+                                    aria-label={t('remove')}
+                                >
+                                    <TrashIcon className="w-5 h-5" />
+                                </button>
+                            )}
+                        />
+                    ))}
+                </div>
+            )}
+            
             {isExhibiting && (
-                <ExhibitionMode
-                    artworks={activeGallery.artworks}
+                <ExhibitionMode 
+                    artworks={activeGallery.artworks} 
                     onClose={() => setIsExhibiting(false)}
                     audioGuide={activeGallery.audioGuide}
                 />

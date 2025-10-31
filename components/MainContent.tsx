@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext.tsx';
 import { Workspace } from './Workspace.tsx';
@@ -54,7 +56,8 @@ export const MainContent: React.FC = () => {
                 onSelectEntry={setActiveJournalId}
                 onUpdateEntry={updateJournalEntry}
                 onDeleteEntry={deleteJournalEntry}
-                onNewEntry={() => createJournalEntry(null)}
+                // FIX: Pass an async function to match the expected promise return type.
+                onNewEntry={async () => await createJournalEntry(null)}
             />;
         case 'profile':
             return <ProfileView />;

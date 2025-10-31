@@ -113,13 +113,13 @@ export const featuredArtworks: Artwork[] = [
   },
   {
     id: 'feat_11',
-    title: 'Composition with Red, Blue and Yellow',
-    artist: 'Piet Mondrian',
-    year: '1930',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Mondrian_Composition_II_in_Red%2C_Blue%2C_and_Yellow.jpg/800px-Mondrian_Composition_II_in_Red%2C_Blue%2C_and_Yellow.jpg',
-    thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Mondrian_Composition_II_in_Red%2C_Blue%2C_and_Yellow.jpg/400px-Mondrian_Composition_II_in_Red%2C_Blue%2C_and_Yellow.jpg',
-    description: 'A 1930 oil on canvas painting by Piet Mondrian. A quintessential example of the Neoplasticism art movement.',
-    sourceUrl: 'https://en.wikipedia.org/wiki/Composition_with_Red_Blue_and_Yellow',
+    title: 'The Birth of Venus',
+    artist: 'Sandro Botticelli',
+    year: 'c. 1484–1486',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/1024px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
+    thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/400px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
+    description: 'A painting by the Italian artist Sandro Botticelli, probably made in the mid-1480s. It depicts the goddess Venus arriving at the shore after her birth, when she had emerged from the sea fully-grown.',
+    sourceUrl: 'https://en.wikipedia.org/wiki/The_Birth_of_Venus',
     license: 'Public domain'
   },
   {

@@ -31,7 +31,8 @@ const NavItem: React.FC<{
 
 export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveView }) => {
   const { t } = useTranslation();
-  const { settings, toggleTheme } = useAppContext();
+  // FIX: Destructure appSettings as settings and use toggleTheme from context.
+  const { appSettings: settings, toggleTheme } = useAppContext();
 
   const navItems: { view: ActiveView, label: string, icon: React.ReactNode }[] = [
     { view: 'workspace', label: t('view.workspace'), icon: <HomeIcon /> },

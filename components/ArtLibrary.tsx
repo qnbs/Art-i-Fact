@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Artwork } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { useAppContext } from '../contexts/AppContext.tsx';
@@ -17,11 +17,22 @@ import { RetryPrompt } from './ui/RetryPrompt.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
 
 export const ArtLibrary: React.FC = () => {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const { handleViewArtworkDetails, handleInitiateAdd, initialDiscoverSearch } = useAppContext();
+    
+    const getLocalizedFeaturedArtworks = useCallback(() => {
+        if (language === 'de') {
+            return featuredArtworks.map(art => ({
+                ...art,
+                title: t(`featuredArtworks.${art.id}_title`),
+                description: t(`featuredArtworks.${art.id}_desc`),
+            }));
+        }
+        return featuredArtworks;
+    }, [language, t]);
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [artworks, setArtworks] = useState<Artwork[]>(featuredArtworks);
+    const [artworks, setArtworks] = useState<Artwork[]>(() => getLocalizedFeaturedArtworks());
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isSearching, setIsSearching] = useState(false);
@@ -36,7 +47,7 @@ export const ArtLibrary: React.FC = () => {
 
     const handleSearch = useCallback(async (query: string) => {
         if (!query) {
-            setArtworks(featuredArtworks);
+            setArtworks(getLocalizedFeaturedArtworks());
             setIsSearching(false);
             setError(null);
             return;
@@ -54,7 +65,13 @@ export const ArtLibrary: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [t]);
+    }, [t, getLocalizedFeaturedArtworks]);
+    
+    useEffect(() => {
+        if (!isSearching) {
+            setArtworks(getLocalizedFeaturedArtworks());
+        }
+    }, [isSearching, getLocalizedFeaturedArtworks]);
 
     useEffect(() => {
         handleSearch(debouncedSearchTerm);

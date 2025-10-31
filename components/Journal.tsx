@@ -124,7 +124,7 @@ export const Journal: React.FC<JournalProps> = ({ entries, language, activeEntry
                                 />
                                 <Button onClick={handleGetInsights} variant="secondary" size="sm">
                                     <SparklesIcon className="w-4 h-4 mr-1" />
-                                    Get Insights
+                                    {t('journal.getInsights')}
                                 </Button>
                             </div>
                             <div className="flex-grow flex overflow-hidden">
@@ -132,7 +132,7 @@ export const Journal: React.FC<JournalProps> = ({ entries, language, activeEntry
                                     value={activeEntry.content}
                                     onChange={(e) => onUpdateEntry(activeEntry.id, { content: e.target.value })}
                                     className="w-1/2 h-full p-4 resize-none bg-transparent focus:outline-none border-r border-gray-200 dark:border-gray-800"
-                                    placeholder="Start writing your research notes here..."
+                                    placeholder={t('journal.placeholder')}
                                 />
                                 <div className="w-1/2 h-full p-4 overflow-y-auto">
                                     <MarkdownRenderer markdown={activeEntry.content} />
@@ -141,7 +141,7 @@ export const Journal: React.FC<JournalProps> = ({ entries, language, activeEntry
                         </>
                     ) : (
                         <div className="flex items-center justify-center h-full text-gray-500">
-                            Select an entry to start editing.
+                            {t('journal.selectPrompt')}
                         </div>
                     )}
                 </div>

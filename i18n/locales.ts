@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'de';
 
 // FIX: Changed Locale to be a recursive type to allow for arbitrary nesting, fixing multiple type errors.
@@ -92,6 +91,11 @@ export const locales: { [key in Language]: Locale } = {
     },
     artwork: {
         detailsLabel: "View details for {{title}}",
+        details: {
+            chat: "Chat about this Artwork",
+            findSimilar: "Find Similar Art",
+            deepDive: "Generate AI Deep Dive",
+        }
     },
     discover: {
       title: "Discover Art",
@@ -107,12 +111,33 @@ export const locales: { [key in Language]: Locale } = {
         title: "Results for \"{{query}}\"",
       },
     },
+    studio: {
+        generate: "Generate Image",
+        remix: "Remix Image",
+        enhance: "Enhance",
+        aspectRatio: "Aspect Ratio",
+        inspiration: "Inspiration",
+        remixing: "Remixing Artwork",
+        cancelRemix: "Cancel Remix",
+        addToGallery: "Add to Gallery",
+        remixThis: "Remix This Image",
+        download: "Download",
+        empty: "Your generated images will appear here.",
+        placeholder: {
+            generate: "A futuristic cityscape in the style of Van Gogh...",
+            remix: "Describe your edits for \"{{title}}\"...",
+        },
+    },
     gallery: {
       creator: {
-        title: "Gallery Title",
-        title_placeholder: "e.g., 'Masters of Impressionism'",
-        description: "Gallery Description",
-        description_placeholder: "e.g., 'An exploration of light and color...'",
+        title: {
+            label: "Gallery Title",
+            placeholder: "e.g., 'Masters of Impressionism'",
+        },
+        description: {
+            label: "Gallery Description",
+            placeholder: "e.g., 'An exploration of light and color...'",
+        }
       },
       new: "New Gallery",
       status: {
@@ -133,12 +158,33 @@ export const locales: { [key in Language]: Locale } = {
       },
       actions: {
         duplicate: "Duplicate",
+        critique: "Critique",
+        audioGuide: "Audio Guide",
+        share: "Share",
+        exhibit: "Exhibit",
+        edit: "Edit Details",
       },
       critique: {
         modal: {
+          title: "AI Curatorial Critique",
           critique: "AI Critique",
           suggestions: "Suggestions for Improvement"
         }
+      },
+      audioGuide: {
+          modal: {
+              title: "Audio Guide Script Generated",
+              message: "The audio guide is now available in Exhibition Mode.",
+              ok: "OK",
+          }
+      },
+      empty: {
+          title: "Gallery is Empty",
+          prompt: "Go to Discover to find and add artworks to this gallery.",
+      },
+      notFound: {
+          title: "No Gallery Selected",
+          prompt: "Return to your workspace or gallery suite to select a gallery.",
       }
     },
     workspace: {
@@ -156,17 +202,20 @@ export const locales: { [key in Language]: Locale } = {
             journals_one: "1 Journal",
             journals_other: "{{count}} Journals",
             creator: {
-                title: "Project Title",
-                title_placeholder: "e.g., 'Baroque Art Research'",
-                description: "Project Description",
-                description_placeholder: "A brief summary of your project's goals.",
+                title: {
+                    label: "Project Title",
+                    placeholder: "e.g., 'Baroque Art Research'",
+                },
+                description: {
+                    label: "Project Description",
+                    placeholder: "A brief summary of your project's goals.",
+                }
             },
             notFound: {
                 title: "Project Not Found",
                 message: "The project you are looking for does not exist or has been deleted.",
             }
         },
-        // FIX: Renamed `newProject` to `newProjectDefaults` to avoid duplicate key error.
         newProjectDefaults: {
           defaultTitle: "New Project",
           defaultDesc: "A new collection of galleries and research.",
@@ -178,6 +227,9 @@ export const locales: { [key in Language]: Locale } = {
             prompt: "Create your first entry to start your research.",
         },
         new: "New Entry",
+        getInsights: "Get Insights",
+        placeholder: "Start writing your research notes here...",
+        selectPrompt: "Select an entry to start editing.",
     },
     profile: {
         title: "Curator Profile",
@@ -354,6 +406,7 @@ export const locales: { [key in Language]: Locale } = {
         },
         error: {
             gemini: "The AI assistant is currently unavailable. Please try again later.",
+            taskFailed: "Task Failed"
         },
         artwork: {
             added: "Artwork added to '{{gallery}}'.",
@@ -375,6 +428,8 @@ export const locales: { [key in Language]: Locale } = {
         noResults: "No results for \"{{query}}\"",
         sections: {
             general: "General",
+            user: "User",
+            actions: "Actions"
         },
     },
     exhibition: {
@@ -385,6 +440,12 @@ export const locales: { [key in Language]: Locale } = {
         curatedBy: "Curated by {{username}}",
         audioPlaying: "Audio Guide Active",
         audioMuted: "Audio Guide Muted",
+        aria: {
+            previous: "Previous Artwork",
+            next: "Next Artwork",
+            play: "Play Slideshow",
+            pause: "Pause Slideshow",
+        }
     },
     camera: {
         error: {
@@ -557,6 +618,11 @@ export const locales: { [key in Language]: Locale } = {
     },
     artwork: {
         detailsLabel: "Details für {{title}} ansehen",
+        details: {
+            chat: "Über dieses Kunstwerk chatten",
+            findSimilar: "Ähnliche Kunst finden",
+            deepDive: "KI-Tiefenanalyse erstellen",
+        }
     },
     discover: {
       title: "Kunst entdecken",
@@ -572,12 +638,33 @@ export const locales: { [key in Language]: Locale } = {
         title: "Ergebnisse für \"{{query}}\"",
       },
     },
+    studio: {
+        generate: "Bild generieren",
+        remix: "Bild remixen",
+        enhance: "Verbessern",
+        aspectRatio: "Seitenverhältnis",
+        inspiration: "Inspiration",
+        remixing: "Remixe Kunstwerk",
+        cancelRemix: "Remix abbrechen",
+        addToGallery: "Zu Galerie hinzufügen",
+        remixThis: "Dieses Bild remixen",
+        download: "Herunterladen",
+        empty: "Ihre generierten Bilder werden hier angezeigt.",
+        placeholder: {
+            generate: "Eine futuristische Stadtlandschaft im Stil von Van Gogh...",
+            remix: "Beschreibe deine Änderungen für \"{{title}}\"...",
+        },
+    },
     gallery: {
       creator: {
-        title: "Galerietitel",
-        title_placeholder: "z.B. 'Meister des Impressionismus'",
-        description: "Galeriebeschreibung",
-        description_placeholder: "z.B. 'Eine Erkundung von Licht und Farbe...'",
+        title: {
+            label: "Galerietitel",
+            placeholder: "z.B. 'Meister des Impressionismus'",
+        },
+        description: {
+            label: "Galeriebeschreibung",
+            placeholder: "z.B. 'Eine Erkundung von Licht und Farbe...'",
+        }
       },
       new: "Neue Galerie",
       status: {
@@ -598,12 +685,33 @@ export const locales: { [key in Language]: Locale } = {
       },
       actions: {
         duplicate: "Duplizieren",
+        critique: "Kritik",
+        audioGuide: "Audioguide",
+        share: "Teilen",
+        exhibit: "Ausstellen",
+        edit: "Details bearbeiten",
       },
       critique: {
         modal: {
-          critique: "KI-Kuratorenkritik",
+          title: "KI-Kuratorenkritik",
+          critique: "KI-Kritik",
           suggestions: "Verbesserungsvorschläge"
         }
+      },
+      audioGuide: {
+          modal: {
+              title: "Audioguide-Skript erstellt",
+              message: "Der Audioguide ist jetzt im Ausstellungsmodus verfügbar.",
+              ok: "OK",
+          }
+      },
+      empty: {
+          title: "Galerie ist leer",
+          prompt: "Gehen Sie zu 'Entdecken', um Kunstwerke zu finden und dieser Galerie hinzuzufügen.",
+      },
+      notFound: {
+          title: "Keine Galerie ausgewählt",
+          prompt: "Kehren Sie zu Ihrem Arbeitsbereich oder Ihrer Galerie-Sammlung zurück, um eine Galerie auszuwählen.",
       }
     },
     workspace: {
@@ -621,17 +729,20 @@ export const locales: { [key in Language]: Locale } = {
             journals_one: "1 Journal",
             journals_other: "{{count}} Journale",
             creator: {
-                title: "Projekttitel",
-                title_placeholder: "z.B. 'Recherche zur Barockkunst'",
-                description: "Projektbeschreibung",
-                description_placeholder: "Eine kurze Zusammenfassung der Ziele Ihres Projekts.",
+                title: {
+                    label: "Projekttitel",
+                    placeholder: "z.B. 'Recherche zur Barockkunst'",
+                },
+                description: {
+                    label: "Projektbeschreibung",
+                    placeholder: "Eine kurze Zusammenfassung der Ziele Ihres Projekts.",
+                },
             },
             notFound: {
                 title: "Projekt nicht gefunden",
                 message: "Das gesuchte Projekt existiert nicht oder wurde gelöscht.",
             }
         },
-        // FIX: Renamed `newProject` to `newProjectDefaults` to avoid duplicate key error.
         newProjectDefaults: {
           defaultTitle: "Neues Projekt",
           defaultDesc: "Eine neue Sammlung von Galerien und Recherchen.",
@@ -643,6 +754,9 @@ export const locales: { [key in Language]: Locale } = {
             prompt: "Erstellen Sie Ihren ersten Eintrag, um mit Ihrer Recherche zu beginnen.",
         },
         new: "Neuer Eintrag",
+        getInsights: "Einblicke erhalten",
+        placeholder: "Beginnen Sie hier mit Ihren Forschungsnotizen...",
+        selectPrompt: "Wählen Sie einen Eintrag zum Bearbeiten aus.",
     },
     profile: {
         title: "Kuratorenprofil",
@@ -819,6 +933,7 @@ export const locales: { [key in Language]: Locale } = {
         },
         error: {
             gemini: "Der KI-Assistent ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.",
+            taskFailed: "Aufgabe fehlgeschlagen"
         },
         artwork: {
             added: "Kunstwerk zu '{{gallery}}' hinzugefügt.",
@@ -840,6 +955,8 @@ export const locales: { [key in Language]: Locale } = {
         noResults: "Keine Ergebnisse für \"{{query}}\"",
         sections: {
             general: "Allgemein",
+            user: "Benutzer",
+            actions: "Aktionen"
         },
     },
     exhibition: {
@@ -850,6 +967,12 @@ export const locales: { [key in Language]: Locale } = {
         curatedBy: "Kuratiert von {{username}}",
         audioPlaying: "Audioguide aktiv",
         audioMuted: "Audioguide stummgeschaltet",
+        aria: {
+            previous: "Vorheriges Kunstwerk",
+            next: "Nächstes Kunstwerk",
+            play: "Diashow starten",
+            pause: "Diashow anhalten",
+        }
     },
     camera: {
         error: {
@@ -936,5 +1059,31 @@ export const locales: { [key in Language]: Locale } = {
           def: "Die Lehre von der Identifizierung, Beschreibung und Interpretation des Inhalts von Bildern: die dargestellten Motive, die dafür verwendeten Kompositionen und Details sowie andere Elemente, die sich vom künstlerischen Stil unterscheiden.",
         },
     },
+    featuredArtworks: {
+        feat_1_title: "Die Sternennacht",
+        feat_1_desc: "Ein berühmtes Ölgemälde des niederländischen postimpressionistischen Malers Vincent van Gogh.",
+        feat_2_title: "Mona Lisa",
+        feat_2_desc: "Ein Porträtgemälde der italienischen Renaissance von Leonardo da Vinci, das als das bekannteste, meistbesuchte und am häufigsten parodierte Kunstwerk der Welt beschrieben wurde.",
+        feat_3_title: "Die Beständigkeit der Erinnerung",
+        feat_3_desc: "Ein Gemälde des Künstlers Salvador Dalí aus dem Jahr 1931 und eines seiner bekanntesten Werke.",
+        feat_4_title: "Die große Welle vor Kanagawa",
+        feat_4_desc: "Ein Holzschnitt des japanischen Ukiyo-e-Künstlers Hokusai. Es ist Hokusais berühmtestes Werk und eines der bekanntesten Werke der japanischen Kunst weltweit.",
+        feat_5_title: "Das Mädchen mit dem Perlenohrring",
+        feat_5_desc: "Ein Ölgemälde des niederländischen Malers Johannes Vermeer aus dem Goldenen Zeitalter. Es ist eine Tronie eines Mädchens mit einem Kopftuch und einem Perlenohrring.",
+        feat_6_title: "Wanderer über dem Nebelmeer",
+        feat_6_desc: "Ein Gemälde des deutschen romantischen Künstlers Caspar David Friedrich. Es gilt als eines der Meisterwerke der Romantik und eines ihrer repräsentativsten Werke.",
+        feat_7_title: "Der Kuss",
+        feat_7_desc: "Ein Ölgemälde auf Leinwand mit Blattgold, Silber und Platin des österreichischen symbolistischen Malers Gustav Klimt.",
+        feat_8_title: "American Gothic",
+        feat_8_desc: "Ein Gemälde von Grant Wood in der Sammlung des Art Institute of Chicago. Wood wurde inspiriert, das heute als American Gothic House bekannte Haus in Eldon, Iowa, zusammen mit 'der Art von Menschen, von denen ich mir vorstellte, dass sie in diesem Haus leben sollten' zu malen.",
+        feat_9_title: "Der Schrei",
+        feat_9_desc: "Der populäre Name für eine Komposition des norwegischen expressionistischen Künstlers Edvard Munch aus dem Jahr 1893.",
+        feat_10_title: "Die Freiheit führt das Volk",
+        feat_10_desc: "Ein Gemälde von Eugène Delacroix zum Gedenken an die Julirevolution von 1830, die König Karl X. von Frankreich stürzte.",
+        feat_11_title: "Die Geburt der Venus",
+        feat_11_desc: "Ein Gemälde des italienischen Künstlers Sandro Botticelli, wahrscheinlich Mitte der 1480er Jahre entstanden. Es stellt die Göttin Venus dar, die nach ihrer Geburt, als sie ausgewachsen aus dem Meer gestiegen war, am Ufer ankommt.",
+        feat_12_title: "Nachtschwärmer",
+        feat_12_desc: "Ein Ölgemälde auf Leinwand von Edward Hopper aus dem Jahr 1942, das vier Personen in einem Innenstadt-Diner spät in der Nacht darstellt, gesehen durch das große Glasfenster des Diners.",
+    }
   },
 };

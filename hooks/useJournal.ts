@@ -22,7 +22,8 @@ export const useJournal = (defaultTitle: string) => {
         await db.saveJournalEntries(updatedEntries);
     }, [entries]);
 
-    const createJournalEntry = useCallback((projectId: string | null = null): string => {
+    // FIX: Made function async and return a promise to match its behavior.
+    const createJournalEntry = useCallback(async (projectId: string | null = null): Promise<string> => {
         const newEntry: JournalEntry = {
             id: `jnl_${Date.now()}`,
             title: defaultTitle,
@@ -31,7 +32,7 @@ export const useJournal = (defaultTitle: string) => {
             updatedAt: new Date().toISOString(),
             projectId: projectId || undefined,
         };
-        updateAndSave(prev => [newEntry, ...prev]);
+        await updateAndSave(prev => [newEntry, ...prev]);
         return newEntry.id;
     }, [defaultTitle, updateAndSave]);
 

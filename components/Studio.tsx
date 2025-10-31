@@ -6,14 +6,57 @@ import * as gemini from '../services/geminiService.ts';
 import type { Artwork, ImageAspectRatio } from '../types.ts';
 import { studioInspirationPrompts } from '../data/inspiration.ts';
 
-import { PaintBrushIcon, SparklesIcon, MagicWandIcon, ArrowPathIcon } from './IconComponents.tsx';
+import { PaintBrushIcon, SparklesIcon, MagicWandIcon, ArrowPathIcon, PlusCircleIcon, ArrowDownTrayIcon, MagnifyingGlassPlusIcon } from './IconComponents.tsx';
 import { Button } from './ui/Button.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
+import { AccordionItem } from './ui/AccordionItem.tsx';
+import { useModal } from '../contexts/ModalContext.tsx';
+
+// Sub-component for the new image detail modal
+const ImageDetailModalContent: React.FC<{
+    artwork: Artwork;
+    onAddToGallery: () => void;
+    onRemix: () => void;
+    onDownload: () => void;
+}> = ({ artwork, onAddToGallery, onRemix, onDownload }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="flex flex-col md:flex-row gap-6 max-h-[80vh]">
+            <div className="md:w-2/3 flex items-center justify-center">
+                <img src={artwork.imageUrl} alt={artwork.title} className="max-w-full max-h-[70vh] object-contain rounded-lg" />
+            </div>
+            <div className="md:w-1/3 flex flex-col">
+                <h3 className="text-lg font-bold">{artwork.title}</h3>
+                <p className="text-sm text-gray-500 mb-2">{artwork.artist}, {artwork.year}</p>
+                <div className="my-2 p-3 bg-gray-100 dark:bg-gray-800/50 rounded-lg flex-grow overflow-y-auto">
+                    <h4 className="font-semibold text-sm mb-1">Prompt:</h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{artwork.description?.replace('Generated with prompt: "', '').slice(0, -1)}</p>
+                </div>
+                <div className="space-y-2 mt-4 flex-shrink-0">
+                    <Button onClick={onAddToGallery} className="w-full">
+                        <PlusCircleIcon className="w-5 h-5 mr-2" />
+                        {t('studio.addToGallery')}
+                    </Button>
+                    <Button onClick={onRemix} variant="secondary" className="w-full">
+                        <ArrowPathIcon className="w-5 h-5 mr-2" />
+                        {t('studio.remixThis')}
+                    </Button>
+                     <Button onClick={onDownload} variant="secondary" className="w-full">
+                        <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
+                        {t('studio.download')}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 export const Studio: React.FC = () => {
     const { t } = useTranslation();
     const { settings, language, handleInitiateAdd } = useAppContext();
     const { handleAiTask } = useAI();
+    const { showModal, hideModal } = useModal();
 
     const [prompt, setPrompt] = useState('');
     const [aspectRatio, setAspectRatio] = useState<ImageAspectRatio>(settings.studioDefaultAspectRatio);
@@ -71,9 +114,34 @@ export const Studio: React.FC = () => {
         });
     }, [prompt, handleAiTask, settings, language]);
 
+    const handleDownload = useCallback((artwork: Artwork) => {
+        const link = document.createElement('a');
+        link.href = artwork.imageUrl;
+        link.download = `art-i-fact-studio-${artwork.id}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }, []);
+
+    const handleViewImageDetails = useCallback((artwork: Artwork) => {
+        showModal(artwork.title, <ImageDetailModalContent 
+            artwork={artwork}
+            onAddToGallery={() => {
+                handleInitiateAdd(artwork);
+                hideModal();
+            }}
+            onRemix={() => {
+                setRemixSource(artwork);
+                setPrompt(settings.defaultRemixPrompt);
+                hideModal();
+            }}
+            onDownload={() => handleDownload(artwork)}
+        />);
+    }, [showModal, hideModal, handleInitiateAdd, settings.defaultRemixPrompt, handleDownload]);
+
     const handleAction = remixSource ? handleRemix : handleGenerate;
-    const actionText = remixSource ? 'Remix Image' : 'Generate Image';
-    const placeholderText = remixSource ? `Describe your edits for "${remixSource.title}"...` : 'A futuristic cityscape in the style of Van Gogh...';
+    const actionText = remixSource ? t('studio.remix') : t('studio.generate');
+    const placeholderText = remixSource ? t('studio.placeholder.remix', { title: remixSource.title }) : t('studio.placeholder.generate');
 
     return (
         <div className="flex flex-col h-full">
@@ -84,9 +152,9 @@ export const Studio: React.FC = () => {
                 <div className="w-full md:w-1/3 flex flex-col gap-4">
                     {remixSource && (
                         <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-amber-500/50 animate-fade-in">
-                            <h3 className="font-semibold text-center mb-2">Remixing Artwork</h3>
+                            <h3 className="font-semibold text-center mb-2">{t('studio.remixing')}</h3>
                             <img src={remixSource.imageUrl} alt={remixSource.title} className="rounded-md w-full h-auto object-contain max-h-40" />
-                            <Button variant="secondary" size="sm" className="w-full mt-2" onClick={() => setRemixSource(null)}>Cancel Remix</Button>
+                            <Button variant="secondary" size="sm" className="w-full mt-2" onClick={() => setRemixSource(null)}>{t('studio.cancelRemix')}</Button>
                         </div>
                     )}
                     
@@ -100,7 +168,7 @@ export const Studio: React.FC = () => {
                     <div className="flex gap-2">
                         <Button onClick={handleEnhancePrompt} variant="secondary" className="w-full">
                             <MagicWandIcon className="w-5 h-5 mr-2" />
-                            Enhance
+                            {t('studio.enhance')}
                         </Button>
                         <Button onClick={handleAction} className="w-full">
                             <SparklesIcon className="w-5 h-5 mr-2" />
@@ -110,7 +178,7 @@ export const Studio: React.FC = () => {
 
                     {!remixSource && (
                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Aspect Ratio</label>
+                            <label className="text-sm font-medium">{t('studio.aspectRatio')}</label>
                             <div className="grid grid-cols-5 gap-2">
                                 {(['1:1', '16:9', '9:16', '4:3', '3:4'] as ImageAspectRatio[]).map(ratio => (
                                     <button 
@@ -125,19 +193,23 @@ export const Studio: React.FC = () => {
                         </div>
                     )}
                     
-                    <div className="space-y-2">
-                        <h3 className="text-sm font-semibold">Inspiration</h3>
+                     <div className="space-y-1">
+                        <h3 className="text-sm font-semibold mb-2">{t('studio.inspiration')}</h3>
                         {studioInspirationPrompts.map(cat => (
-                            <div key={cat.category}>
-                                <h4 className="text-xs text-gray-500 uppercase font-bold mb-1">{cat.category}</h4>
-                                <div className="flex flex-wrap gap-1">
+                            <AccordionItem key={cat.category} title={cat.category}>
+                                <div className="flex flex-wrap gap-1 pt-2">
                                     {cat.prompts.map(p => (
-                                        <button key={p} onClick={() => setPrompt(p)} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/50">
-                                            {p.substring(0, 30)}...
+                                        <button 
+                                            key={p} 
+                                            onClick={() => setPrompt(p)} 
+                                            className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                                            title={p}
+                                        >
+                                            {p.substring(0, 30)}{p.length > 30 ? '...' : ''}
                                         </button>
                                     ))}
                                 </div>
-                            </div>
+                            </AccordionItem>
                         ))}
                     </div>
                 </div>
@@ -146,18 +218,15 @@ export const Studio: React.FC = () => {
                 <div className="w-full md:w-2/3 bg-gray-200/50 dark:bg-black/20 p-4 rounded-lg flex-grow overflow-y-auto">
                     {generatedImages.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-center text-gray-500">
-                           <p>Your generated images will appear here.</p>
+                           <p>{t('studio.empty')}</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                             {generatedImages.map(img => (
-                                <div key={img.id} className="group relative">
-                                    <img src={img.imageUrl} alt={img.title} className="w-full h-auto object-cover rounded-lg aspect-square" />
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                                        <Button size="sm" onClick={() => handleInitiateAdd(img)}>Add to Gallery</Button>
-                                        <Button size="sm" variant="secondary" onClick={() => { setRemixSource(img); setPrompt(settings.defaultRemixPrompt); }}>
-                                            <ArrowPathIcon className="w-4 h-4 mr-1"/> Remix
-                                        </Button>
+                                <div key={img.id} className="group relative cursor-pointer" onClick={() => handleViewImageDetails(img)}>
+                                    <img src={img.imageUrl} alt={img.title} className="w-full h-auto object-cover rounded-lg aspect-square transition-transform group-hover:scale-105" />
+                                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <MagnifyingGlassPlusIcon className="w-10 h-10 text-white" />
                                     </div>
                                 </div>
                             ))}

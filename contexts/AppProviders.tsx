@@ -7,6 +7,9 @@ import { ModalProvider } from './ModalContext.tsx';
 import { AIStatusProvider } from './AIStatusContext.tsx';
 import { AppProvider } from './AppContext.tsx';
 import { OnlineStatusProvider } from './OnlineStatusContext.tsx';
+// FIX: Import AppSettingsProvider and ProfileProvider
+import { AppSettingsProvider } from './AppSettingsContext.tsx';
+import { ProfileProvider } from './ProfileContext.tsx';
 
 /**
  * A single component that wraps the entire application with all necessary providers.
@@ -27,9 +30,14 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children
                     <ToastProvider>
                         <ModalProvider>
                             <AIStatusProvider>
-                                <AppProvider>
-                                    {children}
-                                </AppProvider>
+                                {/* FIX: Add AppSettingsProvider and ProfileProvider wrapper */}
+                                <AppSettingsProvider>
+                                    <ProfileProvider>
+                                        <AppProvider>
+                                            {children}
+                                        </AppProvider>
+                                    </ProfileProvider>
+                                </AppSettingsProvider>
                             </AIStatusProvider>
                         </ModalProvider>
                     </ToastProvider>

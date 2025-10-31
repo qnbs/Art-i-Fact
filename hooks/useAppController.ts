@@ -13,8 +13,9 @@ import { db } from '../services/dbService.ts';
 
 export const useAppController = () => {
     // Hooks
-    const { appSettings, isLoading: settingsLoading } = useAppSettings();
-    const { profile, isLoading: profileLoading } = useProfile();
+    // FIX: Destructure setters to make them available to the controller.
+    const { appSettings, isLoading: settingsLoading, setAppSettings, resetAppSettings } = useAppSettings();
+    const { profile, isLoading: profileLoading, setProfile, resetProfile } = useProfile();
     
     // RTK State Management for UI
     const dispatch = useDispatch<AppDispatch>();
@@ -28,7 +29,7 @@ export const useAppController = () => {
     // Data Hooks
     // FIX: Consolidate all data hooks and their functions into this controller.
     const { projects, addProject, updateProject, deleteProject, isLoading: projectsLoading } = useProjects();
-    const { galleries, createGallery, updateGallery, deleteGallery, addArtworkToGallery, removeArtworkFromGallery, reorderArtworksInGallery, importGallery, duplicateGallery, isLoading: galleriesLoading } = useGallery();
+    const { galleries, createGallery, updateGallery, deleteGallery, addArtworkToGallery, removeArtworkFromGallery, reorderArtworksInGallery, importGallery, duplicateGallery, deleteGalleriesByProjectId, isLoading: galleriesLoading } = useGallery();
     const { entries, createJournalEntry, updateJournalEntry, deleteJournalEntry, deleteJournalsByProjectId, isLoading: journalLoading } = useJournal(appSettings.defaultJournalTitle);
     
     const isLoading = settingsLoading || profileLoading || projectsLoading || galleriesLoading || journalLoading;
@@ -82,6 +83,7 @@ export const useAppController = () => {
         activeProject,
         activeGallery,
         activeProjectId,
+        activeGalleryId,
         profile,
         projects,
         galleries,
@@ -90,6 +92,15 @@ export const useAppController = () => {
         projectJournals,
         initialDiscoverSearch,
         isCommandPaletteOpen,
+        appSettings,
+        
+        // Settings handlers
+        setAppSettings,
+        resetAppSettings,
+
+        // Profile handlers
+        setProfile,
+        resetProfile,
         
         // Simple Handlers & Setters
         handleSetView,
@@ -119,6 +130,7 @@ export const useAppController = () => {
         deleteGallery,
         importGallery,
         duplicateGallery,
+        deleteGalleriesByProjectId,
         
         // Project handlers
         addProject,

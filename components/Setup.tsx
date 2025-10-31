@@ -13,7 +13,8 @@ import { db } from '../services/dbService.ts';
 
 export const Setup: React.FC = () => {
     const { t, language, setLanguage } = useTranslation();
-    const { settings: appSettings, updateSettings, resetSettings } = useAppContext();
+    // FIX: Destructure appSettings, updateSettings, and resetSettings from context.
+    const { appSettings, updateSettings, resetSettings } = useAppContext();
     const { showToast } = useToast();
 
     const handleReset = () => {
