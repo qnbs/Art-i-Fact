@@ -2,7 +2,7 @@ import React from 'react';
 // FIX: Added .ts extension to fix module resolution error.
 import type { AppSettings } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
+import { useAppContext } from '../contexts/AppContext.tsx';
 import { useToast } from '../contexts/ToastContext.tsx';
 import { Section, SettingRow, Toggle } from './ui/SettingsComponents.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
@@ -13,11 +13,11 @@ import { db } from '../services/dbService.ts';
 
 export const Setup: React.FC = () => {
     const { t, language, setLanguage } = useTranslation();
-    const { appSettings, setAppSettings, resetAppSettings } = useAppSettings();
+    const { settings: appSettings, updateSettings, resetSettings } = useAppContext();
     const { showToast } = useToast();
 
     const handleReset = () => {
-        resetAppSettings();
+        resetSettings();
         showToast(t('toast.settings.reset'), 'success');
     };
     
@@ -54,7 +54,8 @@ export const Setup: React.FC = () => {
     };
     
     const handleUpdate = (key: keyof AppSettings, value: any) => {
-        setAppSettings({ [key]: value });
+        updateSettings({ [key]: value });
+        showToast(t('toast.settings.updated'), 'success');
     };
 
     return (

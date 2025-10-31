@@ -60,7 +60,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [language]);
 
   const t = useCallback((key: string, options?: { [key: string]: string | number }): string => {
-    const locale: Locale = locales[language] || locales.en;
+    const locale: Locale = (locales as any)[language] || locales.en;
     let translation = getNestedTranslation(locale, key);
 
     if (translation === undefined) {

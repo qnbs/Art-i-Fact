@@ -1,31 +1,24 @@
+
 import React from 'react';
 import type { Project } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useAppContext } from '../contexts/AppContext.tsx';
 import { HomeIcon, PlusCircleIcon, PencilIcon, TrashIcon, EllipsisVerticalIcon } from './IconComponents.tsx';
 import { Button } from './ui/Button.tsx';
 import { EmptyState } from './ui/EmptyState.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
 
-interface WorkspaceProps {
-    projects: Project[];
-    onNewProject: () => void;
-    onSelectProject: (id: string) => void;
-    onEditProject: (project: Project) => void;
-    onDeleteProject: (project: Project) => void;
-    galleryCountByProject: (projectId: string) => number;
-    journalCountByProject: (projectId: string) => number;
-    newlyCreatedId: string | null;
-}
-
-const ProjectCard: React.FC<{ 
-    project: Project; 
+interface ProjectCardProps {
+    project: Project;
     isNew: boolean;
-    onSelect: () => void; 
+    onSelect: () => void;
     onEdit: () => void;
     onDelete: () => void;
     galleryCount: number;
     journalCount: number;
-}> = React.memo(({ project, isNew, onSelect, onEdit, onDelete, galleryCount, journalCount }) => {
+}
+
+const ProjectCard: React.FC<ProjectCardProps> = React.memo(({ project, isNew, onSelect, onEdit, onDelete, galleryCount, journalCount }) => {
     const { t } = useTranslation();
     
     const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
@@ -75,17 +68,18 @@ const ProjectCard: React.FC<{
 });
 ProjectCard.displayName = 'ProjectCard';
 
-export const Workspace: React.FC<WorkspaceProps> = ({
-    projects,
-    onNewProject,
-    onSelectProject,
-    onEditProject,
-    onDeleteProject,
-    galleryCountByProject,
-    journalCountByProject,
-    newlyCreatedId,
-}) => {
+export const Workspace: React.FC = () => {
     const { t } = useTranslation();
+    const {
+        projects,
+        handleNewProject,
+        handleSelectProject,
+        handleEditProject,
+        handleDeleteProject,
+        galleryCountByProject,
+        journalCountByProject,
+        newlyCreatedProjectId,
+    } = useAppContext();
 
     if (projects.length === 0) {
         return (
@@ -95,7 +89,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
                     title={t('workspace.empty.title')}
                     message={t('workspace.empty.prompt')}
                 >
-                    <Button onClick={onNewProject}>
+                    <Button onClick={handleNewProject}>
                         <PlusCircleIcon className="w-5 h-5 mr-2" />
                         {t('workspace.empty.button')}
                     </Button>
@@ -107,7 +101,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     return (
         <div className="h-full flex flex-col">
             <PageHeader title={t('workspace.title')} icon={<HomeIcon className="w-8 h-8" />} >
-                <Button onClick={onNewProject}>
+                <Button onClick={handleNewProject}>
                     <PlusCircleIcon className="w-5 h-5 mr-2" />
                     {t('workspace.newProject')}
                 </Button>
@@ -119,10 +113,10 @@ export const Workspace: React.FC<WorkspaceProps> = ({
                         <ProjectCard
                             key={project.id}
                             project={project}
-                            isNew={project.id === newlyCreatedId}
-                            onSelect={() => onSelectProject(project.id)}
-                            onEdit={() => onEditProject(project)}
-                            onDelete={() => onDeleteProject(project)}
+                            isNew={project.id === newlyCreatedProjectId}
+                            onSelect={() => handleSelectProject(project.id)}
+                            onEdit={() => handleEditProject(project)}
+                            onDelete={() => handleDeleteProject(project)}
                             galleryCount={galleryCountByProject(project.id)}
                             journalCount={journalCountByProject(project.id)}
                         />

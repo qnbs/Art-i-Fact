@@ -1,10 +1,8 @@
 import React from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
-import { CommandLineIcon, UserCircleIcon, EllipsisVerticalIcon, Cog6ToothIcon, QuestionMarkCircleIcon } from './IconComponents.tsx';
+import { CommandLineIcon, UserCircleIcon, EllipsisVerticalIcon, Cog6ToothIcon, QuestionMarkCircleIcon, SunIcon, MoonIcon } from './IconComponents.tsx';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-// FIX: Added .ts extension to fix module resolution error.
 import type { ActiveView } from '../types.ts';
-import { useProfile } from '../contexts/ProfileContext.tsx';
+import { useAppContext } from '../contexts/AppContext.tsx';
 import { Avatar } from './ui/Avatar.tsx';
 
 interface HeaderProps {
@@ -17,7 +15,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onOpenCommandPalette, activeProjectTitle, activeGalleryTitle }) => {
   const { t } = useTranslation();
-  const { profile } = useProfile();
+  const { profile, settings, toggleTheme } = useAppContext();
 
   const getTitle = () => {
     if (activeView === 'project' && activeProjectTitle) return activeProjectTitle;
@@ -32,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onOpe
         <button
           onClick={onOpenCommandPalette}
           className="rounded-md p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-          aria-label="Open command palette"
+          aria-label={t('header.openCommandPalette')}
         >
           <CommandLineIcon className="h-6 w-6" />
         </button>
@@ -51,6 +49,11 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onOpe
                  <button onClick={() => setActiveView('help')} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <QuestionMarkCircleIcon className="w-5 h-5" /> {t('view.help')}
                 </button>
+                <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                <button onClick={toggleTheme} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    {settings.theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                    <span>{settings.theme === 'dark' ? t('settings.general.theme.lightMode') : t('settings.general.theme.darkMode')}</span>
+                </button>
             </div>
         </details>
       </div>
@@ -62,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onOpe
             <button
               onClick={onOpenCommandPalette}
               className="rounded-md p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-              aria-label="Open command palette"
+              aria-label={t('header.openCommandPalette')}
             >
               <CommandLineIcon className="h-6 w-6" />
             </button>

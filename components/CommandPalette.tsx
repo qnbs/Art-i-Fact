@@ -73,7 +73,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
     if (!paletteRoot) return null;
 
     const groupedCommands = filteredCommands.reduce((acc, command) => {
-        const section = command.section || 'General';
+        const section = command.section || t('commandPalette.sections.general');
         if (!acc[section]) {
             acc[section] = [];
         }
@@ -83,11 +83,12 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
 
     const CommandList = () => (
         <>
-        {Object.entries(groupedCommands).map(([section, cmds]) => (
+        {/* FIX: Explicitly cast Object.entries to resolve type inference issue. */}
+        {(Object.entries(groupedCommands) as [string, Command[]][]).map(([section, cmds]) => (
             <div key={section} className="mb-2">
                 <h3 className="text-xs font-semibold uppercase text-gray-400 px-3 py-1">{section}</h3>
                 <ul>
-                    {cmds.map((command, i) => {
+                    {cmds.map((command) => {
                         const index = filteredCommands.findIndex(c => c.id === command.id);
                         return (
                         <li
@@ -127,7 +128,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
                         type="text"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Type a command or search..."
+                        placeholder={t('commandPalette.placeholder')}
                         className="w-full bg-transparent border-none py-3 pl-10 pr-4 text-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-0"
                     />
                 </div>
@@ -136,7 +137,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
                         <CommandList />
                     ) : (
                         <div className="text-center py-8 text-gray-500">
-                            No results found for "{searchTerm}"
+                            {t('commandPalette.noResults', { query: searchTerm })}
                         </div>
                     )}
                 </div>

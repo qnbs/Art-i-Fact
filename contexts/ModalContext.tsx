@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
-import { Modal } from '../components/Modal.tsx';
 
 interface ModalContextType {
   showModal: (title: string, content: React.ReactNode, onCloseCallback?: () => void) => void;
   hideModal: () => void;
+  isOpen: boolean;
+  modalContent: { title: string; content: React.ReactNode };
 }
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
@@ -30,11 +31,13 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [onCloseAction]);
 
   return (
-    <ModalContext.Provider value={{ showModal, hideModal }}>
+    <ModalContext.Provider value={{ showModal, hideModal, isOpen, modalContent }}>
       {children}
-      <Modal isOpen={isOpen} onClose={hideModal} title={modalContent.title}>
-        {modalContent.content}
-      </Modal>
+      {/* 
+        The Modal component is no longer rendered here.
+        It is now rendered in AppLayout.tsx, which is a descendant of AppProvider.
+        This ensures that any content rendered inside the modal has access to AppContext.
+       */}
     </ModalContext.Provider>
   );
 };

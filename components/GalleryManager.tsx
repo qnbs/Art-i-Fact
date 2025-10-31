@@ -1,27 +1,19 @@
-import React, { useCallback } from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
+
+
+import React from 'react';
 import type { Gallery, Project } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-// FIX: Added .tsx extension to fix module resolution error.
+import { useAppContext } from '../contexts/AppContext.tsx';
 import { GalleryIcon, PlusCircleIcon, TrashIcon, DocumentDuplicateIcon, EllipsisVerticalIcon, HomeIcon } from './IconComponents.tsx';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 import { EmptyState } from './ui/EmptyState.tsx';
 import { Button } from './ui/Button.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
-import { useAppSettings } from '../../contexts/AppSettingsContext.tsx';
-import { useModal } from '../../contexts/ModalContext.tsx';
-import { useToast } from '../../contexts/ToastContext.tsx';
 
 interface GalleryManagerProps {
     galleries: Gallery[];
-    projects?: Project[];
     onCreateNew: () => void;
-    onSelectGallery: (id: string) => void;
-    onDeleteGallery: (id: string) => void;
-    onDuplicateGallery?: (id: string) => void;
     hideHeader?: boolean;
-    newlyCreatedId?: string | null;
 }
 
 const StatusBadge: React.FC<{status: 'draft' | 'published'}> = ({ status }) => {
@@ -109,33 +101,15 @@ const GalleryCard: React.FC<{
     );
 });
 
-export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, projects, onCreateNew, onSelectGallery, onDeleteGallery, onDuplicateGallery, hideHeader = false, newlyCreatedId }) => {
+export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, onCreateNew, hideHeader = false }) => {
     const { t } = useTranslation();
-    const { appSettings } = useAppSettings();
-    const { showModal, hideModal } = useModal();
-    const { showToast } = useToast();
-    
-    const confirmAndDelete = useCallback((gallery: Gallery) => {
-        onDeleteGallery(gallery.id);
-        showToast(t('toast.gallery.deleted', { title: gallery.title }), 'success');
-        hideModal();
-    }, [onDeleteGallery, showToast, t, hideModal]);
-
-    const handleDelete = useCallback((gallery: Gallery) => {
-        if (appSettings.showDeletionConfirmation) {
-            showModal(t('delete.gallery.title'), (
-                <div>
-                    <p>{t('delete.gallery.confirm', { title: gallery.title })}</p>
-                    <div className="flex justify-end gap-2 mt-4">
-                        <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
-                        <Button variant="danger" onClick={() => confirmAndDelete(gallery)}>{t('remove')}</Button>
-                    </div>
-                </div>
-            ));
-        } else {
-            confirmAndDelete(gallery);
-        }
-    }, [appSettings.showDeletionConfirmation, showModal, t, confirmAndDelete, hideModal]);
+    const { 
+        projects, 
+        handleSelectGallery, 
+        handleDeleteGalleryWithConfirmation, 
+        handleDuplicateGallery, 
+        newlyCreatedGalleryId 
+    } = useAppContext();
     
     if (galleries.length === 0 && !hideHeader) {
          return (
@@ -171,10 +145,10 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, proje
                         key={gallery.id} 
                         gallery={gallery} 
                         project={projects?.find(p => p.id === gallery.projectId)}
-                        isNew={gallery.id === newlyCreatedId}
-                        onSelect={() => onSelectGallery(gallery.id)} 
-                        onDelete={() => handleDelete(gallery)}
-                        onDuplicate={onDuplicateGallery ? () => onDuplicateGallery(gallery.id) : undefined}
+                        isNew={gallery.id === newlyCreatedGalleryId}
+                        onSelect={() => handleSelectGallery(gallery.id)} 
+                        onDelete={() => handleDeleteGalleryWithConfirmation(gallery.id)}
+                        onDuplicate={handleDuplicateGallery ? () => handleDuplicateGallery(gallery.id) : undefined}
                     />
                 ))}
             </div>

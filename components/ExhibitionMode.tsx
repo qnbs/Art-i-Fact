@@ -5,7 +5,7 @@ import type { Artwork, AudioGuide, Profile } from '../types.ts';
 import { CloseIcon, ArrowLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, SpeakerWaveIcon, SpeakerXMarkIcon, DocumentTextIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from './IconComponents.tsx';
 // FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
+import { useAppContext } from '../contexts/AppContext.tsx';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis.ts';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 
@@ -24,7 +24,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
     isPublicView = false, galleryTitle, curatorProfile 
 }) => {
   const { t } = useTranslation();
-  const { appSettings } = useAppSettings();
+  const { settings: appSettings } = useAppContext();
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [isSlideshowPlaying, setSlideshowPlaying] = useState(appSettings.exhibitAutoplay && !audioGuide);
   const [isAudioGuideActive, setAudioGuideActive] = useState(appSettings.exhibitAutoplay && !!audioGuide);

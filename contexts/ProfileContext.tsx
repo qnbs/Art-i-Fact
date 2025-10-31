@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { useProfile as useProfileHook } from '../hooks/useProfile.ts';
 import type { Profile } from '../types.ts';

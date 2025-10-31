@@ -228,7 +228,7 @@ export const generateImage = async (prompt: string, aspectRatio: string): Promis
 export const remixImage = async (base64ImageData: string, prompt: string): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image-preview',
+            model: 'gemini-2.5-flash-image',
             contents: {
                 parts: [
                     { inlineData: { data: base64ImageData, mimeType: 'image/jpeg' } },
@@ -236,7 +236,7 @@ export const remixImage = async (base64ImageData: string, prompt: string): Promi
                 ],
             },
             config: {
-                responseModalities: [Modality.IMAGE, Modality.TEXT],
+                responseModalities: [Modality.IMAGE],
             },
         });
 
@@ -278,9 +278,13 @@ export const generateTrailerVideo = async (gallery: Gallery): Promise<string> =>
     
     try {
         let operation = await ai.models.generateVideos({
-            model: 'veo-2.0-generate-001',
+            model: 'veo-3.1-fast-generate-preview',
             prompt: prompt,
-            config: { numberOfVideos: 1 }
+            config: { 
+                numberOfVideos: 1,
+                resolution: '1080p',
+                aspectRatio: '16:9'
+            }
         });
 
         while (!operation.done) {

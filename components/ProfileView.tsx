@@ -1,20 +1,10 @@
 import React from 'react';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { useProfile } from '../contexts/ProfileContext.tsx';
+import { useAppContext } from '../contexts/AppContext.tsx';
 import { Avatar } from './ui/Avatar.tsx';
 import { Cog6ToothIcon, QuestionMarkCircleIcon, ChevronRightIcon, UserCircleIcon, PencilIcon } from './IconComponents.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
 import { Button } from './ui/Button.tsx';
-
-interface ProfileViewProps {
-    setActiveView: (view: 'setup' | 'help') => void;
-    onEditProfile: () => void;
-    stats: {
-        galleriesCurated: number;
-        artworksDiscovered: number;
-        aiArtworksCreated: number;
-    };
-}
 
 const StatItem: React.FC<{ value: number; label: string; }> = React.memo(({ value, label }) => (
     <div className="text-center p-4 bg-gray-100 dark:bg-gray-900/50 rounded-lg">
@@ -22,6 +12,7 @@ const StatItem: React.FC<{ value: number; label: string; }> = React.memo(({ valu
         <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-1">{label}</p>
     </div>
 ));
+StatItem.displayName = 'StatItem';
 
 const ProfileLink: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void; }> = React.memo(({ icon, label, onClick }) => (
     <button onClick={onClick} className="w-full flex items-center p-4 bg-white dark:bg-gray-900/70 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/80 transition-colors shadow-sm hover:shadow-md">
@@ -30,15 +21,22 @@ const ProfileLink: React.FC<{ icon: React.ReactNode; label: string; onClick: () 
         <ChevronRightIcon className="w-6 h-6 text-gray-400" />
     </button>
 ));
+ProfileLink.displayName = 'ProfileLink';
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ setActiveView, onEditProfile, stats }) => {
+export const ProfileView: React.FC = () => {
     const { t } = useTranslation();
-    const { profile } = useProfile();
+    const { handleSetView, handleEditProfile, galleries, profile } = useAppContext();
+
+    const stats = {
+        galleriesCurated: galleries.length,
+        artworksDiscovered: galleries.reduce((sum, g) => sum + g.artworks.filter(a => !a.isGenerated).length, 0),
+        aiArtworksCreated: galleries.reduce((sum, g) => sum + g.artworks.filter(a => a.isGenerated).length, 0),
+    };
 
     return (
         <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
             <PageHeader title={t('profile.title')} icon={<UserCircleIcon className="w-8 h-8" />}>
-                 <Button variant="secondary" onClick={onEditProfile}>
+                 <Button variant="secondary" onClick={handleEditProfile}>
                     <PencilIcon className="w-5 h-5 mr-2" />
                     {t('profile.edit.button')}
                 </Button>
@@ -58,8 +56,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ setActiveView, onEditP
             </div>
 
             <div className="space-y-4">
-                <ProfileLink icon={<Cog6ToothIcon className="w-7 h-7" />} label={t('settings.title')} onClick={() => setActiveView('setup')} />
-                <ProfileLink icon={<QuestionMarkCircleIcon className="w-7 h-7" />} label={t('help.title')} onClick={() => setActiveView('help')} />
+                <ProfileLink icon={<Cog6ToothIcon className="w-7 h-7" />} label={t('settings.title')} onClick={() => handleSetView('setup')} />
+                <ProfileLink icon={<QuestionMarkCircleIcon className="w-7 h-7" />} label={t('help.title')} onClick={() => handleSetView('help')} />
             </div>
         </div>
     );

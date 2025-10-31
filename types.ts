@@ -1,5 +1,4 @@
-
-// FIX: Removed unused and incorrect imports for types that are defined locally or not needed.
+// FIX: Add 'community' to ActiveView to support the Community page and resolve type errors.
 export type ActiveView = 'workspace' | 'project' | 'discover' | 'gallery' | 'gallerysuite' | 'studio' | 'journal' | 'profile' | 'setup' | 'help' | 'community';
 
 export interface Artwork {

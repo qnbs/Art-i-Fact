@@ -5,6 +5,7 @@ const APP_SHELL_URLS = [
   '/',
   '/index.html',
   '/index.tsx',
+  '/manifest.json',
   // Using the data URI icon from index.html
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='0' y1='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23fbbf24'/%3E%3Cstop offset='100%25' stop-color='%23d97706'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='15' fill='url(%23g)'/%3E%3Cpath d='M25 80 L50 30 L75 80' stroke='white' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='50' cy='60' r='7' fill='white'/%3E%3C/svg%3E",
 ];

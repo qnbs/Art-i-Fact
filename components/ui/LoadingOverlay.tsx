@@ -2,6 +2,7 @@ import React from 'react';
 import { SpinnerIcon } from '../IconComponents.tsx';
 import { RetryPrompt } from './RetryPrompt.tsx';
 import type { AiError } from '../../contexts/AIStatusContext.tsx';
+import { useTranslation } from '../../contexts/TranslationContext.tsx';
 
 interface LoadingOverlayProps {
   message: string;
@@ -10,6 +11,7 @@ interface LoadingOverlayProps {
 }
 
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message, isActive, error }) => {
+  const { t } = useTranslation();
   if (!isActive && !error) {
     return null;
   }
@@ -23,7 +25,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message, isActiv
     >
       <div className="text-center text-white">
         {error ? (
-           <RetryPrompt title="AI Task Failed" message={error.message} onRetry={error.onRetry} />
+           <RetryPrompt title={t('toast.error.taskFailed')} message={error.message} onRetry={error.onRetry} />
         ) : (
           <>
             <SpinnerIcon className="w-16 h-16 text-amber-500 mx-auto mb-6" />

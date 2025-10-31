@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useContext } from 'react';
 import { useAppSettings as useAppSettingsHook } from '../hooks/useAppSettings.ts';
 import type { AppSettings } from '../types.ts';

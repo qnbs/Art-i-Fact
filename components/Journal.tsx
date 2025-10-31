@@ -1,309 +1,147 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
-import type { JournalEntry, Gallery } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution error.
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import type { JournalEntry } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useAppContext } from '../contexts/AppContext.tsx';
 import { useAI } from '../contexts/AIStatusContext.tsx';
-import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
-import { useModal } from '../contexts/ModalContext.tsx';
-import { useToast } from '../contexts/ToastContext.tsx';
-// FIX: Added .tsx extension to fix module resolution error.
-import { JournalIcon, SparklesIcon, TrashIcon, CheckCircleIcon, BookOpenIcon, PencilIcon, SpinnerIcon, PlusCircleIcon } from './IconComponents.tsx';
-import { MarkdownRenderer } from './MarkdownRenderer.tsx';
-import { Button } from './ui/Button.tsx';
-import { EmptyState } from './ui/EmptyState.tsx';
-import { PageHeader } from './ui/PageHeader.tsx';
 import * as gemini from '../services/geminiService.ts';
-import { GenerateContentResponse } from '@google/genai';
+import { useDebounce } from '../hooks/useDebounce.ts';
+import { MarkdownRenderer } from './MarkdownRenderer.tsx';
+import { PageHeader } from './ui/PageHeader.tsx';
+import { Button } from './ui/Button.tsx';
+import { JournalIcon, PlusCircleIcon, SparklesIcon } from './IconComponents.tsx';
+import { EmptyState } from './ui/EmptyState.tsx';
 
 interface JournalProps {
     entries: JournalEntry[];
-    galleries: Gallery[];
     language: 'de' | 'en';
     activeEntryId?: string | null;
-    onSelectEntry?: (id: string | null) => void;
-    onUpdateEntry: (id: string, updatedEntry: Partial<Omit<JournalEntry, 'id' | 'createdAt'>>) => void;
+    onSelectEntry: (id: string) => void;
+    onUpdateEntry: (id: string, updates: Partial<JournalEntry>) => void;
     onDeleteEntry: (id: string) => void;
-    onNewEntry: () => string;
+    onNewEntry: () => Promise<string>;
 }
 
-const JournalEditor: React.FC<Omit<JournalProps, 'entries' | 'galleries' | 'onNewEntry'> & { entry: JournalEntry }> = ({
-    entry, onUpdateEntry, language
-}) => {
+export const Journal: React.FC<JournalProps> = ({ entries, language, activeEntryId: externalActiveId, onSelectEntry, onUpdateEntry, onNewEntry }) => {
     const { t } = useTranslation();
-    const { handleAiTask, activeAiTask } = useAI();
-    const { appSettings } = useAppSettings();
-    const { showToast } = useToast();
-    const [title, setTitle] = useState(entry.title);
-    const [content, setContent] = useState(entry.content);
-    const [researchTopic, setResearchTopic] = useState('');
+    const { settings } = useAppContext();
+    const { handleAiTask } = useAI();
+    const [internalActiveId, setInternalActiveId] = useState<string | null>(null);
 
-    useEffect(() => {
-        setTitle(entry.title);
-        setContent(entry.content);
-    }, [entry]);
-
-    const handleSave = useCallback(() => {
-        onUpdateEntry(entry.id, { title, content });
-        showToast(t('toast.journal.saved'), 'success');
-    }, [entry.id, title, content, onUpdateEntry, showToast, t]);
-
-    const handleBlur = () => {
-        if (appSettings.autoSaveJournal) {
-            if (title !== entry.title || content !== entry.content) {
-                onUpdateEntry(entry.id, { title, content });
-            }
-        }
-    };
-    
-    const appendSources = (response: GenerateContentResponse, topic: string) => {
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-        if (groundingChunks && groundingChunks.length > 0) {
-            const sources = groundingChunks
-                .map((c: any) => c.web?.uri)
-                .filter((uri: string | undefined): uri is string => !!uri)
-                .filter((uri: string, index: number, self: string[]) => self.indexOf(uri) === index);
-            
-            if (sources.length > 0) {
-                const sourcesTitle = language === 'de' ? 'Quellen' : 'Sources';
-                let sourcesText = `\n\n---\n**${sourcesTitle}:**\n`;
-                sources.forEach((source: string) => {
-                    sourcesText += `- ${source}\n`;
-                });
-                return sourcesText;
-            }
-        }
-        return '';
-    };
-
-    const handleResearch = async () => {
-        if (!researchTopic) return;
-        const currentContent = content;
-        const topicForHeader = researchTopic;
-        setResearchTopic('');
-        
-        const header = `\n\n### ${t('journal.research.heading', { topic: topicForHeader })}\n\n`;
-
-        await handleAiTask('journal', async () => {
-            if (appSettings.streamJournalResponses) {
-                const resultStream = await gemini.generateJournalInsightsStream(topicForHeader, appSettings, language);
-                let firstChunk = true;
-                let fullResponseText = '';
-                for await (const chunk of resultStream) {
-                    if (firstChunk) {
-                        setContent(prev => `${prev}${header}`);
-                        firstChunk = false;
-                    }
-                    if (chunk.text) {
-                        fullResponseText += chunk.text;
-                        setContent(prev => `${prev}${chunk.text}`);
-                    }
-                }
-                // At the end of the stream, we don't have the full response object for sources.
-                // This is a limitation of streaming with grounding. 
-                // We'll update the content with the streamed text.
-                return fullResponseText;
-            } else {
-                const response = await gemini.generateJournalInsights(topicForHeader, appSettings, language);
-                const responseText = response.text;
-                const sourcesText = appendSources(response, topicForHeader);
-                const combinedText = `${responseText}${sourcesText}`;
-                setContent(prev => `${prev}${header}${combinedText}`);
-                return combinedText; // Return the text that was added
-            }
-        }, {
-            onEnd: (result) => {
-                if (result === undefined) { // Task failed
-                    setContent(currentContent);
-                } else if (appSettings.autoSaveJournal) {
-                    // onUpdateEntry is called inside handleBlur, which should be triggered
-                    // or we can call it manually after a state update
-                    onUpdateEntry(entry.id, { title, content: `${currentContent}${header}${result}` });
-                }
-            }
-        });
-    };
-
-    const isDirty = title !== entry.title || content !== entry.content;
-
-    return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-900/50 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onBlur={handleBlur}
-                    className="text-2xl font-bold bg-transparent focus:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800 rounded-md p-1 w-full"
-                />
-                {!appSettings.autoSaveJournal && isDirty && (
-                     <Button size="sm" onClick={handleSave}>
-                        <CheckCircleIcon className="w-4 h-4 mr-2" />
-                        {t('save')}
-                    </Button>
-                )}
-            </div>
-            <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onBlur={handleBlur}
-                placeholder={t('journal.editor.placeholder')}
-                className="w-full flex-grow bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-md p-3 text-base resize-none mb-4"
-            />
-            <div className="flex-shrink-0 space-y-2">
-                <div className="flex items-center gap-2">
-                    <input
-                        type="text"
-                        value={researchTopic}
-                        onChange={(e) => setResearchTopic(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleResearch() }}
-                        placeholder={t('journal.research.placeholder')}
-                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md py-1.5 px-3"
-                    />
-                    <Button variant="secondary" onClick={handleResearch} disabled={!researchTopic || activeAiTask === 'journal'}>
-                        {activeAiTask === 'journal' ? <SpinnerIcon className="w-5 h-5"/> : <SparklesIcon className="w-5 h-5" />}
-                    </Button>
-                </div>
-                <div>
-                     <h4 className="text-sm font-semibold mb-2">{t('journal.preview')}</h4>
-                     <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md max-h-48 overflow-y-auto">
-                        <MarkdownRenderer markdown={content} />
-                     </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export const Journal: React.FC<JournalProps> = (props) => {
-    const { t } = useTranslation();
-    const { showModal, hideModal } = useModal();
-    const { showToast } = useToast();
-    const { appSettings } = useAppSettings();
-    const { entries, onDeleteEntry, onNewEntry } = props;
-    
-    const [internalActiveEntryId, setInternalActiveEntryId] = useState<string | null>(null);
-
-    const isControlled = props.activeEntryId !== undefined;
-    const activeEntryId = isControlled ? props.activeEntryId : internalActiveEntryId;
-    const onSelectEntry = isControlled ? props.onSelectEntry! : setInternalActiveEntryId;
-
-    useEffect(() => {
-        if (!isControlled && activeEntryId && !entries.find(e => e.id === activeEntryId)) {
-            setInternalActiveEntryId(null);
-        }
-    }, [entries, activeEntryId, isControlled]);
+    const activeEntryId = externalActiveId ?? internalActiveId;
+    const activeEntry = entries.find(e => e.id === activeEntryId);
     
     useEffect(() => {
-        if (!activeEntryId && entries.length > 0 && !isControlled) {
-            setInternalActiveEntryId(entries[0].id);
+        if (!activeEntryId && entries.length > 0) {
+            handleSelectEntry(entries[0].id);
         }
-    }, [entries, activeEntryId, isControlled]);
+    }, [entries, activeEntryId]);
 
-    const activeEntry = useMemo(() => entries.find(e => e.id === activeEntryId), [entries, activeEntryId]);
-    
-    const confirmAndDelete = useCallback((entryId: string, entryTitle: string) => {
-        onDeleteEntry(entryId);
-        if (activeEntryId === entryId) {
-            onSelectEntry(null);
-        }
-        showToast(t('toast.journal.deleted'), 'success');
-        hideModal();
-    }, [onDeleteEntry, activeEntryId, onSelectEntry, showToast, t, hideModal]);
-
-    const handleDelete = useCallback((e: React.MouseEvent, entryId: string, entryTitle: string) => {
-        e.stopPropagation();
-        if (appSettings.showDeletionConfirmation) {
-            showModal(t('journal.delete.title'), (
-                <div>
-                    <p>{t('journal.delete.confirm', { title: entryTitle })}</p>
-                    <div className="flex justify-end gap-2 mt-4">
-                        <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
-                        <Button variant="danger" onClick={() => confirmAndDelete(entryId, entryTitle)}>{t('remove')}</Button>
-                    </div>
-                </div>
-            ));
-        } else {
-            confirmAndDelete(entryId, entryTitle);
-        }
-    }, [showModal, t, appSettings.showDeletionConfirmation, confirmAndDelete, hideModal]);
-    
-    const handleNew = useCallback(() => {
-        const newId = onNewEntry();
-        onSelectEntry(newId);
-    }, [onNewEntry, onSelectEntry]);
-
-    if (entries.length === 0 && !isControlled) {
-        return (
-            <div className="h-full">
-                <PageHeader title={t('journal.title')} icon={<JournalIcon className="w-8 h-8" />} >
-                    <Button onClick={handleNew}>
-                        <PlusCircleIcon className="w-5 h-5 mr-2" />
-                        {t('journal.new')}
-                    </Button>
-                </PageHeader>
-                <EmptyState 
-                    icon={<JournalIcon className="w-16 h-16" />}
-                    title={t('journal.empty.title')}
-                    message={t('journal.empty.prompt')}
-                >
-                     <Button onClick={handleNew}>
-                        <PlusCircleIcon className="w-5 h-5 mr-2" />
-                        {t('journal.new')}
-                    </Button>
-                </EmptyState>
-            </div>
-        );
+    const handleSelectEntry = (id: string) => {
+        onSelectEntry(id);
+        setInternalActiveId(id);
     }
     
-    return (
-        <div className="flex flex-col h-full">
-            {!isControlled && <PageHeader title={t('journal.title')} icon={<JournalIcon className="w-8 h-8" />} >
-                <Button onClick={handleNew}>
-                    <PlusCircleIcon className="w-5 h-5 mr-2" />
+    const debouncedContent = useDebounce(activeEntry?.content, 1000);
+
+    useEffect(() => {
+        if (settings.autoSaveJournal && activeEntry && debouncedContent !== undefined) {
+             onUpdateEntry(activeEntry.id, { content: debouncedContent });
+        }
+    }, [debouncedContent, activeEntry, onUpdateEntry, settings.autoSaveJournal]);
+
+    const handleGetInsights = useCallback(async () => {
+        if (!activeEntry) return;
+
+        if (settings.streamJournalResponses) {
+            let fullText = '';
+            try {
+                const stream = await gemini.generateJournalInsightsStream(activeEntry.title, settings, language);
+                for await (const chunk of stream) {
+                    fullText += chunk.text;
+                    onUpdateEntry(activeEntry.id, { content: fullText });
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        } else {
+            handleAiTask('journal', () => gemini.generateJournalInsights(activeEntry.title, settings, language), {
+                onEnd: (result) => {
+                    if (result) {
+                        onUpdateEntry(activeEntry.id, { content: result.text });
+                    }
+                }
+            });
+        }
+    }, [activeEntry, settings, language, onUpdateEntry, handleAiTask]);
+
+    if (entries.length === 0) {
+        return (
+            <EmptyState
+                icon={<JournalIcon className="w-16 h-16"/>}
+                title={t('journal.empty.title')}
+                message={t('journal.empty.prompt')}
+            >
+                <Button onClick={onNewEntry}>
+                    <PlusCircleIcon className="w-5 h-5 mr-2"/>
                     {t('journal.new')}
                 </Button>
-            </PageHeader>}
+            </EmptyState>
+        );
+    }
 
-            <div className="flex flex-col md:flex-row h-full gap-6 flex-grow">
-                <div className="w-full md:w-1/3 md:h-full flex-shrink-0 flex flex-col">
-                    <div className="flex-grow overflow-y-auto pr-2">
-                        <div className="space-y-2">
+    return (
+        <div className="flex flex-col h-full">
+            <PageHeader title={t('view.journal')} icon={<JournalIcon className="w-8 h-8"/>}>
+                <Button onClick={onNewEntry} size="sm">
+                    <PlusCircleIcon className="w-4 h-4 mr-1"/>
+                    {t('journal.new')}
+                </Button>
+            </PageHeader>
+            <div className="flex-grow flex gap-6 overflow-hidden">
+                {/* Entry List */}
+                <div className="w-1/3 flex-shrink-0 overflow-y-auto pr-2">
+                    <ul className="space-y-2">
                         {entries.map(entry => (
-                            <button
-                                key={entry.id}
-                                onClick={() => onSelectEntry(entry.id)}
-                                className={`w-full text-left p-3 rounded-md group transition-colors ${activeEntryId === entry.id ? 'bg-amber-100 dark:bg-amber-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'}`}
-                            >
-                                <div className="flex justify-between items-start">
-                                    <h4 className={`font-semibold truncate ${activeEntryId === entry.id ? 'text-amber-800 dark:text-amber-300' : ''}`}>{entry.title}</h4>
-                                     <button
-                                        onClick={(e) => handleDelete(e, entry.id, entry.title)}
-                                        className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title={t('remove')}
-                                    >
-                                        <TrashIcon className="w-4 h-4" />
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {new Date(entry.updatedAt).toLocaleDateString()}
-                                </p>
-                            </button>
+                            <li key={entry.id}>
+                                <button onClick={() => handleSelectEntry(entry.id)} className={`w-full text-left p-3 rounded-lg transition-colors ${activeEntryId === entry.id ? 'bg-amber-100 dark:bg-amber-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'}`}>
+                                    <h3 className="font-semibold truncate">{entry.title}</h3>
+                                    <p className="text-xs text-gray-500 truncate">{entry.content?.substring(0, 50) || 'No content'}</p>
+                                </button>
+                            </li>
                         ))}
-                        </div>
-                    </div>
+                    </ul>
                 </div>
-
-                <div className="w-full md:w-2/3 md:h-full flex-grow">
+                {/* Editor */}
+                <div className="w-2/3 flex flex-col bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
                     {activeEntry ? (
-                        <JournalEditor {...props} entry={activeEntry} />
-                    ) : (
-                         <div className="flex-grow flex justify-center items-center text-center h-full">
-                            <div className="text-gray-500 max-w-md p-8">
-                                <BookOpenIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
-                                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">{t('journal.select.title')}</h3>
-                                <p>{t('journal.select.prompt')}</p>
+                        <>
+                            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                                <input
+                                    type="text"
+                                    value={activeEntry.title}
+                                    onChange={(e) => onUpdateEntry(activeEntry.id, { title: e.target.value })}
+                                    className="text-xl font-bold bg-transparent w-full focus:outline-none"
+                                />
+                                <Button onClick={handleGetInsights} variant="secondary" size="sm">
+                                    <SparklesIcon className="w-4 h-4 mr-1" />
+                                    Get Insights
+                                </Button>
                             </div>
+                            <div className="flex-grow flex overflow-hidden">
+                                <textarea
+                                    value={activeEntry.content}
+                                    onChange={(e) => onUpdateEntry(activeEntry.id, { content: e.target.value })}
+                                    className="w-1/2 h-full p-4 resize-none bg-transparent focus:outline-none border-r border-gray-200 dark:border-gray-800"
+                                    placeholder="Start writing your research notes here..."
+                                />
+                                <div className="w-1/2 h-full p-4 overflow-y-auto">
+                                    <MarkdownRenderer markdown={activeEntry.content} />
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-gray-500">
+                            Select an entry to start editing.
                         </div>
                     )}
                 </div>

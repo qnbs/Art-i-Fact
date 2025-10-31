@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { Artwork, Gallery } from '../types.ts';
 // FIX: Added .tsx extension to fix module resolution error.
@@ -82,13 +83,13 @@ export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ artwork, g
                 <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
                     {projectGalleries.length > 0 && (
                         <div className="mb-2">
-                            <h4 className="text-xs uppercase font-bold text-gray-500 my-2 px-1">In This Project</h4>
+                            <h4 className="text-xs uppercase font-bold text-gray-500 my-2 px-1">{t('modal.addToGallery.inProject')}</h4>
                             {projectGalleries.map(gallery => <GalleryListItem key={gallery.id} gallery={gallery} onSelect={onAddExisting} />)}
                         </div>
                     )}
                     {otherGalleries.length > 0 && (
                           <div className="mb-2">
-                            {projectGalleries.length > 0 && otherGalleries.length > 0 && <h4 className="text-xs uppercase font-bold text-gray-500 my-2 px-1">Other Galleries</h4>}
+                            {projectGalleries.length > 0 && otherGalleries.length > 0 && <h4 className="text-xs uppercase font-bold text-gray-500 my-2 px-1">{t('modal.addToGallery.other')}</h4>}
                             {otherGalleries.map(gallery => <GalleryListItem key={gallery.id} gallery={gallery} onSelect={onAddExisting} />)}
                         </div>
                     )}
@@ -97,7 +98,7 @@ export const AddToGalleryModal: React.FC<AddToGalleryModalProps> = ({ artwork, g
         ) : (
              <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-4">
                 <GalleryIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                No galleries exist yet. Create one to get started!
+                {t('modal.addToGallery.empty')}
             </div>
         )}
     </div>

@@ -1,7 +1,8 @@
 import React from 'react';
 import type { ActiveView } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, SparklesIcon, GlobeAltIcon, GalleryIcon } from './IconComponents.tsx';
+import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, SparklesIcon, GlobeAltIcon, GalleryIcon, SunIcon, MoonIcon } from './IconComponents.tsx';
+import { useAppContext } from '../contexts/AppContext.tsx';
 
 interface SideNavBarProps {
   activeView: ActiveView;
@@ -30,6 +31,7 @@ const NavItem: React.FC<{
 
 export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveView }) => {
   const { t } = useTranslation();
+  const { settings, toggleTheme } = useAppContext();
 
   const navItems: { view: ActiveView, label: string, icon: React.ReactNode }[] = [
     { view: 'workspace', label: t('view.workspace'), icon: <HomeIcon /> },
@@ -37,7 +39,6 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveVie
     { view: 'gallerysuite', label: t('view.gallerysuite'), icon: <GalleryIcon /> },
     { view: 'studio', label: t('view.studio'), icon: <PaintBrushIcon /> },
     { view: 'journal', label: t('view.journal'), icon: <JournalIcon /> },
-    { view: 'community', label: t('view.community'), icon: <GlobeAltIcon /> },
   ];
 
   return (
@@ -57,6 +58,16 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveVie
           />
         ))}
       </ul>
+      <div className="mt-auto">
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center px-4 py-3 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-200"
+          aria-label={settings.theme === 'dark' ? t('settings.general.theme.toggleLight') : t('settings.general.theme.toggleDark')}
+        >
+          {settings.theme === 'dark' ? <SunIcon className="w-6 h-6 mr-4" /> : <MoonIcon className="w-6 h-6 mr-4" />}
+          <span className="font-semibold">{settings.theme === 'dark' ? t('settings.general.theme.lightMode') : t('settings.general.theme.darkMode')}</span>
+        </button>
+      </div>
     </nav>
   );
 };

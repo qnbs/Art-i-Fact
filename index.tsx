@@ -1,7 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// FIX: Corrected import path for App component.
-// FIX: Added .tsx extension to fix module resolution error.
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { AppProviders } from './contexts/AppProviders.tsx';

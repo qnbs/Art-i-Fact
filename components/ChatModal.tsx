@@ -1,54 +1,45 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { Chat } from '@google/genai';
-// FIX: Added .tsx extension to fix module resolution error.
-import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { useAppSettings } from '../contexts/AppSettingsContext.tsx';
-import { startArtChat } from '../services/geminiService.ts';
-// FIX: Added .ts extension to fix module resolution error.
+import { SparklesIcon, UserCircleIcon } from './IconComponents.tsx';
+import * as gemini from '../services/geminiService.ts';
 import type { Artwork } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution error.
-import { SparklesIcon } from './IconComponents.tsx';
+import { useTranslation } from '../contexts/TranslationContext.tsx';
+import { useAppContext } from '../contexts/AppContext.tsx';
+import { MarkdownRenderer } from './MarkdownRenderer.tsx';
+import { SpinnerIcon } from './IconComponents.tsx';
 
-interface ChatMessage {
+interface ChatModalProps {
+    artwork: Artwork;
+    language: 'de' | 'en';
+}
+
+interface Message {
     sender: 'user' | 'ai';
     text: string;
 }
 
-export const ChatModal: React.FC<{ artwork: Artwork; language: 'de' | 'en'; }> = ({ artwork, language }) => {
+export const ChatModal: React.FC<ChatModalProps> = ({ artwork, language }) => {
     const { t } = useTranslation();
-    const { appSettings } = useAppSettings();
+    const { settings } = useAppContext();
     const [chat, setChat] = useState<Chat | null>(null);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [userInput, setUserInput] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const chatInstance = startArtChat(artwork, appSettings, language);
-        setChat(chatInstance);
-        const getInitialMessage = async () => {
+        const initChat = async () => {
             setIsLoading(true);
-            try {
-                // Let the AI start the conversation based on its system prompt
-                const responseStream = await chatInstance.sendMessageStream({ message: "Tell me about this artwork." });
-                let fullText = '';
-                for await (const chunk of responseStream) {
-                    if (chunk.text) {
-                        fullText += chunk.text;
-                        setMessages([{ sender: 'ai', text: fullText }]);
-                    }
-                }
-            } catch (e) {
-                setMessages([{ sender: 'ai', text: t('chat.error.start') }]);
-            } finally {
-                setIsLoading(false);
-            }
+            const chatSession = gemini.startArtChat(artwork, settings, language);
+            setChat(chatSession);
+            
+            const initialResponse = await chatSession.sendMessage({ message: "Give me a brief, fascinating insight about this piece to start our conversation." });
+            setMessages([{ sender: 'ai', text: initialResponse.text }]);
+            setIsLoading(false);
         };
-        getInitialMessage();
-    }, [artwork, t, appSettings, language]);
-
+        initChat();
+    }, [artwork, settings, language]);
+    
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading]);
@@ -57,68 +48,62 @@ export const ChatModal: React.FC<{ artwork: Artwork; language: 'de' | 'en'; }> =
         e.preventDefault();
         if (!userInput.trim() || !chat || isLoading) return;
 
-        const newUserMessage: ChatMessage = { sender: 'user', text: userInput };
-        setMessages(prev => [...prev, newUserMessage]);
+        const userMessage: Message = { sender: 'user', text: userInput };
+        setMessages(prev => [...prev, userMessage]);
         setUserInput('');
         setIsLoading(true);
 
         try {
-            const responseStream = await chat.sendMessageStream({ message: userInput });
-            let fullText = '';
-            setMessages(prev => [...prev, { sender: 'ai', text: '' }]);
-            for await (const chunk of responseStream) {
-                if (chunk.text) {
-                    fullText += chunk.text;
-                    setMessages(prev => {
-                        const newMessages = [...prev];
-                        newMessages[newMessages.length - 1].text = fullText;
-                        return newMessages;
-                    });
-                }
-            }
+            const response = await chat.sendMessage({ message: userInput });
+            const aiMessage: Message = { sender: 'ai', text: response.text };
+            setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
-            setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[newMessages.length - 1].text = t('chat.error.response');
-                return newMessages;
-            });
+            console.error("Chat error:", error);
+            const errorMessage: Message = { sender: 'ai', text: "I'm sorry, I encountered an error. Please try again." };
+            setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-         <div className="flex flex-col h-[60vh] max-h-[500px]">
-            <div className="flex-grow p-4 overflow-y-auto space-y-4 -mx-6">
+        <div className="flex flex-col h-[60vh]">
+            <div className="flex-grow overflow-y-auto p-1 pr-4 space-y-4">
                 {messages.map((msg, index) => (
-                    <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        {msg.sender === 'ai' && <div className="w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>}
-                        <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${msg.sender === 'user' ? 'bg-amber-600 text-white rounded-br-none' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-bl-none'}`}>
-                            <p className="text-sm">{msg.text}</p>
+                    <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                        {msg.sender === 'ai' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600"><SparklesIcon className="w-5 h-5" /></div>}
+                        <div className={`max-w-md p-3 rounded-xl ${msg.sender === 'ai' ? 'bg-gray-100 dark:bg-gray-800' : 'bg-amber-600 text-white'}`}>
+                           <MarkdownRenderer markdown={msg.text} />
                         </div>
+                         {msg.sender === 'user' && <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500"><UserCircleIcon className="w-6 h-6" /></div>}
                     </div>
                 ))}
                 {isLoading && (
-                    <div className="flex items-end gap-2 justify-start">
-                        <div className="w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center flex-shrink-0"><SparklesIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
-                        <div className="max-w-md p-3 rounded-2xl bg-gray-200 dark:bg-gray-700 rounded-bl-none">
-                            <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce mr-1"></span>
-                            <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce mr-1" style={{ animationDelay: '0.1s' }}></span>
-                            <span className="inline-block w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                     <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600"><SparklesIcon className="w-5 h-5" /></div>
+                        <div className="max-w-sm p-3 rounded-xl bg-gray-100 dark:bg-gray-800">
+                           <SpinnerIcon className="w-5 h-5" />
                         </div>
                     </div>
                 )}
-                <div ref={messagesEndRef} />
+                 <div ref={messagesEndRef} />
             </div>
-            <form onSubmit={handleSendMessage} className="pt-4 flex-shrink-0 -mx-6 px-6">
-                <input
-                    type="text"
-                    value={userInput}
-                    onChange={e => setUserInput(e.target.value)}
-                    placeholder={t('chat.placeholder')}
-                    disabled={isLoading}
-                    className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full py-2 px-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                />
+            <form onSubmit={handleSendMessage} className="mt-4 flex-shrink-0">
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={userInput}
+                        onChange={(e) => setUserInput(e.target.value)}
+                        placeholder="Ask a question..."
+                        className="w-full bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 rounded-lg py-3 pl-4 pr-12 text-lg"
+                        disabled={isLoading}
+                    />
+                    <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-600 disabled:text-gray-400" disabled={isLoading || !userInput.trim()}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
+                          <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                        </svg>
+                    </button>
+                </div>
             </form>
         </div>
     );
