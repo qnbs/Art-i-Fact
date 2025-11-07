@@ -2,7 +2,9 @@
 
 > **Where Human Vision Meets Artificial Intelligence. Discover, Create, and Curate the Future of Art.**
 
-<p align="center">
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qnbs/Art-i-Fact)
+> 
+<p align="left">
   <img src="https://img.shields.io/badge/React-19-blue?logo=react" alt="React 19">
   <img src="https://img.shields.io/badge/Redux-Toolkit-764ABC?logo=redux" alt="Redux Toolkit">
   <img src="https://img.shields.io/badge/Google-Gemini_API-4285F4?logo=google" alt="Gemini API">
