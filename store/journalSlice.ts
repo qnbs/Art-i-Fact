@@ -63,6 +63,10 @@ export const deleteJournalsByProjectId = createAsyncThunk('journal/deleteJournal
     return projectId;
 });
 
+export const deleteAllJournals = createAsyncThunk('journal/deleteAllJournals', async () => {
+    await db.saveJournalEntries([]);
+});
+
 const journalSlice = createSlice({
     name: 'journal',
     initialState,
@@ -91,6 +95,9 @@ const journalSlice = createSlice({
             })
             .addCase(deleteJournalsByProjectId.fulfilled, (state, action: PayloadAction<string>) => {
                 state.entries = state.entries.filter(j => j.projectId !== action.payload);
+            })
+            .addCase(deleteAllJournals.fulfilled, (state) => {
+                state.entries = [];
             });
     },
 });

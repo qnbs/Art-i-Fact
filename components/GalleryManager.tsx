@@ -1,10 +1,8 @@
-
-
 import React from 'react';
 import type { Gallery, Project } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { useAppContext } from '../contexts/AppContext.tsx';
-import { GalleryIcon, PlusCircleIcon, TrashIcon, DocumentDuplicateIcon, EllipsisVerticalIcon, HomeIcon } from './IconComponents.tsx';
+import { GalleryIcon, PlusCircleIcon, TrashIcon, DocumentDuplicateIcon, EllipsisVerticalIcon, HomeIcon, SparklesIcon } from './IconComponents.tsx';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';
 import { EmptyState } from './ui/EmptyState.tsx';
 import { Button } from './ui/Button.tsx';
@@ -33,7 +31,8 @@ const GalleryCard: React.FC<{
     onSelect: () => void; 
     onDelete: () => void;
     onDuplicate?: () => void;
-}> = React.memo(({ gallery, project, isNew, onSelect, onDelete, onDuplicate }) => {
+    onSetFeatured: (id: string) => void;
+}> = React.memo(({ gallery, project, isNew, onSelect, onDelete, onDuplicate, onSetFeatured }) => {
     const { t } = useTranslation();
     
     const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
@@ -85,7 +84,10 @@ const GalleryCard: React.FC<{
                     <summary className="list-none cursor-pointer p-2 bg-black/40 text-white rounded-full hover:bg-black/60">
                         <EllipsisVerticalIcon className="w-5 h-5"/>
                     </summary>
-                    <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                        <button onClick={() => onSetFeatured(gallery.id)} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <SparklesIcon className="w-4 h-4" /> {t('gallery.actions.featureOnProfile')}
+                        </button>
                         {onDuplicate && (
                             <button onClick={onDuplicate} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                 <DocumentDuplicateIcon className="w-4 h-4" /> {t('gallery.actions.duplicate')}
@@ -107,7 +109,8 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, onCre
         projects, 
         handleSelectGallery, 
         handleDeleteGalleryWithConfirmation, 
-        handleDuplicateGallery, 
+        handleDuplicateGallery,
+        handleSetFeaturedGallery,
         newlyCreatedGalleryId 
     } = useAppContext();
     
@@ -149,6 +152,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({ galleries, onCre
                         onSelect={() => handleSelectGallery(gallery.id)} 
                         onDelete={() => handleDeleteGalleryWithConfirmation(gallery.id)}
                         onDuplicate={handleDuplicateGallery ? () => handleDuplicateGallery(gallery.id) : undefined}
+                        onSetFeatured={handleSetFeaturedGallery}
                     />
                 ))}
             </div>

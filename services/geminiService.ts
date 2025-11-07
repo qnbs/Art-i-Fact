@@ -10,7 +10,6 @@ class GeminiError extends Error {
     }
 }
 
-// FIX: Initialize the GoogleGenAI client.
 const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 
 const getCreativitySettings = (creativity: AppSettings['aiCreativity']) => {
@@ -35,13 +34,22 @@ const handleApiCall = async <T>(apiFn: () => Promise<GenerateContentResponse>): 
     try {
         const response = await apiFn();
         
-        // FIX: Corrected safety check to use `response.promptFeedback` as `promptFeedback` is not on the candidate.
-        // Check for safety blocks in text/json generation
         if (response.promptFeedback?.blockReason) {
             throw new GeminiError(`Request was blocked due to ${response.promptFeedback.blockReason}.`, response.promptFeedback.blockReason);
         }
-
-        return JSON.parse(response.text) as T;
+        
+        // FIX: Ensure response.text exists and is a valid JSON string before parsing.
+        const text = response.text?.trim();
+        if (!text) {
+            throw new GeminiError("Received an empty response from the AI.", "NO_CONTENT");
+        }
+        
+        try {
+            return JSON.parse(text) as T;
+        } catch (parseError) {
+             console.error("Failed to parse Gemini JSON response:", text);
+             throw new Error("The AI returned an invalid response format.");
+        }
 
     } catch (error) {
         if (error instanceof GeminiError) {
@@ -53,8 +61,6 @@ const handleApiCall = async <T>(apiFn: () => Promise<GenerateContentResponse>): 
 }
 
 
-// Text and JSON Generation
-// FIX: Corrected the type of the `language` parameter to only allow 'de' or 'en'.
 export const generateDeepDive = (artwork: Artwork, settings: AppSettings, language: 'de' | 'en'): Promise<DeepDive> => {
     const creativity = getCreativitySettings(settings.aiCreativity);
     return handleApiCall<DeepDive>(() => ai.models.generateContent({
@@ -75,7 +81,6 @@ export const generateDeepDive = (artwork: Artwork, settings: AppSettings, langua
     }));
 };
 
-// FIX: Corrected the type of the `language` parameter to only allow 'de' or 'en'.
 export const generateCritique = (gallery: Gallery, settings: AppSettings, language: 'de' | 'en'): Promise<GalleryCritique> => {
     const creativity = getCreativitySettings(settings.aiCreativity);
     const artworkList = gallery.artworks.map(a => ({ title: a.title, artist: a.artist, description: a.description })).slice(0, 10);
@@ -96,7 +101,6 @@ export const generateCritique = (gallery: Gallery, settings: AppSettings, langua
     }));
 };
 
-// FIX: Corrected the type of the `language` parameter to only allow 'de' or 'en'.
 export const generateAudioGuideScript = (gallery: Gallery, profile: Profile, settings: AppSettings, language: 'de' | 'en'): Promise<AudioGuide> => {
     const creativity = getCreativitySettings(settings.aiCreativity);
     const artworkData = gallery.artworks.map(a => ({ id: a.id, title: a.title, artist: a.artist }));
@@ -145,17 +149,17 @@ export const generateSimilarArtSearchQuery = async (artwork: Artwork, language: 
 
 
 // Journal Research with Grounding
-// FIX: Corrected the type of the `language` parameter to only allow 'de' or 'en'.
 export const generateJournalInsights = async (topic: string, settings: AppSettings, language: 'de' | 'en'): Promise<GenerateContentResponse> => {
     const creativity = getCreativitySettings(settings.aiCreativity);
     try {
+        const maxBudget = Math.floor(24576 * (settings.aiThinkingBudget / 100));
         return await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompts[language].journal(topic),
             config: {
                 ...creativity,
                 tools: [{ googleSearch: {} }],
-                thinkingConfig: { thinkingBudget: settings.aiThinkingBudget }
+                thinkingConfig: { thinkingBudget: maxBudget }
             }
         });
     } catch (error) {
@@ -164,23 +168,22 @@ export const generateJournalInsights = async (topic: string, settings: AppSettin
     }
 };
 
-// FIX: Corrected the type of the `language` parameter to only allow 'de' or 'en'.
 export const generateJournalInsightsStream = (topic: string, settings: AppSettings, language: 'de' | 'en') => {
     const creativity = getCreativitySettings(settings.aiCreativity);
+    const maxBudget = Math.floor(24576 * (settings.aiThinkingBudget / 100));
     return ai.models.generateContentStream({
         model: 'gemini-2.5-flash',
         contents: prompts[language].journal(topic),
         config: {
             ...creativity,
             tools: [{ googleSearch: {} }],
-            thinkingConfig: { thinkingBudget: settings.aiThinkingBudget }
+            thinkingConfig: { thinkingBudget: maxBudget }
         }
     });
 };
 
 
 // Chat
-// FIX: Corrected the type of the `language` parameter to only allow 'de' or 'en'.
 export const startArtChat = (artwork: Artwork, settings: AppSettings, language: 'de' | 'en'): Chat => {
     const creativity = getCreativitySettings(settings.aiCreativity);
     return ai.chats.create({
@@ -194,13 +197,17 @@ export const startArtChat = (artwork: Artwork, settings: AppSettings, language: 
 };
 
 // Image Generation & Editing
-// FIX: Rewrote `generateImage` to not use `handleApiCall` due to type incompatibilities with `generateImages` response.
-// The new implementation has its own error handling, similar to `remixImage`.
-export const generateImage = async (prompt: string, aspectRatio: string): Promise<string> => {
+export const generateImage = async (prompt: string, aspectRatio: string, negativePrompt?: string): Promise<string> => {
     try {
+        let fullPrompt = prompt;
+        if (negativePrompt && negativePrompt.trim() !== '') {
+            // A common convention for negative prompts if the model doesn't have a dedicated field.
+            fullPrompt = `${prompt} | negative prompt: ${negativePrompt}`;
+        }
+
         const response = await ai.models.generateImages({
             model: 'imagen-4.0-generate-001',
-            prompt: prompt,
+            prompt: fullPrompt,
             config: {
                 numberOfImages: 1,
                 outputMimeType: 'image/jpeg',
@@ -254,7 +261,6 @@ export const remixImage = async (base64ImageData: string, prompt: string): Promi
 };
 
 
-// FIX: Corrected the type of the `language` parameter to only allow 'de' or 'en'.
 export const enhancePrompt = async (prompt: string, settings: AppSettings, language: 'de' | 'en'): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
@@ -276,30 +282,48 @@ export const enhancePrompt = async (prompt: string, settings: AppSettings, langu
 export const generateTrailerVideo = async (gallery: Gallery): Promise<string> => {
     const prompt = `Create a short, cinematic trailer for an art gallery titled "${gallery.title}". The theme is "${gallery.description}". Show a sequence of beautiful, evocative artworks in a similar style.`;
     
+    // As per guidelines, create a new instance right before the API call for Veo to use the selected key.
+    const veoAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
     try {
-        let operation = await ai.models.generateVideos({
+        let operation = await veoAi.models.generateVideos({
             model: 'veo-3.1-fast-generate-preview',
             prompt: prompt,
             config: { 
                 numberOfVideos: 1,
-                resolution: '1080p',
+                resolution: '720p', // Use 720p for faster generation/cost
                 aspectRatio: '16:9'
             }
         });
 
         while (!operation.done) {
             await new Promise(resolve => setTimeout(resolve, 10000));
-            operation = await ai.operations.getVideosOperation({ operation: operation });
+            // Re-create instance for polling to ensure the latest key is used.
+            const pollingAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            operation = await pollingAi.operations.getVideosOperation({ operation: operation });
         }
 
         const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
         if (!downloadLink) {
-            throw new Error("Video generation failed to produce a download link.");
+            throw new GeminiError("Video generation completed but did not produce a download link.", "NO_CONTENT");
         }
         
-        return downloadLink;
+        const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            if (errorText.includes("Requested entity was not found")) {
+                 throw new GeminiError("The API key may be invalid or expired. Please try selecting a new key.", "API_KEY_INVALID");
+            }
+            throw new Error(`Failed to download video: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+
     } catch (error) {
-        console.error("Gemini API Error:", error);
-        throw new Error("Failed to generate video. Please try again later.");
+        if (error instanceof GeminiError) throw error;
+        console.error("Gemini API Error (Video Generation):", error);
+        throw new Error("Failed to generate the gallery trailer. This is an experimental feature and may sometimes fail. Please try again later.");
     }
 };

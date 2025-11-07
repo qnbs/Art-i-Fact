@@ -62,19 +62,24 @@ export const deleteGalleriesByProjectId = createAsyncThunk('galleries/deleteGall
     return projectId;
 });
 
-export const addArtworkToGallery = createAsyncThunk('galleries/addArtworkToGallery', async ({ galleryId, artwork }: { galleryId: string; artwork: Artwork }, { getState }) => {
-    return updateGallery({
+export const deleteAllGalleries = createAsyncThunk('galleries/deleteAllGalleries', async () => {
+    await db.saveGalleries([]);
+});
+
+export const addArtworkToGallery = createAsyncThunk('galleries/addArtworkToGallery', async ({ galleryId, artwork }: { galleryId: string; artwork: Artwork }, { dispatch, getState }) => {
+    const result = await dispatch(updateGallery({
         id: galleryId,
         updater: g => ({
             ...g,
             artworks: g.artworks.some(a => a.id === artwork.id) ? g.artworks : [...g.artworks, artwork],
             thumbnailUrl: g.artworks.length === 0 ? artwork.thumbnailUrl || artwork.imageUrl : g.thumbnailUrl,
         })
-    })(getState().dispatch, getState, undefined);
+    }));
+    return result.payload as Gallery;
 });
 
-export const removeArtworkFromGallery = createAsyncThunk('galleries/removeArtworkFromGallery', async ({ galleryId, artworkId }: { galleryId: string; artworkId: string }, { getState }) => {
-    return updateGallery({
+export const removeArtworkFromGallery = createAsyncThunk('galleries/removeArtworkFromGallery', async ({ galleryId, artworkId }: { galleryId: string; artworkId: string }, { dispatch, getState }) => {
+    const result = await dispatch(updateGallery({
         id: galleryId,
         updater: g => {
             const newArtworks = g.artworks.filter(a => a.id !== artworkId);
@@ -84,29 +89,30 @@ export const removeArtworkFromGallery = createAsyncThunk('galleries/removeArtwor
                 thumbnailUrl: newArtworks[0]?.thumbnailUrl || newArtworks[0]?.imageUrl || undefined,
             };
         }
-    })(getState().dispatch, getState, undefined);
+    }));
+    return result.payload as Gallery;
 });
 
-export const reorderArtworksInGallery = createAsyncThunk('galleries/reorderArtworksInGallery', async ({ galleryId, reorderedArtworks }: { galleryId: string; reorderedArtworks: Artwork[] }, { getState }) => {
-     return updateGallery({
+export const reorderArtworksInGallery = createAsyncThunk('galleries/reorderArtworksInGallery', async ({ galleryId, reorderedArtworks }: { galleryId: string; reorderedArtworks: Artwork[] }, { dispatch, getState }) => {
+     const result = await dispatch(updateGallery({
         id: galleryId,
         updater: g => ({ ...g, artworks: reorderedArtworks })
-    })(getState().dispatch, getState, undefined);
+    }));
+    return result.payload as Gallery;
 });
 
-export const importGallery = createAsyncThunk('galleries/importGallery', async (galleryToImport: Gallery & { curatorProfile?: Profile }, { getState }) => {
-    const newGallery: Gallery = {
+export const importGallery = createAsyncThunk('galleries/importGallery', async (galleryToImport: Gallery & { curatorProfile?: Profile }, { dispatch, getState }) => {
+    const newGalleryData = {
         ...galleryToImport,
-        id: `gal_${Date.now()}`,
-        projectId: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        title: galleryToImport.title,
         description: `${galleryToImport.description}\n\n(Imported from curator: ${galleryToImport.curatorProfile?.username || 'Unknown'})`,
+        projectId: null,
     };
-    return createGallery(newGallery)(getState().dispatch, getState, undefined);
+    const result = await dispatch(createGallery(newGalleryData));
+    return result.payload as Gallery;
 });
 
-export const duplicateGallery = createAsyncThunk('galleries/duplicateGallery', async (id: string, { getState }) => {
+export const duplicateGallery = createAsyncThunk('galleries/duplicateGallery', async (id: string, { dispatch, getState }) => {
     const galleryToDuplicate = (getState() as RootState).galleries.galleries.find(g => g.id === id);
     if (!galleryToDuplicate) throw new Error('Gallery not found');
     const newGalleryData = {
@@ -115,7 +121,8 @@ export const duplicateGallery = createAsyncThunk('galleries/duplicateGallery', a
         projectId: galleryToDuplicate.projectId,
         description: galleryToDuplicate.description,
     };
-    return createGallery(newGalleryData)(getState().dispatch, getState, undefined);
+    const result = await dispatch(createGallery(newGalleryData));
+    return result.payload as Gallery;
 });
 
 const galleriesSlice = createSlice({
@@ -143,6 +150,9 @@ const galleriesSlice = createSlice({
             })
             .addCase(deleteGalleriesByProjectId.fulfilled, (state, action: PayloadAction<string>) => {
                 state.galleries = state.galleries.filter(g => g.projectId !== action.payload);
+            })
+            .addCase(deleteAllGalleries.fulfilled, (state) => {
+                state.galleries = [];
             });
     },
 });

@@ -1,7 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-// FIX: Added .tsx extension to fix module resolution error.
 import { CameraIcon } from './IconComponents.tsx';
 
 export const CameraAnalysisModal: React.FC<{ onCapture: (file: File) => void; onClose: () => void; }> = ({ onCapture, onClose }) => {

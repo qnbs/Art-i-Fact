@@ -11,7 +11,7 @@ import { withDraggable } from './dnd/withDraggable.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
 import { Button } from './ui/Button.tsx';
 import { EmptyState } from './ui/EmptyState.tsx';
-import { GalleryIcon, SparklesIcon, SpeakerWaveIcon, ShareIcon, PresentationChartBarIcon, TrashIcon, PencilIcon } from './IconComponents.tsx';
+import { GalleryIcon, SparklesIcon, SpeakerWaveIcon, ShareIcon, PresentationChartBarIcon, TrashIcon, PencilIcon, VideoCameraIcon } from './IconComponents.tsx';
 import { ExhibitionMode } from './ExhibitionMode.tsx';
 import { CritiqueModalContent } from './CritiqueModalContent.tsx';
 import { ShareModal } from './ShareModal.tsx';
@@ -30,7 +30,8 @@ export const GalleryView: React.FC = () => {
         updateGallery,
         language,
         profile,
-        settings,
+        appSettings,
+        handleGenerateTrailer,
     } = useAppContext();
     
     const { handleAiTask } = useAI();
@@ -78,13 +79,13 @@ export const GalleryView: React.FC = () => {
     };
     
     const handleCritique = () => {
-        handleAiTask<GalleryCritique>('critique', () => gemini.generateCritique(activeGallery, settings, language as 'de' | 'en'), {
+        handleAiTask<GalleryCritique>('critique', () => gemini.generateCritique(activeGallery, appSettings, language as 'de' | 'en'), {
             onEnd: (result) => result && showModal(t('gallery.critique.modal.title'), <CritiqueModalContent critiqueResult={result} />)
         });
     };
 
     const handleAudioGuide = () => {
-        handleAiTask<AudioGuide>('audioGuide', () => gemini.generateAudioGuideScript(activeGallery, profile, settings, language as 'de' | 'en'), {
+        handleAiTask<AudioGuide>('audioGuide', () => gemini.generateAudioGuideScript(activeGallery, profile, appSettings, language as 'de' | 'en'), {
             onEnd: (result) => {
                 if (result) {
                     updateGallery(activeGallery.id, g => ({...g, audioGuide: result }));
@@ -99,7 +100,7 @@ export const GalleryView: React.FC = () => {
     };
     
     const handleEditDetails = () => {
-        showModal(t('workspace.editProject'), <GalleryCreator
+        showModal(t('gallery.editDetails', { title: activeGallery.title }), <GalleryCreator
             gallery={activeGallery}
             onSave={(details) => {
                 updateGallery(activeGallery.id, g => ({...g, ...details}));
@@ -132,6 +133,10 @@ export const GalleryView: React.FC = () => {
                  <Button onClick={handleAudioGuide} variant="secondary" size="sm">
                     <SpeakerWaveIcon className="w-5 h-5 mr-2" />
                     {t('gallery.actions.audioGuide')}
+                </Button>
+                <Button onClick={() => handleGenerateTrailer(activeGallery)} variant="secondary" size="sm">
+                    <VideoCameraIcon className="w-5 h-5 mr-2" />
+                    {t('gallery.actions.trailer')}
                 </Button>
                  <Button onClick={handleShare} variant="secondary" size="sm">
                     <ShareIcon className="w-5 h-5 mr-2" />

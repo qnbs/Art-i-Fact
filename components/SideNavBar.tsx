@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ActiveView } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
-import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, SparklesIcon, GlobeAltIcon, GalleryIcon, SunIcon, MoonIcon } from './IconComponents.tsx';
+import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, SparklesIcon, GalleryIcon, SunIcon, MoonIcon, CogIcon, QuestionMarkCircleIcon } from './IconComponents.tsx';
 import { useAppContext } from '../contexts/AppContext.tsx';
 
 interface SideNavBarProps {
@@ -16,22 +16,19 @@ const NavItem: React.FC<{
   onClick: () => void;
 }> = ({ label, icon, isActive, onClick }) => {
   return (
-    <li>
-      <button
-        onClick={onClick}
-        className={`flex items-center w-full px-4 py-3 rounded-lg transition-colors duration-200 ${isActive ? 'bg-amber-500 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'}`}
-        aria-current={isActive ? 'page' : undefined}
-      >
-        <div className="w-6 h-6 mr-4">{icon}</div>
-        <span className="font-semibold">{label}</span>
-      </button>
-    </li>
+    <button
+      onClick={onClick}
+      className={`flex items-center w-full px-4 py-3 rounded-lg transition-colors duration-200 ${isActive ? 'bg-amber-500 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'}`}
+      aria-current={isActive ? 'page' : undefined}
+    >
+      <div className="w-6 h-6 mr-4">{icon}</div>
+      <span className="font-semibold">{label}</span>
+    </button>
   );
 };
 
 export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveView }) => {
   const { t } = useTranslation();
-  // FIX: Destructure appSettings as settings and use toggleTheme from context.
   const { appSettings: settings, toggleTheme } = useAppContext();
 
   const navItems: { view: ActiveView, label: string, icon: React.ReactNode }[] = [
@@ -42,24 +39,41 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ activeView, setActiveVie
     { view: 'journal', label: t('view.journal'), icon: <JournalIcon /> },
   ];
 
+  const secondaryNavItems: { view: ActiveView, label: string, icon: React.ReactNode }[] = [
+      { view: 'setup', label: t('view.setup'), icon: <CogIcon /> },
+      { view: 'help', label: t('view.help'), icon: <QuestionMarkCircleIcon /> },
+  ];
+
   return (
     <nav className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4 flex-shrink-0">
       <div className="flex items-center mb-8">
         <SparklesIcon className="w-8 h-8 text-amber-500 mr-2" />
         <h1 className="text-xl font-bold">Art-i-Fact</h1>
       </div>
-      <ul className="space-y-2">
+      <ul className="space-y-2 list-none p-0">
         {navItems.map(item => (
-          <NavItem
-            key={item.view}
-            label={item.label}
-            icon={item.icon}
-            isActive={activeView === item.view}
-            onClick={() => setActiveView(item.view)}
-          />
+          <li key={item.view}>
+            <NavItem
+              label={item.label}
+              icon={item.icon}
+              isActive={activeView === item.view}
+              onClick={() => setActiveView(item.view)}
+            />
+          </li>
         ))}
       </ul>
-      <div className="mt-auto">
+      <div className="mt-auto space-y-2">
+        <div className="border-t border-gray-200 dark:border-gray-700/50 pt-2 space-y-2">
+            {secondaryNavItems.map(item => (
+              <NavItem
+                key={item.view}
+                label={item.label}
+                icon={item.icon}
+                isActive={activeView === item.view}
+                onClick={() => setActiveView(item.view)}
+              />
+            ))}
+        </div>
         <button
           onClick={toggleTheme}
           className="w-full flex items-center px-4 py-3 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-200"

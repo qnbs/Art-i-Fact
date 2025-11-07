@@ -1,7 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-// FIX: Added .ts extension to fix module resolution error.
 import { locales, Locale, Language } from '../i18n/locales.ts';
-// FIX: Added .ts extension to fix module resolution error.
 import { LANGUAGE_LOCAL_STORAGE_KEY, APP_SETTINGS_LOCAL_STORAGE_KEY } from '../constants.ts';
 
 interface TranslationContextType {

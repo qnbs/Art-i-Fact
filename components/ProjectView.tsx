@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { useAppContext } from '../contexts/AppContext.tsx';
@@ -24,7 +20,6 @@ export const ProjectView: React.FC = () => {
         projectJournals,
         language,
         handleNewGallery,
-        // FIX: Correctly reference context functions that are now available in AppContextType.
         updateJournalEntry,
         deleteJournalEntry,
         createJournalEntry,
@@ -34,7 +29,6 @@ export const ProjectView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<ProjectTab>('galleries');
     const [activeJournalId, setActiveJournalId] = useState<string | null>(null);
     
-    // FIX: Made handleNewJournal async to await the new entry's ID.
     const handleNewJournal = useCallback(async () => {
         if (!activeProjectId) return;
         const newId = await createJournalEntry(activeProjectId);
@@ -75,7 +69,7 @@ export const ProjectView: React.FC = () => {
             return (
                  <GalleryManager 
                     galleries={projectGalleries}
-                    onCreateNew={handleNewGallery}
+                    onCreateNew={() => handleNewGallery()}
                     hideHeader={true}
                 />
             );
@@ -86,7 +80,7 @@ export const ProjectView: React.FC = () => {
                 title={t('gallery.manager.empty.title')}
                 message={t('gallery.manager.empty.prompt')}
             >
-                <Button onClick={handleNewGallery}>
+                <Button onClick={() => handleNewGallery()}>
                     <PlusCircleIcon className="w-5 h-5 mr-2" />
                     {t('gallery.manager.create')}
                 </Button>
@@ -136,7 +130,7 @@ export const ProjectView: React.FC = () => {
                     </button>
                  </div>
                  {activeTab === 'galleries' && (
-                     <Button size="sm" onClick={handleNewGallery}>
+                     <Button size="sm" onClick={() => handleNewGallery()}>
                         <PlusCircleIcon className="w-4 h-4 mr-1" />
                         {t('gallery.new')}
                     </Button>

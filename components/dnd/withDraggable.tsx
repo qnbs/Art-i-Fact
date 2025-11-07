@@ -1,4 +1,3 @@
-
 import React, { DragEvent } from 'react';
 
 interface DraggableProps {
@@ -10,9 +9,9 @@ interface DraggableProps {
     onDragEnd: (e: DragEvent<HTMLDivElement>) => void;
 }
 
-// FIX: Omitted conflicting drag event handler props from the wrapped component's props (`P`)
-// to resolve type conflicts when the HOC is used. This allows the HOC to define custom signatures
-// for drag events (e.g., with an `index` parameter) without clashing with standard React.HTMLAttributes.
+// HOC to add drag-and-drop functionality.
+// Omit standard drag event handlers from the wrapped component's props (`P`)
+// to avoid type conflicts, as this HOC provides its own custom signatures.
 export const withDraggable = <P extends object>(WrappedComponent: React.ComponentType<P>) => {
     return React.memo((props: Omit<P, 'onDragStart' | 'onDragEnter' | 'onDragEnd'> & DraggableProps) => {
         const { 

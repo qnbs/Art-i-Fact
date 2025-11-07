@@ -23,7 +23,7 @@ interface JournalProps {
 
 export const Journal: React.FC<JournalProps> = ({ entries, language, activeEntryId: externalActiveId, onSelectEntry, onUpdateEntry, onNewEntry }) => {
     const { t } = useTranslation();
-    const { settings } = useAppContext();
+    const { appSettings: settings } = useAppContext();
     const { handleAiTask } = useAI();
     const [internalActiveId, setInternalActiveId] = useState<string | null>(null);
 

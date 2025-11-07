@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { AppSettings } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 
-export const useSpeechSynthesis = (onEnd: () => void, settings: Pick<AppSettings, 'audioGuideVoiceURI' | 'audioGuideSpeed'>) => {
+export const useSpeechSynthesis = (onEnd: () => void, settings: Pick<AppSettings, 'audioGuideVoiceURI' | 'audioGuideSpeed' | 'audioGuidePitch' | 'audioGuideVolume'>) => {
     const { language } = useTranslation();
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -33,6 +32,8 @@ export const useSpeechSynthesis = (onEnd: () => void, settings: Pick<AppSettings
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = language === 'de' ? 'de-DE' : 'en-US';
         utterance.rate = settings.audioGuideSpeed;
+        utterance.pitch = settings.audioGuidePitch;
+        utterance.volume = settings.audioGuideVolume;
         
         if (voices.length > 0) {
             const selectedVoice = voices.find(v => v.voiceURI === settings.audioGuideVoiceURI);

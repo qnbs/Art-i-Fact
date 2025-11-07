@@ -1,8 +1,5 @@
-
-
 import React, { useState } from 'react';
 import type { Artwork, Gallery } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { PlusCircleIcon, GalleryIcon } from './IconComponents.tsx';
 import { ImageWithFallback } from './ui/ImageWithFallback.tsx';

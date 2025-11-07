@@ -14,12 +14,12 @@ export const Section: React.FC<{ title: string; children: React.ReactNode, icon?
 );
 
 export const SettingRow: React.FC<{ label: string; description?: string; children: React.ReactNode, htmlFor?: string }> = ({ label, description, children, htmlFor }) => (
-    <div className="p-4 flex justify-between items-center">
-        <label htmlFor={htmlFor} className="cursor-pointer">
+    <div className="p-4 flex flex-col gap-3 items-start sm:flex-row sm:items-center sm:justify-between">
+        <label htmlFor={htmlFor} className="cursor-pointer sm:pr-4">
             <span className="text-gray-800 dark:text-gray-200">{label}</span>
             {description && <p id={htmlFor ? `${htmlFor}-desc` : undefined} className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>}
         </label>
-        <div>{children}</div>
+        <div className="flex-shrink-0">{children}</div>
     </div>
 );
 

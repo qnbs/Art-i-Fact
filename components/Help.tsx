@@ -1,12 +1,8 @@
-
-
 import React from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { useModal } from '../contexts/ModalContext.tsx';
 import { AccordionItem } from './ui/AccordionItem.tsx';
 import { PageHeader } from './ui/PageHeader.tsx';
-// FIX: Added .tsx extension to fix module resolution error.
 import { QuestionMarkCircleIcon, SparklesIcon, BookOpenIcon } from './IconComponents.tsx';
 import { TutorialSteps } from './TutorialSteps.tsx';
 import { Glossary } from './Glossary.tsx';

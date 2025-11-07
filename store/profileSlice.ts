@@ -33,6 +33,11 @@ export const updateProfile = createAsyncThunk('profile/updateProfile', async (ne
     return newProfile;
 });
 
+export const resetProfile = createAsyncThunk('profile/resetProfile', async () => {
+    await db.saveProfile(defaultProfile);
+    return defaultProfile;
+});
+
 const profileSlice = createSlice({
     name: 'profile',
     initialState,
@@ -47,6 +52,9 @@ const profileSlice = createSlice({
                 state.profile = action.payload;
             })
             .addCase(updateProfile.fulfilled, (state, action: PayloadAction<Profile>) => {
+                state.profile = action.payload;
+            })
+            .addCase(resetProfile.fulfilled, (state, action) => {
                 state.profile = action.payload;
             });
     },

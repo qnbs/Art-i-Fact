@@ -1,9 +1,5 @@
-
-
-
 import React from 'react';
 import type { Gallery, Profile, ShareableGalleryData } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { useToast } from '../contexts/ToastContext.tsx';
 import { Button } from './ui/Button.tsx';

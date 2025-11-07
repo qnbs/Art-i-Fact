@@ -20,7 +20,7 @@ interface Message {
 
 export const ChatModal: React.FC<ChatModalProps> = ({ artwork, language }) => {
     const { t } = useTranslation();
-    const { settings } = useAppContext();
+    const { appSettings } = useAppContext();
     const [chat, setChat] = useState<Chat | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [userInput, setUserInput] = useState('');
@@ -30,7 +30,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({ artwork, language }) => {
     useEffect(() => {
         const initChat = async () => {
             setIsLoading(true);
-            const chatSession = gemini.startArtChat(artwork, settings, language);
+            const chatSession = gemini.startArtChat(artwork, appSettings, language);
             setChat(chatSession);
             
             const initialResponse = await chatSession.sendMessage({ message: "Give me a brief, fascinating insight about this piece to start our conversation." });
@@ -38,7 +38,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({ artwork, language }) => {
             setIsLoading(false);
         };
         initChat();
-    }, [artwork, settings, language]);
+    }, [artwork, appSettings, language]);
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

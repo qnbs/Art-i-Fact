@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-// FIX: Added .ts extension to fix module resolution error.
 import type { Artwork, AudioGuide, Profile } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution error.
 import { CloseIcon, ArrowLeftIcon, ArrowRightIcon, PlayIcon, PauseIcon, SpeakerWaveIcon, SpeakerXMarkIcon, DocumentTextIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from './IconComponents.tsx';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { useAppContext } from '../contexts/AppContext.tsx';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis.ts';
@@ -24,7 +21,7 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
     isPublicView = false, galleryTitle, curatorProfile 
 }) => {
   const { t } = useTranslation();
-  const { settings: appSettings } = useAppContext();
+  const { appSettings } = useAppContext();
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [isSlideshowPlaying, setSlideshowPlaying] = useState(appSettings.exhibitAutoplay && !audioGuide);
   const [isAudioGuideActive, setAudioGuideActive] = useState(appSettings.exhibitAutoplay && !!audioGuide);
@@ -76,18 +73,22 @@ export const ExhibitionMode: React.FC<ExhibitionModeProps> = ({
       });
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('deviceorientation', handleDeviceOrientation);
+    if (appSettings.exhibitEnableParallax) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('deviceorientation', handleDeviceOrientation);
+    }
     resetInactivityTimer();
     window.addEventListener('keydown', resetInactivityTimer);
 
     return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('deviceorientation', handleDeviceOrientation);
+        if (appSettings.exhibitEnableParallax) {
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('deviceorientation', handleDeviceOrientation);
+        }
         if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
         window.removeEventListener('keydown', resetInactivityTimer);
     };
-  }, [resetInactivityTimer]);
+  }, [resetInactivityTimer, appSettings.exhibitEnableParallax]);
 
   const goToNext = useCallback(() => {
     const isLastSlide = currentIndex === artworks.length - 1;

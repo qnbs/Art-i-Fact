@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext.tsx';
 import { Workspace } from './Workspace.tsx';
@@ -20,7 +16,6 @@ export const MainContent: React.FC = () => {
         activeView,
         galleries, 
         handleNewGallerySuite,
-        // FIX: Destructure necessary props for the Journal component from the app context.
         entries,
         language,
         createJournalEntry,
@@ -28,7 +23,6 @@ export const MainContent: React.FC = () => {
         deleteJournalEntry,
     } = useAppContext();
 
-    // FIX: Add local state to manage the active journal entry in the main journal view.
     const [activeJournalId, setActiveJournalId] = useState<string | null>(null);
 
     switch (activeView) {
@@ -48,7 +42,6 @@ export const MainContent: React.FC = () => {
         case 'studio':
             return <Studio />;
         case 'journal':
-            // FIX: Pass all required props to the Journal component.
             return <Journal 
                 entries={entries.filter(e => !e.projectId)}
                 language={language}
@@ -56,8 +49,10 @@ export const MainContent: React.FC = () => {
                 onSelectEntry={setActiveJournalId}
                 onUpdateEntry={updateJournalEntry}
                 onDeleteEntry={deleteJournalEntry}
-                // FIX: Pass an async function to match the expected promise return type.
-                onNewEntry={async () => await createJournalEntry(null)}
+                onNewEntry={async () => {
+                    const newId = await createJournalEntry(null);
+                    return newId;
+                }}
             />;
         case 'profile':
             return <ProfileView />;

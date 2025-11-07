@@ -11,6 +11,8 @@ interface UiState {
     activeProjectId: string | null;
     activeGalleryId: string | null;
     isCommandPaletteOpen: boolean;
+    newlyCreatedProjectId: string | null;
+    newlyCreatedGalleryId: string | null;
 }
 
 const initialState: UiState = {
@@ -18,6 +20,8 @@ const initialState: UiState = {
     activeProjectId: null,
     activeGalleryId: null,
     isCommandPaletteOpen: false,
+    newlyCreatedProjectId: null,
+    newlyCreatedGalleryId: null,
 };
 
 const uiSlice = createSlice({
@@ -27,6 +31,8 @@ const uiSlice = createSlice({
         // Sets the main view and resets project/gallery IDs if necessary.
         setActiveView(state, action: PayloadAction<ActiveView>) {
             state.activeView = action.payload;
+            state.newlyCreatedProjectId = null;
+            state.newlyCreatedGalleryId = null;
             if (action.payload !== 'project' && action.payload !== 'gallery') {
                 state.activeProjectId = null;
                 state.activeGalleryId = null;
@@ -37,6 +43,7 @@ const uiSlice = createSlice({
             state.activeProjectId = action.payload;
             if (action.payload) {
                 state.activeView = 'project';
+                state.newlyCreatedProjectId = action.payload;
             }
         },
         // Sets an active gallery and automatically switches to the gallery view.
@@ -44,6 +51,7 @@ const uiSlice = createSlice({
             state.activeGalleryId = action.payload;
             if (action.payload) {
                 state.activeView = 'gallery';
+                state.newlyCreatedGalleryId = action.payload;
             }
         },
         // Controls the visibility of the command palette.

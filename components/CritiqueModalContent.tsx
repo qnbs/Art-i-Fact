@@ -1,7 +1,4 @@
-
-
 import React from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import type { GalleryCritique } from '../types.ts';
 

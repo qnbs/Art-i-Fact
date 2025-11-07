@@ -15,7 +15,6 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView, onOpenCommandPalette, activeProjectTitle, activeGalleryTitle }) => {
   const { t } = useTranslation();
-  // FIX: Destructure appSettings as settings and use toggleTheme from context.
   const { profile, appSettings: settings, toggleTheme } = useAppContext();
 
   const getTitle = () => {

@@ -1,0 +1,50 @@
+{
+  "name": "Art-i-Fact Dev Environment",
+  // Use the official TypeScript/Node.js image which comes with Node, npm, and TypeScript pre-installed.
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+
+  // Features to add to the dev container. The base image is sufficient for now.
+  "features": {},
+
+  // Forward the port specified in the npm start script.
+  "forwardPorts": [3000],
+
+  // Configure port attributes for a better user experience.
+  "portsAttributes": {
+    "3000": {
+      "label": "Application",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  // VS Code specific customizations.
+  "customizations": {
+    "vscode": {
+      // Settings to apply inside the container.
+      "settings": {
+        "editor.formatOnSave": true,
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
+      },
+      // Extensions to install for a better developer experience.
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "eamodio.gitlens",
+        "GitHub.copilot",
+        "ms-vscode.vscode-typescript-next"
+      ]
+    }
+  },
+
+  // Run 'npm install' after the container is created.
+  "postCreateCommand": "npm install",
+
+  // Run 'npm start' automatically after attaching to the container.
+  "postAttachCommand": "npm start"
+}

@@ -1,33 +1,57 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { db } from '../services/dbService.ts';
-import type { AppSettings, ActiveView, ImageAspectRatio } from '../types.ts';
+import type { AppSettings } from '../types.ts';
 import type { RootState } from './store.ts';
 
 const defaultSettings: AppSettings = {
+  // General & Appearance
   theme: 'dark',
   showDeletionConfirmation: true,
   compactMode: false,
   defaultViewOnStartup: 'workspace',
-  aiResultsCount: 15,
+  reduceMotion: false,
+
+  // AI Assistant
   aiCreativity: 'balanced',
+  aiTemperature: 0.7,
+  aiTopP: 0.9,
+  aiTopK: 40,
   aiContentLanguage: 'ui',
   aiThinkingBudget: 50,
   streamJournalResponses: true,
+
+  // Studio
   promptEnhancementStyle: 'descriptive',
+  autoEnhancePrompts: false,
   studioDefaultAspectRatio: '1:1',
-  studioAutoSave: false,
   clearPromptOnGenerate: true,
+  defaultNegativePrompt: 'text, watermark, ugly, deformed',
   defaultRemixPrompt: 'Make this more vibrant and add a surreal element.',
+
+  // Exhibition Mode
   slideshowSpeed: 7,
   slideshowTransition: 'fade',
   exhibitAutoplay: false,
   exhibitLoopSlideshow: true,
+  exhibitBackground: 'blur',
+  exhibitEnableParallax: true,
   showArtworkInfoInSlideshow: true,
   showControlsOnHover: true,
+  
+  // Journal
   autoSaveJournal: true,
   defaultJournalTitle: 'New Journal Entry',
-  audioGuideVoiceURI: '',
+  journalEditorFontSize: 'base',
+
+  // Audio Guide
+  audioGuideVoiceURI: 'default', 
   audioGuideSpeed: 1,
+  audioGuidePitch: 1,
+  audioGuideVolume: 1,
+
+  // Profile
+  showProfileActivity: true,
+  showProfileAchievements: true,
 };
 
 interface SettingsState {

@@ -1,5 +1,4 @@
 import React from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../../contexts/TranslationContext.tsx';
 import { Button } from './Button.tsx';
 import { ArrowPathIcon } from '../IconComponents.tsx';

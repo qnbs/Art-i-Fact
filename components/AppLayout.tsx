@@ -30,18 +30,30 @@ export const AppLayout: React.FC = () => {
         commands,
         activeProject,
         activeGallery,
-        settings,
+        appSettings: settings,
     } = useAppContext();
     const { t } = useTranslation();
     const { activeAiTask, loadingMessage, aiError } = useAI();
     const { isOpen: isModalOpen, modalContent, hideModal } = useModal();
 
     useEffect(() => {
-      document.documentElement.className = settings.theme;
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', settings.theme === 'dark' ? '#030712' : '#d97706');
-      }
+        const applyTheme = (theme: 'light' | 'dark') => {
+            document.documentElement.className = theme;
+            const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+            if (metaThemeColor) {
+                metaThemeColor.setAttribute('content', theme === 'dark' ? '#030712' : '#d97706');
+            }
+        };
+
+        if (settings.theme === 'system') {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            applyTheme(mediaQuery.matches ? 'dark' : 'light');
+            const handler = (e: MediaQueryListEvent) => applyTheme(e.matches ? 'dark' : 'light');
+            mediaQuery.addEventListener('change', handler);
+            return () => mediaQuery.removeEventListener('change', handler);
+        } else {
+            applyTheme(settings.theme);
+        }
     }, [settings.theme]);
 
     if (isLoading) {

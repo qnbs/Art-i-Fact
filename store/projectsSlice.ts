@@ -47,6 +47,10 @@ export const deleteProject = createAsyncThunk('projects/deleteProject', async (i
     return id;
 });
 
+export const deleteAllProjects = createAsyncThunk('projects/deleteAllProjects', async () => {
+    await db.saveProjects([]);
+});
+
 const projectsSlice = createSlice({
     name: 'projects',
     initialState,
@@ -71,6 +75,9 @@ const projectsSlice = createSlice({
             })
             .addCase(deleteProject.fulfilled, (state, action: PayloadAction<string>) => {
                 state.projects = state.projects.filter(p => p.id !== action.payload);
+            })
+            .addCase(deleteAllProjects.fulfilled, (state) => {
+                state.projects = [];
             });
     },
 });

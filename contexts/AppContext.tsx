@@ -1,285 +1,310 @@
-import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import { useAppController } from '../hooks/useAppController.ts';
-import type { ActiveView, Gallery, Project, Artwork, Profile, AppSettings, JournalEntry, ShareableGalleryData } from '../types.ts';
+import { useTranslation } from './TranslationContext.tsx';
 import { useModal } from './ModalContext.tsx';
 import { useToast } from './ToastContext.tsx';
-import { useTranslation } from './TranslationContext.tsx';
+import { useAI } from './AIStatusContext.tsx';
 
+import type { Project, Artwork, Gallery, Profile } from '../types.ts';
 import type { Command } from '../components/CommandPalette.tsx';
+
 import { ProjectEditor } from '../components/ProjectEditor.tsx';
 import { GalleryCreator } from '../components/GalleryCreator.tsx';
-import { ArtworkDetails } from '../components/ArtworkDetails.tsx';
 import { AddToGalleryModal } from '../components/AddToGalleryModal.tsx';
-import { ProfileEditor } from '../components/ProfileEditor.tsx';
+import { ArtworkDetails } from '../components/ArtworkDetails.tsx';
 import { ChatModal } from '../components/ChatModal.tsx';
-import { HomeIcon, SearchIcon, PaintBrushIcon, JournalIcon, UserCircleIcon, Cog6ToothIcon, QuestionMarkCircleIcon, GalleryIcon, PlusCircleIcon } from '../components/IconComponents.tsx';
-// FIX: Import gemini service.
+import { ProfileEditor } from '../components/ProfileEditor.tsx';
 import * as gemini from '../services/geminiService.ts';
+import { GlobeAltIcon } from '../components/IconComponents.tsx';
+import { Button } from '../components/ui/Button.tsx';
 
 type AppControllerReturnType = ReturnType<typeof useAppController>;
 
-// FIX: Add missing properties to the context type.
-export type AppContextType = AppControllerReturnType & {
-    language: 'de' | 'en';
-    settings: AppSettings;
+interface AppContextType extends AppControllerReturnType {
     handleNewProject: () => void;
     handleEditProject: (project: Project) => void;
     handleDeleteProject: (project: Project) => void;
-    handleNewGallery: () => void;
+    handleNewGallery: (inProjectId?: string | null) => void;
     handleNewGallerySuite: () => void;
     handleDeleteGalleryWithConfirmation: (id: string) => void;
     handleDuplicateGallery: (id: string) => void;
+    handleSetFeaturedGallery: (id: string) => void;
+    handleGenerateTrailer: (gallery: Gallery) => void;
     handleViewArtworkDetails: (artwork: Artwork) => void;
     handleInitiateAdd: (artwork: Artwork) => void;
+    handleFindSimilarArt: (artwork: Artwork) => void;
+    handleStartChat: (artwork: Artwork) => void;
     handleEditProfile: () => void;
-    onStartChat: (artwork: Artwork) => void;
-    handleThematicSearch: (themes: string[]) => void;
+    handleResetAllData: () => void;
     commands: Command[];
-    newlyCreatedProjectId: string | null;
-    newlyCreatedGalleryId: string | null;
+    language: 'de' | 'en';
     toggleTheme: () => void;
-    updateSettings: (settings: Partial<AppSettings>) => void;
-    resetSettings: () => void;
-};
+}
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const controller = useAppController();
+    const { t, language, setLanguage } = useTranslation();
     const { showModal, hideModal } = useModal();
     const { showToast } = useToast();
-    const { t, language } = useTranslation();
-    // FIX: Correctly destructure `resetAppSettings` from the controller and rename `appSettings` to `settings`.
-    const { appSettings: settings, setAppSettings, resetAppSettings } = controller;
+    const { handleAiTask } = useAI();
 
-    const [newlyCreatedProjectId, setNewlyCreatedProjectId] = useState<string | null>(null);
-    const [newlyCreatedGalleryId, setNewlyCreatedGalleryId] = useState<string | null>(null);
+    const {
+        galleries,
+        activeProjectId,
+        activeGalleryId,
+        appSettings,
+        profile,
+        addProject,
+        updateProject,
+        deleteProject: deleteProjectData,
+        createGallery,
+        updateGallery,
+        deleteGallery,
+        duplicateGallery,
+        addArtworkToGallery,
+        removeArtworkFromGallery,
+        setProfile,
+        setAppSettings, // Used for toggleTheme
+        deleteGalleriesByProjectId,
+        deleteJournalsByProjectId,
+        deleteAllProjects,
+        deleteAllGalleries,
+        deleteAllJournals,
+        resetAppSettings,
+        resetProfile,
+        setInitialDiscoverSearch,
+        handleSetView,
+        handleSelectProject,
+        handleSelectGallery,
+        setIsCommandPaletteOpen
+    } = controller;
 
-    useEffect(() => {
-        if (newlyCreatedProjectId) {
-            const timer = setTimeout(() => setNewlyCreatedProjectId(null), 1500);
-            return () => clearTimeout(timer);
-        }
-    }, [newlyCreatedProjectId]);
-
-    useEffect(() => {
-        if (newlyCreatedGalleryId) {
-            const timer = setTimeout(() => setNewlyCreatedGalleryId(null), 1500);
-            return () => clearTimeout(timer);
-        }
-    }, [newlyCreatedGalleryId]);
-    
-    // FIX: Implement theme toggling logic.
     const toggleTheme = useCallback(() => {
-        setAppSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' });
-    }, [setAppSettings, settings.theme]);
+        const newTheme = appSettings.theme === 'dark' ? 'light' : 'dark';
+        setAppSettings({ theme: newTheme });
+    }, [appSettings.theme, setAppSettings]);
 
     const handleNewProject = useCallback(() => {
         showModal(t('workspace.newProject'), <ProjectEditor
             onSave={async (details) => {
-                const newId = controller.addProject(details.title, details.description);
-                setNewlyCreatedProjectId(newId);
-                controller.handleSelectProject(newId);
+                const newId = await addProject(details.title, details.description);
+                handleSelectProject(newId);
                 hideModal();
+                showToast(t('toast.project.created'), 'success');
             }}
             onCancel={hideModal}
         />);
-    }, [showModal, t, controller.addProject, controller.handleSelectProject, hideModal]);
+    }, [showModal, t, addProject, handleSelectProject, hideModal, showToast]);
 
     const handleEditProject = useCallback((project: Project) => {
-        showModal(t('workspace.editProject'), <ProjectEditor
+        showModal(t('workspace.editProject', { title: project.title }), <ProjectEditor
             project={project}
             onSave={(details) => {
-                controller.updateProject(project.id, details);
+                updateProject(project.id, details);
                 hideModal();
+                showToast(t('toast.project.updated'), 'success');
             }}
             onCancel={hideModal}
         />);
-    }, [showModal, t, controller.updateProject, hideModal]);
+    }, [showModal, t, updateProject, hideModal, showToast]);
 
     const handleDeleteProject = useCallback((project: Project) => {
-        const confirmAndDelete = () => {
-            controller.deleteProject(project.id);
-            controller.deleteGalleriesByProjectId(project.id);
-            controller.deleteJournalsByProjectId(project.id);
-            showToast(t('toast.project.deleted', { title: project.title }), 'success');
-        };
+        if (appSettings.showDeletionConfirmation && !window.confirm(t('confirm.delete.project', { title: project.title }))) return;
+        deleteGalleriesByProjectId(project.id);
+        deleteJournalsByProjectId(project.id);
+        deleteProjectData(project.id);
+        showToast(t('toast.project.deleted'), 'success');
+    }, [appSettings.showDeletionConfirmation, t, deleteGalleriesByProjectId, deleteJournalsByProjectId, deleteProjectData, showToast]);
 
-        if (settings.showDeletionConfirmation) {
-            if (window.confirm(t('delete.project.confirm', { title: project.title }))) {
-                confirmAndDelete();
-            }
-        } else {
-             confirmAndDelete();
-        }
-    }, [settings.showDeletionConfirmation, t, controller.deleteProject, controller.deleteGalleriesByProjectId, controller.deleteJournalsByProjectId, showToast]);
-    
-    const createNewGallery = useCallback((projectId: string | null) => {
-        showModal(t('gallery.new'), <GalleryCreator 
-            onSave={(details) => {
-                const newId = controller.createGallery({ ...details, projectId });
-                setNewlyCreatedGalleryId(newId);
-                controller.handleSelectGallery(newId);
+    const handleNewGallery = useCallback((inProjectId: string | null = activeProjectId) => {
+        showModal(t('gallery.new'), <GalleryCreator
+            onSave={async (details) => {
+                const newId = await createGallery({ ...details, projectId: inProjectId });
+                handleSelectGallery(newId);
                 hideModal();
             }}
             onCancel={hideModal}
-        />)
-    }, [showModal, t, controller.createGallery, controller.handleSelectGallery, hideModal]);
+        />);
+    }, [showModal, t, createGallery, handleSelectGallery, hideModal, activeProjectId]);
     
-    const handleNewGallery = useCallback(() => createNewGallery(controller.activeProjectId), [createNewGallery, controller.activeProjectId]);
-    const handleNewGallerySuite = useCallback(() => createNewGallery(null), [createNewGallery]);
-
+    const handleNewGallerySuite = useCallback(() => handleNewGallery(null), [handleNewGallery]);
 
     const handleDeleteGalleryWithConfirmation = useCallback((id: string) => {
-        const gallery = controller.galleries.find(g => g.id === id);
+        const gallery = galleries.find(g => g.id === id);
         if (!gallery) return;
+        if (appSettings.showDeletionConfirmation && !window.confirm(t('confirm.delete.gallery', { title: gallery.title }))) return;
+        deleteGallery(id);
+        showToast(t('toast.gallery.deleted'), 'success');
+    }, [appSettings.showDeletionConfirmation, t, galleries, deleteGallery, showToast]);
 
-        const confirmAndDelete = () => {
-            controller.deleteGallery(id);
-            showToast(t('toast.gallery.deleted', { title: gallery.title }), 'success');
+    const handleDuplicateGallery = useCallback(async (id: string) => {
+        const newId = await duplicateGallery(id);
+        if (newId) {
+            showToast(t('toast.gallery.duplicated'), 'success');
+            handleSelectGallery(newId);
+        }
+    }, [duplicateGallery, showToast, handleSelectGallery]);
+    
+    const handleSetFeaturedGallery = useCallback((id: string) => {
+        setProfile({ featuredGalleryId: id });
+        showToast(t('toast.profile.featured'), 'success');
+    }, [setProfile, showToast]);
+
+    const handleGenerateTrailer = useCallback(async (gallery: Gallery) => {
+        const startGeneration = async () => {
+            handleAiTask<string>('video', () => gemini.generateTrailerVideo(gallery), {
+                onEnd: (result) => {
+                    if (result) { // result is a blob URL string
+                        showModal('Gallery Trailer Ready!', 
+                            <div className="flex flex-col items-center">
+                                <video src={result} controls autoPlay className="w-full rounded-lg mb-4" />
+                                <a href={result} download={`${gallery.title.replace(/ /g, '_')}_trailer.mp4`}>
+                                    <Button>Download Video</Button>
+                                </a>
+                            </div>
+                        );
+                    }
+                }
+            });
         };
 
-        if (settings.showDeletionConfirmation) {
-            if (window.confirm(t('delete.gallery.confirm', { title: gallery.title }))) {
-                confirmAndDelete();
-            }
+        const hasKey = await (window as any).aistudio?.hasSelectedApiKey();
+        
+        if (!hasKey) {
+            showModal(t('veo.modal.title'), 
+                <div>
+                    <p className="mb-4">{t('veo.modal.description')}</p>
+                    <p className="text-sm text-gray-500 mb-4" dangerouslySetInnerHTML={{ __html: t('veo.modal.billingInfo') }}/>
+                    <div className="flex justify-end gap-2">
+                        <Button variant="secondary" onClick={hideModal}>{t('cancel')}</Button>
+                        <Button onClick={async () => {
+                            hideModal();
+                            await (window as any).aistudio?.openSelectKey();
+                            // Assume key is selected and proceed
+                            // Add a small delay to allow the environment variable to potentially update
+                            setTimeout(startGeneration, 500); 
+                        }}>
+                            {t('veo.modal.selectKeyButton')}
+                        </Button>
+                    </div>
+                </div>
+            );
         } else {
-            confirmAndDelete();
+            startGeneration();
         }
-    }, [settings.showDeletionConfirmation, t, controller.galleries, controller.deleteGallery, showToast]);
+    }, [handleAiTask, showModal, hideModal, t]);
 
-    const handleDuplicateGallery = useCallback((id: string) => {
-        const newId = controller.duplicateGallery(id);
-        if (newId) {
-            // NOTE: The new gallery might not be in the `galleries` state immediately.
-            // This relies on the duplicate function returning a title, or we make an assumption.
-            // A better approach would be to have duplicateGallery thunk return the full object.
-            // For now, let's just find it, but it might be one render behind.
-            const newGallery = controller.galleries.find(g => g.id === newId);
-            showToast(t('toast.gallery.duplicated', { title: newGallery?.title || '' }), 'success');
+    const handleFindSimilarArt = useCallback(async (artwork: Artwork) => {
+        try {
+            const query = await gemini.generateSimilarArtSearchQuery(artwork, language as 'de' | 'en');
+            setInitialDiscoverSearch(query);
+            handleSetView('discover');
+        } catch (e) {
+            showToast(t('toast.error.gemini'), 'error');
         }
-    }, [controller.duplicateGallery, controller.galleries, showToast, t]);
+    }, [language, setInitialDiscoverSearch, handleSetView, showToast, t]);
 
-    const handleThematicSearch = useCallback((themes: string[]) => {
-        if (themes.length > 0) {
-            controller.setInitialDiscoverSearch(themes.join(', '));
-            controller.handleSetView('discover');
-        }
-    }, [controller.setInitialDiscoverSearch, controller.handleSetView]);
-    
-     const onStartChat = useCallback((artwork: Artwork) => {
-        showModal(t('chat.title', { title: artwork.title }), <ChatModal artwork={artwork} language={language} />);
+    const handleStartChat = useCallback((artwork: Artwork) => {
+        showModal(t('artwork.details.chat'), <ChatModal artwork={artwork} language={language as 'de' | 'en'} />);
     }, [showModal, t, language]);
 
-
     const handleInitiateAdd = useCallback((artwork: Artwork) => {
-         const handleCreateAndAdd = (details: { title: string, description: string }) => {
-            const newId = controller.createGallery({ ...details, projectId: controller.activeProjectId });
-            controller.addArtworkToGallery(newId, artwork);
-            showToast(t('toast.artwork.added', { gallery: details.title }), 'success');
+        const handleCreateAndAdd = async (details: { title: string; description: string; }) => {
+            const newId = await createGallery({ ...details, projectId: activeProjectId });
+            addArtworkToGallery(newId, artwork);
+            showToast(t('toast.artwork.addedAndCreated'), 'success');
             hideModal();
-        }
+            handleSelectGallery(newId);
+        };
 
         const handleAddExisting = (galleryId: string) => {
-            controller.addArtworkToGallery(galleryId, artwork);
-            const gallery = controller.galleries.find(g => g.id === galleryId);
-            showToast(t('toast.artwork.added', { gallery: gallery?.title || '' }), 'success');
+            addArtworkToGallery(galleryId, artwork);
+            showToast(t('toast.artwork.added'), 'success');
             hideModal();
         };
 
-        showModal(t('modal.addToGallery.title'), <AddToGalleryModal 
+        showModal(t('modal.details.addToGallery'), <AddToGalleryModal
             artwork={artwork}
-            galleries={controller.galleries}
+            galleries={galleries}
             onAddExisting={handleAddExisting}
             onCreateAndAdd={handleCreateAndAdd}
-            activeProjectId={controller.activeProjectId}
+            activeProjectId={activeProjectId}
         />);
-    }, [
-        controller.galleries, 
-        controller.activeProjectId, 
-        controller.createGallery, 
-        controller.addArtworkToGallery, 
-        showModal, 
-        hideModal, 
-        showToast, 
-        t
-    ]);
+    }, [createGallery, activeProjectId, addArtworkToGallery, showToast, hideModal, handleSelectGallery, showModal, t, galleries]);
 
     const handleViewArtworkDetails = useCallback((artwork: Artwork) => {
-        const activeGallery = controller.galleries.find(g => g.id === controller.activeGalleryId);
+        const gallery = galleries.find(g => g.id === activeGalleryId);
 
         const handleAddComment = (artworkId: string, comment: string) => {
-            if (activeGallery) {
-                const updatedArtworks = activeGallery.artworks.map(a => a.id === artworkId ? {...a, comment } : a);
-                controller.updateGallery(activeGallery.id, g => ({ ...g, artworks: updatedArtworks }));
+            if(gallery) {
+                const updatedArtworks = gallery.artworks.map(a => a.id === artworkId ? {...a, comment } : a);
+                updateGallery(gallery.id, g => ({...g, artworks: updatedArtworks }));
             }
         };
 
         showModal(artwork.title, <ArtworkDetails
             artwork={artwork}
-            activeGallery={activeGallery}
-            language={language}
+            activeGallery={gallery}
+            language={language as 'de'|'en'}
             onClose={hideModal}
-            onFindSimilar={(art) => {
-                gemini.generateSimilarArtSearchQuery(art, language).then(query => {
-                    controller.setInitialDiscoverSearch(query);
-                    controller.handleSetView('discover');
-                    hideModal();
-                });
-            }}
-            onInitiateAddToGallery={(art) => { hideModal(); handleInitiateAdd(art); }}
-            onRemoveFromGallery={(artworkId) => activeGallery && controller.removeArtworkFromGallery(activeGallery.id, artworkId)}
+            onFindSimilar={handleFindSimilarArt}
+            onInitiateAddToGallery={handleInitiateAdd}
+            onRemoveFromGallery={(artworkId: string) => removeArtworkFromGallery(gallery!.id, artworkId)}
             onAddComment={handleAddComment}
-            onThematicSearch={(themes) => {
-                handleThematicSearch(themes);
-                hideModal();
-            }}
-            onStartChat={onStartChat}
-        />)
-    }, [
-        controller.galleries, 
-        controller.activeGalleryId, 
-        controller.updateGallery, 
-        controller.setInitialDiscoverSearch,
-        controller.handleSetView,
-        controller.removeArtworkFromGallery,
-        hideModal, 
-        language, 
-        handleThematicSearch, 
-        onStartChat, 
-        handleInitiateAdd,
-        showModal
-    ]);
+            onThematicSearch={() => {}} // Placeholder
+            onStartChat={handleStartChat}
+        />);
+    }, [galleries, activeGalleryId, language, showModal, hideModal, handleFindSimilarArt, handleInitiateAdd, removeArtworkFromGallery, updateGallery, handleStartChat]);
     
-
     const handleEditProfile = useCallback(() => {
-        showModal(t('profile.edit.title'), <ProfileEditor 
-            profile={controller.profile}
-            onSave={(details) => {
-                controller.setProfile(details);
+        showModal(t('profile.edit.button'), <ProfileEditor
+            profile={profile}
+            onSave={(details: Partial<Profile>) => {
+                setProfile(details);
                 hideModal();
+                showToast(t('toast.profile.updated'), 'success');
             }}
             onCancel={hideModal}
-        />)
-    }, [showModal, t, controller.profile, controller.setProfile, hideModal]);
-    
-    const commands: Command[] = useMemo(() => [
-        { id: 'nav-workspace', name: t('view.workspace'), action: () => { controller.handleSetView('workspace'); controller.setIsCommandPaletteOpen(false) }, icon: <HomeIcon className="w-5 h-5"/> },
-        { id: 'nav-discover', name: t('view.discover'), action: () => { controller.handleSetView('discover'); controller.setIsCommandPaletteOpen(false) }, icon: <SearchIcon className="w-5 h-5"/> },
-        { id: 'nav-gallerysuite', name: t('view.gallerysuite'), action: () => { controller.handleSetView('gallerysuite'); controller.setIsCommandPaletteOpen(false) }, icon: <GalleryIcon className="w-5 h-5"/> },
-        { id: 'nav-studio', name: t('view.studio'), action: () => { controller.handleSetView('studio'); controller.setIsCommandPaletteOpen(false) }, icon: <PaintBrushIcon className="w-5 h-5"/> },
-        { id: 'nav-journal', name: t('view.journal'), action: () => { controller.handleSetView('journal'); controller.setIsCommandPaletteOpen(false) }, icon: <JournalIcon className="w-5 h-5"/> },
-        { id: 'nav-profile', name: t('view.profile'), action: () => { controller.handleSetView('profile'); controller.setIsCommandPaletteOpen(false) }, icon: <UserCircleIcon className="w-5 h-5"/>, section: 'User' },
-        { id: 'nav-settings', name: t('view.setup'), action: () => { controller.handleSetView('setup'); controller.setIsCommandPaletteOpen(false) }, icon: <Cog6ToothIcon className="w-5 h-5"/>, section: 'User' },
-        { id: 'nav-help', name: t('view.help'), action: () => { controller.handleSetView('help'); controller.setIsCommandPaletteOpen(false) }, icon: <QuestionMarkCircleIcon className="w-5 h-5"/>, section: 'User' },
-        { id: 'action-new-project', name: t('workspace.newProject'), action: () => { handleNewProject(); controller.setIsCommandPaletteOpen(false); }, icon: <PlusCircleIcon className="w-5 h-5"/>, section: 'Actions' },
-        { id: 'action-new-gallery', name: t('gallery.new'), action: () => { handleNewGallery(); controller.setIsCommandPaletteOpen(false); }, icon: <PlusCircleIcon className="w-5 h-5"/>, section: 'Actions' },
-    ], [t, controller.handleSetView, controller.setIsCommandPaletteOpen, handleNewProject, handleNewGallery]);
+        />);
+    }, [showModal, t, profile, setProfile, hideModal, showToast]);
+
+    const handleResetAllData = useCallback(() => {
+        if(window.confirm(t('confirm.delete.allData'))) {
+            deleteAllProjects();
+            deleteAllGalleries();
+            deleteAllJournals();
+            resetAppSettings();
+            resetProfile();
+            showToast(t('toast.settings.reset'), 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        }
+    }, [t, deleteAllProjects, deleteAllGalleries, deleteAllJournals, resetAppSettings, resetProfile, showToast]);
+
+    const commands = useMemo((): Command[] => {
+        const navCommands = (['workspace', 'discover', 'gallerysuite', 'studio', 'journal', 'profile', 'setup', 'help'] as const).map(view => ({
+            id: `nav-${view}`,
+            name: t(`view.${view}`),
+            action: () => { handleSetView(view); setIsCommandPaletteOpen(false); },
+            section: t('commandPalette.sections.navigation'),
+        }));
+
+        const actionCommands: Command[] = [
+            { id: 'act-new-project', name: t('workspace.newProject'), action: () => { handleNewProject(); setIsCommandPaletteOpen(false); }, section: t('commandPalette.sections.actions')},
+            { id: 'act-new-gallery', name: t('gallery.new'), action: () => { handleNewGallery(); setIsCommandPaletteOpen(false); }, section: t('commandPalette.sections.actions')},
+        ];
+
+        const languageCommands: Command[] = [
+            { id: 'lang-en', name: t('commandPalette.actions.setLangEn'), action: () => { setLanguage('en'); setIsCommandPaletteOpen(false); }, section: t('commandPalette.sections.language'), icon: <GlobeAltIcon className="w-5 h-5" /> },
+            { id: 'lang-de', name: t('commandPalette.actions.setLangDe'), action: () => { setLanguage('de'); setIsCommandPaletteOpen(false); }, section: t('commandPalette.sections.language'), icon: <GlobeAltIcon className="w-5 h-5" /> },
+        ]
+
+        return [...navCommands, ...actionCommands, ...languageCommands];
+    }, [t, handleSetView, setIsCommandPaletteOpen, handleNewProject, handleNewGallery, setLanguage]);
 
     const value: AppContextType = {
         ...controller,
-        language,
-        settings,
         handleNewProject,
         handleEditProject,
         handleDeleteProject,
@@ -287,20 +312,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         handleNewGallerySuite,
         handleDeleteGalleryWithConfirmation,
         handleDuplicateGallery,
+        handleSetFeaturedGallery,
+        handleGenerateTrailer,
         handleViewArtworkDetails,
         handleInitiateAdd,
+        handleFindSimilarArt,
+        handleStartChat,
         handleEditProfile,
-        onStartChat,
-        handleThematicSearch,
+        handleResetAllData,
         commands,
-        newlyCreatedProjectId,
-        newlyCreatedGalleryId,
+        language,
         toggleTheme,
-        updateSettings: setAppSettings,
-        resetSettings: resetAppSettings,
     };
 
-    return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+    return (
+        <AppContext.Provider value={value}>
+            {children}
+        </AppContext.Provider>
+    );
 };
 
 export const useAppContext = (): AppContextType => {

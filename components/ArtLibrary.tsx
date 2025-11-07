@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Artwork } from '../types.ts';
 import { useTranslation } from '../contexts/TranslationContext.tsx';

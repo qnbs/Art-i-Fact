@@ -1,114 +1,129 @@
-// FIX: Add 'community' to ActiveView to support the Community page and resolve type errors.
-export type ActiveView = 'workspace' | 'project' | 'discover' | 'gallery' | 'gallerysuite' | 'studio' | 'journal' | 'profile' | 'setup' | 'help' | 'community';
-
+// Core Data Structures
 export interface Artwork {
-    id: string;
-    title: string;
-    artist: string;
-    year?: string;
-    imageUrl: string;
-    thumbnailUrl?: string;
-    description?: string;
-    sourceUrl?: string;
-    license?: string;
-    isGenerated?: boolean;
-    comment?: string;
-    colorPalette?: string[];
-    medium?: string;
-    dimensions?: string;
-    location?: string;
-    historicalContext?: string;
-    tags?: string[];
+  id: string;
+  title: string;
+  artist: string;
+  year?: string;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  description?: string;
+  sourceUrl?: string;
+  license?: string;
+  dimensions?: string;
+  medium?: string;
+  tags?: string[];
+  colorPalette?: string[];
+  comment?: string;
+  isGenerated?: boolean; // True if created in the Studio
 }
 
 export interface Gallery {
-    id: string;
-    title: string;
-    description: string;
-    artworks: Artwork[];
-    status?: 'draft' | 'published';
-    thumbnailUrl?: string;
-    tags?: string[];
-    audioGuide?: AudioGuide;
-    trailerVideoUrl?: string;
-    trailerVideoStatus?: 'none' | 'pending' | 'ready' | 'failed';
-    projectId?: string | null;
-    createdAt: string;
-    updatedAt: string;
-    curatorProfile?: Profile; // Added for community galleries
-}
-
-export interface DeepDive {
-    symbolism: string;
-    artistContext: string;
-    technique: string;
-}
-
-export interface GalleryCritique {
-    critique: string;
-    suggestions: string[];
-}
-
-export interface AudioGuide {
-    introduction: string;
-    segments: {
-        artworkId: string;
-        script: string;
-    }[];
-}
-
-export type ImageAspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
-
-export interface AppSettings {
-    theme: 'light' | 'dark';
-    showDeletionConfirmation: boolean;
-    compactMode: boolean;
-    defaultViewOnStartup: ActiveView;
-    aiResultsCount: number;
-    aiCreativity: 'focused' | 'balanced' | 'creative';
-    aiContentLanguage: 'ui' | 'en' | 'de';
-    aiThinkingBudget: number;
-    streamJournalResponses: boolean;
-    promptEnhancementStyle: 'subtle' | 'descriptive' | 'artistic';
-    studioDefaultAspectRatio: ImageAspectRatio;
-    studioAutoSave: boolean;
-    clearPromptOnGenerate: boolean;
-    defaultRemixPrompt: string;
-    slideshowSpeed: number;
-    slideshowTransition: 'fade' | 'slide';
-    exhibitAutoplay: boolean;
-    exhibitLoopSlideshow: boolean;
-    showArtworkInfoInSlideshow: boolean;
-    showControlsOnHover: boolean;
-    autoSaveJournal: boolean;
-    defaultJournalTitle: string;
-    audioGuideVoiceURI: string;
-    audioGuideSpeed: number;
-}
-
-export interface Profile {
-    username: string;
-    bio: string;
-    avatar: string;
-}
-
-export interface JournalEntry {
-    id: string;
-    title: string;
-    content: string;
-    createdAt: string;
-    updatedAt: string;
-    projectId?: string | null;
+  id: string;
+  title: string;
+  description: string;
+  artworks: Artwork[];
+  thumbnailUrl?: string;
+  status: 'draft' | 'published';
+  createdAt: string;
+  updatedAt: string;
+  projectId: string | null;
+  audioGuide?: AudioGuide;
+  tags?: string[];
+  curatorProfile?: Profile; // For shared galleries
 }
 
 export interface Project {
-    id: string;
-    title: string;
-    description: string;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  title: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
+export interface JournalEntry {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  projectId?: string;
+}
+
+export interface Profile {
+  username: string;
+  bio: string;
+  avatar: string; // e.g., 'avatar-1'
+  featuredGalleryId?: string;
+}
+
+// AI Interaction Types
+export interface DeepDive {
+  symbolism: string;
+  artistContext: string;
+  technique: string;
+}
+
+export interface GalleryCritique {
+  critique: string;
+  suggestions: string[];
+}
+
+export interface AudioGuide {
+  introduction: string;
+  segments: {
+    artworkId: string;
+    script: string;
+  }[];
+}
+
+// App Configuration & State
+export type ActiveView = 'workspace' | 'project' | 'discover' | 'gallerysuite' | 'gallery' | 'studio' | 'journal' | 'profile' | 'setup' | 'help';
+
+export interface AppSettings {
+  theme: 'light' | 'dark' | 'system';
+  showDeletionConfirmation: boolean;
+  compactMode: boolean;
+  defaultViewOnStartup: ActiveView;
+  reduceMotion: boolean;
+
+  aiCreativity: 'focused' | 'balanced' | 'creative' | 'custom';
+  aiTemperature: number;
+  aiTopP: number;
+  aiTopK: number;
+  aiContentLanguage: 'ui' | 'en' | 'de';
+  aiThinkingBudget: number;
+  streamJournalResponses: boolean;
+
+  promptEnhancementStyle: 'subtle' | 'descriptive' | 'artistic';
+  autoEnhancePrompts: boolean;
+  studioDefaultAspectRatio: string;
+  clearPromptOnGenerate: boolean;
+  defaultNegativePrompt: string;
+  defaultRemixPrompt: string;
+
+  slideshowSpeed: number;
+  slideshowTransition: 'fade' | 'slide' | 'kenburns';
+  exhibitAutoplay: boolean;
+  exhibitLoopSlideshow: boolean;
+  exhibitBackground: 'blur' | 'color' | 'none';
+  exhibitEnableParallax: boolean;
+  showArtworkInfoInSlideshow: boolean;
+  showControlsOnHover: boolean;
+  
+  autoSaveJournal: boolean;
+  defaultJournalTitle: string;
+  journalEditorFontSize: 'sm' | 'base' | 'lg';
+
+  audioGuideVoiceURI: string;
+  audioGuideSpeed: number;
+  audioGuidePitch: number;
+  audioGuideVolume: number;
+
+  showProfileActivity: boolean;
+  showProfileAchievements: boolean;
+}
+
+// For sharing galleries via URL
 export interface ShareableGalleryData {
     gallery: Gallery;
     profile: Profile;

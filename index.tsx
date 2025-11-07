@@ -1,34 +1,23 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
-import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { AppProviders } from './contexts/AppProviders.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+// Assuming a base CSS file for Tailwind directives exists
+// import './index.css'; 
 
-// PWA Service Worker Registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js')
-      .then(registration => {
-        console.log('[SW] Service Worker registered with scope:', registration.scope);
-      })
-      .catch(error => {
-        console.error('[SW] Service Worker registration failed:', error);
-      });
-  });
+const container = document.getElementById('root');
+if (container) {
+    const root = createRoot(container);
+    root.render(
+        <React.StrictMode>
+            <ErrorBoundary>
+                <AppProviders>
+                    <App />
+                </AppProviders>
+            </ErrorBoundary>
+        </React.StrictMode>
+    );
+} else {
+    console.error("Failed to find the root element to mount the React application.");
 }
-
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
-
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <AppProviders>
-        <App />
-      </AppProviders>
-    </ErrorBoundary>
-  </React.StrictMode>
-);

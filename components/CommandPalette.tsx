@@ -83,7 +83,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, comman
 
     const CommandList = () => (
         <>
-        {/* FIX: Explicitly cast Object.entries to resolve type inference issue. */}
         {(Object.entries(groupedCommands) as [string, Command[]][]).map(([section, cmds]) => (
             <div key={section} className="mb-2">
                 <h3 className="text-xs font-semibold uppercase text-gray-400 px-3 py-1">{section}</h3>

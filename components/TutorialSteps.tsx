@@ -1,5 +1,4 @@
 import React from 'react';
-// FIX: Added .tsx extension to fix module resolution error.
 import { useTranslation } from '../contexts/TranslationContext.tsx';
 import { SearchIcon, HomeIcon, GalleryIcon, PaintBrushIcon, JournalIcon, PresentationChartBarIcon } from './IconComponents.tsx';
 
