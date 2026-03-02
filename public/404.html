@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Art-i-Fact</title>
+    <script>
+        // SPA redirect for GitHub Pages
+        // Converts paths into a query parameter that index.html can read
+        // This ensures client-side routing works on page refresh
+        var pathSegmentsToKeep = 1; // Keep '/Art-i-Fact'
+        var l = window.location;
+        l.replace(
+            l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+            l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+            l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+            (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+            l.hash
+        );
+    </script>
+</head>
+<body>
+    <noscript>
+        <h1>Art-i-Fact</h1>
+        <p>This application requires JavaScript to run.</p>
+        <p><a href="/Art-i-Fact/">Go to homepage</a></p>
+    </noscript>
+</body>
+</html>

@@ -3,10 +3,28 @@
   "version": "1.0.0",
   "description": "An AI-powered web application that allows users to discover, organize, and share virtual art galleries using AI-powered curation tools.",
   "private": true,
+  "type": "module",
   "scripts": {
-    "start": "live-server --port=3000 --no-browser --open=index.html"
+    "dev": "vite",
+    "start": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build"
+  },
+  "dependencies": {
+    "@google/genai": "^1.15.0",
+    "@reduxjs/toolkit": "^2.2.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-redux": "^9.1.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "live-server": "^1.2.2"
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "terser": "^5.37.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0"
   }
 }
