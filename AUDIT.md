@@ -1,6 +1,6 @@
 # Art-i-Fact — Full Application Audit
 
-> **Audit date:** 2026-04-14  
+> **Audit date:** 2026-05-02 (Dokumentations- und Tooling-Update; siehe unten „Cursor & CI“)  
 > **Scope:** Full app, repo configuration, DevContainer, security, performance, accessibility, i18n  
 > **App version:** 1.0.0  
 
@@ -169,10 +169,10 @@ Art-i-Fact is a well-architected client-only React 19 + TypeScript PWA with clea
 - **Issue:** No skip-to-content link for keyboard users to bypass navigation.
 - **Fix:** Add `<a href="#main-content" class="sr-only focus:not-sr-only">Skip to content</a>` at the top of layout.
 
-### LOW-05: Missing `crossorigin` attribute on font preconnect
+### ~~LOW-05: Missing `crossorigin` attribute on font preconnect~~ ✅ FIXED
 - **File:** `index.html`
-- **Issue:** `<link rel="preconnect" href="https://fonts.googleapis.com">` missing `crossorigin` attribute (fonts.gstatic.com has it).
-- **Fix:** Add `crossorigin` to the fonts.googleapis.com preconnect link.
+- **Issue:** `<link rel="preconnect" href="https://fonts.googleapis.com">` lacked `crossorigin` (recommended alongside `fonts.gstatic.com`).
+- **Resolution:** Added `crossorigin` to the Google Fonts preconnect link.
 
 ### LOW-06: Tailwind loaded from CDN (production risk)
 - **File:** `index.html`
@@ -299,6 +299,14 @@ errorBoundary.reload
 | React plugin | ✅ Enabled |
 | Code splitting | ✅ 3 manual chunks |
 | Env injection | ✅ Secure with fallback |
+
+### Cursor IDE & CI (2026-05-02)
+| Aspect | Status | Notes |
+|--------|--------|-------|
+| Cursor rules | ✅ | `.cursor/rules/art-i-fact.mdc` (`alwaysApply`) — Stack, Konventionen, Änderungsstrategie |
+| Agent entrypoint | ✅ | `AGENTS.md` — Kurzüberblick für Menschen und KI |
+| VS Code / Cursor extensions | ✅ | `.vscode/extensions.json` — Empfehlungen aligned mit Dev Container |
+| GitHub Actions | ✅ | Workflow `.github/workflows/deploy.yml`: **CI and Deploy to GitHub Pages** — Build bei Push/PR zu `main`; Artifact + Deploy bei Push auf `main` oder `workflow_dispatch` auf `main`; PRs nur Build |
 
 ---
 

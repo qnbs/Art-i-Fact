@@ -11,14 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed empty duplicate `AppLayout.tsx` at project root (real implementation is in `components/AppLayout.tsx`)
 - Added missing `.rejected` handler for `fetchWelcomeStatus` thunk in `appSlice.ts` — previously state could remain stuck at 'loading' if IndexedDB read failed
 - Updated outdated `lastmod` date in `public/sitemap.xml`
+- `index.html`: `crossorigin` on Google Fonts `preconnect` for `fonts.googleapis.com` (audit LOW-05)
 
 ### Added
 - SEO meta description and Open Graph tags in `index.html`
 - `CHANGELOG.md` following Keep a Changelog standard
 - `AUDIT.md` comprehensive app audit documentation
+- `AGENTS.md` — concise conventions for contributors and AI agents
+- `.cursor/rules/art-i-fact.mdc` — Cursor always-on project rules
+- `.vscode/extensions.json` — recommended editor extensions
 
 ### Changed
 - Updated and expanded `.github/copilot-instructions.md` with corrected runtime facts and new sections (Build & Deploy, PWA, DevContainer, Security, i18n)
+- GitHub Actions workflow renamed and extended to **CI and Deploy to GitHub Pages**: build on PRs and pushes to `main`; Pages publish on `main` pushes and on manual `workflow_dispatch` when run on `main`
+- `README.md`: technology stack accuracy (Vite bundling, Tailwind CDN), CI/deploy wording, links to `AGENTS.md` / copilot instructions; TypeScript badge wording
+- `AUDIT.md`: tooling section for Cursor and CI; LOW-05 marked fixed; audit metadata refreshed
 
 ## [1.0.0] - 2025-01-01
 

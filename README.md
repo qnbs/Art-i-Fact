@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Redux-Toolkit-764ABC?logo=redux" alt="Redux Toolkit">
   <img src="https://img.shields.io/badge/Google-Gemini_API-4285F4?logo=google" alt="Gemini API">
   <img src="https://img.shields.io/badge/PWA-Offline_First-d97706" alt="PWA Offline First">
-  <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript" alt="TypeScript">
   <img src="https://img.shields.io/badge/Data-100%25_Client_Side-green" alt="100% Client Side">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License">
 </p>
@@ -140,7 +140,7 @@ Art-i-Fact integrates cutting-edge AI into every facet of the curatorial process
 | Category                  | Technology                             | Rationale & Purpose                                                                              |
 | ------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | **Core Framework**        | React 19, TypeScript                   | Building a modern, type-safe, and performant user interface with the latest React features.      |
-| **Styling**               | Tailwind CSS                           | A utility-first CSS framework for rapid, consistent, and maintainable UI development.            |
+| **Styling**               | Tailwind CSS                           | Utility-first CSS loaded via CDN in `index.html` (no local PostCSS/Tailwind CLI pipeline).      |
 | **State Management**      | Redux Toolkit                          | Centralized, predictable state management with minimal boilerplate, enabling optimistic UI.      |
 | **Data Persistence**      | IndexedDB (via `dbService`)            | Robust, client-side database for full offline functionality and 100% data sovereignty.           |
 | **AI Text & Analysis**    | `gemini-2.5-flash`                     | Powers critiques, audio guides, research, and prompt enhancements with speed and intelligence.   |
@@ -149,7 +149,7 @@ Art-i-Fact integrates cutting-edge AI into every facet of the curatorial process
 | **AI Video Generation**   | `veo-3.1-fast-generate-preview`        | Creates short, cinematic trailers for galleries, bringing collections to life.                   |
 | **AI Web Research**       | `gemini-2.5-flash` w/ Search Grounding | Provides the "Get Insights" feature in the Journal with up-to-date, citation-backed information. |
 | **Offline & Performance** | PWA + Service Worker                   | Ensures the app is installable, loads instantly, and is resilient to network conditions.         |
-| **Module Loading**        | ESM via Import Maps                    | Modern, browser-native module loading for faster development and a dependency-free build step.   |
+| **Build & Bundling**      | Vite 6                                 | Production build bundles npm dependencies with manual chunks and hashed assets; dev server on port 3000. |
 
 ---
 
@@ -173,6 +173,8 @@ Art-i-Fact is an evolving platform. Future state-of-the-art enhancements include
 ---
 
 ## 🚀 Running the Project Locally
+
+**Contributor and agent conventions:** See [`AGENTS.md`](AGENTS.md) and [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 
 Art-i-Fact is designed for a seamless, modern development experience, including first-class support for containerized environments.
 
@@ -214,9 +216,10 @@ The application will be available at `http://localhost:3000`.
 Art-i-Fact is configured for automatic deployment to GitHub Pages:
 
 1.  **Enable GitHub Pages:** Go to your repository → Settings → Pages → Source: **GitHub Actions**
-2.  **Push to `main`:** Every push to `main` triggers the deployment workflow automatically.
-3.  **Your live URL:** `https://qnbs.github.io/Art-i-Fact/`
-4.  **Manual deployment:** Go to Actions → "Deploy to GitHub Pages" → "Run workflow"
+2.  **CI:** Pushes and pull requests targeting `main` run **CI and Deploy to GitHub Pages** (install + `npm run build`). Only pushes to `main` upload the artifact and deploy.
+3.  **Push to `main`:** Each push to `main` builds and deploys to Pages automatically.
+4.  **Your live URL:** `https://qnbs.github.io/Art-i-Fact/`
+5.  **Manual run:** Actions → **CI and Deploy to GitHub Pages** → **Run workflow**. On `main`, this builds, uploads, and deploys; on other branches it runs the build only.
 
 ---
 
@@ -343,6 +346,7 @@ Art-i-Fact ist eine echte Progressive Web App. Ein sorgfältig konfigurierter **
 | Kategorie                 | Technologie                            | Begründung & Zweck                                                                            |
 | ------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------- |
 | **Kern-Framework**        | React 19, TypeScript                   | Erstellung einer modernen, typsicheren und performanten Benutzeroberfläche.                   |
+| **Styling**               | Tailwind CSS (CDN)                   | Utility-first CSS über das CDN-Skript in `index.html` (kein lokales Tailwind-CLI-Setup).     |
 | **Zustandsverwaltung**    | Redux Toolkit                          | Zentralisierte, vorhersagbare Zustandsverwaltung, die Optimistic UI ermöglicht.               |
 | **Datenpersistenz**       | IndexedDB                              | Robuste, clientseitige Datenbank für volle Offline-Funktionalität und 100% Datensouveränität. |
 | **KI Text & Analyse**     | `gemini-2.5-flash`                     | Ermöglicht Kritiken, Audioguides, Recherchen und Prompt-Verbesserungen.                       |
@@ -351,6 +355,7 @@ Art-i-Fact ist eine echte Progressive Web App. Ein sorgfältig konfigurierter **
 | **KI Videoerzeugung**     | `veo-3.1-fast-generate-preview`        | Erstellt kinoreife Trailer für Galerien.                                                      |
 | **KI Web-Recherche**      | `gemini-2.5-flash` w/ Search Grounding | Liefert die "Einblicke erhalten"-Funktion im Journal mit aktuellen, zitierten Infos.          |
 | **Offline & Performance** | PWA + Service Worker                   | Stellt sicher, dass die App installierbar ist, sofort lädt und netzwerkresistent ist.         |
+| **Build & Bundling**      | Vite 6                                 | Produktionsbuild mit npm-Abhängigkeiten, manuellen Chunks und gehashten Assets; Dev-Server auf Port 3000. |
 
 ---
 
@@ -372,6 +377,8 @@ Art-i-Fact ist eine echte Progressive Web App. Ein sorgfältig konfigurierter **
 ---
 
 ## 🚀 Projekt lokal ausführen
+
+**Konventionen für Mitwirkende und KI-Agenten:** Siehe [`AGENTS.md`](AGENTS.md) und [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 
 ### 1. Mit VS Code Dev Containern (Empfohlen)
 
@@ -404,9 +411,10 @@ Die Anwendung ist dann unter `http://localhost:3000` verfügbar.
 
 ## 🚢 Deployment
 
-1. Settings → Pages → Source: **GitHub Actions**
-2. Push auf `main` löst automatisches Deployment aus
-3. Live-URL: `https://qnbs.github.io/Art-i-Fact/`
+1. Settings → Pages → Quelle: **GitHub Actions**
+2. **CI:** Pushes und Pull Requests gegen `main` führen denselben Build aus; Deployment erfolgt nur bei Push auf `main`.
+3. Push auf `main` löst Build und Deployment aus.
+4. Live-URL: `https://qnbs.github.io/Art-i-Fact/`
 
 ---
 

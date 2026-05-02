@@ -1,0 +1,13 @@
+---
+description: Art-i-Fact — Stack, Konventionen und Änderungsstrategie
+alwaysApply: true
+---
+
+# Art-i-Fact
+
+- **Stack:** React 19, TypeScript, Vite 6, Redux Toolkit, IndexedDB (`services/dbService.ts`), Tailwind per CDN in `index.html`, Deploy: GitHub Pages mit `base: "/Art-i-Fact/"`.
+- **Importe:** Überall explizite `.ts`/`.tsx`-Suffixe beibehalten.
+- **Datenfluss:** Thunks persistieren über Services → Redux; UI über `useAppController` / `AppContext`; keine zweiten State-Kanäle.
+- **KI:** Neue Aufrufe nur in `services/geminiService.ts`; Ladezustände über `useAI().handleAiTask` (`AIStatusContext.tsx`).
+- **Texte:** `useTranslation().t(...)` mit Keys aus `i18n/locales.ts`; Prompts in `i18n/prompts.ts` (de/en parallel).
+- **Vor Refactors:** Offene Punkte siehe `AUDIT.md`.

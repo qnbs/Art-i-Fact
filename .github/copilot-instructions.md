@@ -37,7 +37,12 @@
 - Vite config in `vite.config.ts` with `base: "/Art-i-Fact/"` for GitHub Pages.
 - Code-splitting: `react-vendor`, `redux-vendor`, `ai-vendor` manual chunks.
 - Environment variables: `GEMINI_API_KEY` injected via Vite's `define` from `.env` file (empty string fallback in production).
-- Deploy: `npm run build` → push `dist/` to GitHub Pages (or use CI workflow).
+- CI/CD: Workflow **CI and Deploy to GitHub Pages** (`.github/workflows/deploy.yml`) runs `npm ci` and `npm run build` on pushes and PRs to `main`. Upload + deploy run on pushes to `main` and on `workflow_dispatch` when executed on `main`; pull requests get build verification only.
+
+## Cursor IDE
+- Persistent agent context: `.cursor/rules/art-i-fact.mdc` (always-on project rules).
+- Short onboarding for humans/agents: `AGENTS.md`.
+- Recommended extensions: `.vscode/extensions.json` (aligned with `.devcontainer/devcontainer.json`).
 
 ## PWA setup
 - `manifest.json` at project root with proper scope and start_url for `/Art-i-Fact/`.
